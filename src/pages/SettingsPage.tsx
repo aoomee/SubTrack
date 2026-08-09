@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Skeleton } from "@/components/ui/skeleton"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { useConfirmation } from "@/hooks/use-confirmation"
 import { useToast } from "@/hooks/use-toast"
@@ -188,30 +189,29 @@ export function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-16rem)]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg font-medium">{t('loadingSettings')}</p>
-        </div>
+      <div className="space-y-6" aria-label={t('loadingSettings')}>
+        <Skeleton className="h-10 w-40" />
+        <Skeleton className="h-10 w-full max-w-3xl" />
+        <Skeleton className="h-56 w-full max-w-3xl rounded-xl" />
       </div>
     )
   }
 
   return (
-    <>
-      <div className="flex items-center justify-between pb-4">
-        <h2 className="text-3xl font-bold tracking-tight">{t('title')}</h2>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.035em] sm:text-[32px]">{t('title')}</h1>
       </div>
 
-      <Tabs defaultValue={defaultTab}>
-        <div className="overflow-x-auto mb-4 sm:overflow-visible">
-          <TabsList className="mb-4 min-w-max sm:min-w-0">
-            <TabsTrigger value="general" className="text-xs sm:text-sm px-2 sm:px-3">{t('general')}</TabsTrigger>
-            <TabsTrigger value="currency" className="text-xs sm:text-sm px-2 sm:px-3">{t('currency')}</TabsTrigger>
-            <TabsTrigger value="options" className="text-xs sm:text-sm px-2 sm:px-3">{t('options')}</TabsTrigger>
-            <TabsTrigger value="notifications" className="text-xs sm:text-sm px-2 sm:px-3">{t('notifications')}</TabsTrigger>
-            <TabsTrigger value="security" className="text-xs sm:text-sm px-2 sm:px-3">{t('security')}</TabsTrigger>
-            <TabsTrigger value="data" className="text-xs sm:text-sm px-2 sm:px-3">{t('data')}</TabsTrigger>
+      <Tabs defaultValue={defaultTab} className="max-w-4xl">
+        <div className="overflow-x-auto sm:overflow-visible">
+          <TabsList className="min-w-max sm:min-w-0">
+            <TabsTrigger value="general">{t('general')}</TabsTrigger>
+            <TabsTrigger value="currency">{t('currency')}</TabsTrigger>
+            <TabsTrigger value="options">{t('options')}</TabsTrigger>
+            <TabsTrigger value="notifications">{t('notifications')}</TabsTrigger>
+            <TabsTrigger value="security">{t('security')}</TabsTrigger>
+            <TabsTrigger value="data">{t('data')}</TabsTrigger>
           </TabsList>
         </div>
 
@@ -222,7 +222,7 @@ export function SettingsPage() {
               <CardDescription>{t('customizeGeneralPreferences')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div>
+              <div className="max-w-md space-y-2">
                 <Label htmlFor="theme">{t('themeMode')}</Label>
                 <Select
                   value={theme}
@@ -241,7 +241,7 @@ export function SettingsPage() {
                     <SelectItem value="system">{t('system')}</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-sm leading-5 text-muted-foreground">
                   {t('chooseBetweenThemes')}
                 </p>
               </div>
@@ -264,7 +264,7 @@ export function SettingsPage() {
         <TabsContent value="security" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>{t('changePassword')}</CardTitle>
+              <CardTitle className="text-base">{t('changePassword')}</CardTitle>
               <CardDescription>{t('changePasswordDesc')}</CardDescription>
             </CardHeader>
             <form onSubmit={handleChangePassword}>
@@ -334,7 +334,7 @@ export function SettingsPage() {
                 {t('exportImportDesc')}
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex gap-4">
+            <CardContent className="flex flex-wrap gap-3">
               <Button variant="outline" onClick={handleExportData}>
                 <Download className="mr-2 h-4 w-4" />
                 {t('exportData')}
@@ -346,7 +346,7 @@ export function SettingsPage() {
             </CardContent>
           </Card>
 
-          <Card className="mt-4 border-destructive">
+          <Card className="mt-4 border-destructive/25 bg-destructive/[0.02]">
             <CardHeader>
               <CardTitle>{t('resetData')}</CardTitle>
               <CardDescription>
@@ -371,6 +371,6 @@ export function SettingsPage() {
       
       {/* Reset Confirmation Dialog */}
       <ConfirmDialog {...resetConfirmation.dialogProps} />
-    </>
+    </div>
   )
 }

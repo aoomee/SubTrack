@@ -80,28 +80,27 @@ export function ExpenseTrendChart({ data, categoryData, currency, className }: E
         <LineChart
           data={data}
           margin={{
-            top: 30,
-            right: 15,
-            left: 5,
-            bottom: 30
+            top: 12,
+            right: 12,
+            left: 0,
+            bottom: 8
           }}
         >
-          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+          <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/70" />
           <XAxis
             dataKey="month"
             className="text-xs fill-muted-foreground"
             tick={{ fontSize: 10 }}
-            angle={-45}
-            textAnchor="end"
-            height={60}
-            interval={0}
+            tickFormatter={(value) => String(value).split(' ')[0]}
+            height={28}
+            minTickGap={20}
             tickMargin={10}
           />
           <YAxis
             className="text-xs fill-muted-foreground"
             tick={{ fontSize: 10 }}
             tickFormatter={(value) => formatCurrencyAmount(value, currency)}
-            width={60}
+            width={56}
           />
           <Tooltip
             content={({ active, payload, label }) => {
@@ -134,9 +133,9 @@ export function ExpenseTrendChart({ data, categoryData, currency, className }: E
             type="monotone"
             dataKey="amount"
             stroke="var(--color-amount)"
-            strokeWidth={2}
-            dot={{ fill: "var(--color-amount)", strokeWidth: 2, r: 4 }}
-            activeDot={{ r: 6, stroke: "var(--color-amount)", strokeWidth: 2 }}
+            strokeWidth={2.25}
+            dot={{ fill: "var(--color-amount)", strokeWidth: 0, r: 3.5 }}
+            activeDot={{ r: 5, stroke: "hsl(var(--background))", strokeWidth: 2 }}
           />
         </LineChart>
       )
@@ -146,28 +145,27 @@ export function ExpenseTrendChart({ data, categoryData, currency, className }: E
         <BarChart
           data={categoryData || []}
           margin={{
-            top: 30,
-            right: 15,
-            left: 5,
-            bottom: 30
+            top: 12,
+            right: 12,
+            left: 0,
+            bottom: 8
           }}
         >
-          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+          <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/70" />
           <XAxis
             dataKey="month"
             className="text-xs fill-muted-foreground"
             tick={{ fontSize: 10 }}
-            angle={-45}
-            textAnchor="end"
-            height={60}
-            interval={0}
+            tickFormatter={(value) => String(value).split(' ')[0]}
+            height={28}
+            minTickGap={20}
             tickMargin={10}
           />
           <YAxis
             className="text-xs fill-muted-foreground"
             tick={{ fontSize: 10 }}
             tickFormatter={(value) => formatCurrencyAmount(value, currency)}
-            width={60}
+            width={56}
           />
           <Tooltip
             content={({ active, payload, label }) => {
@@ -225,10 +223,10 @@ export function ExpenseTrendChart({ data, categoryData, currency, className }: E
   }
   
   return (
-    <Card className={className}>
+    <Card className={`min-h-[340px] ${className || ''}`}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div>
-          <CardTitle className="text-lg">{t('chart.expenseTrends')}</CardTitle>
+          <CardTitle className="text-base">{t('chart.expenseTrends')}</CardTitle>
           <CardDescription>
             {chartType === 'line' 
               ? t('chart.monthlySpendingOverTime')
@@ -236,14 +234,17 @@ export function ExpenseTrendChart({ data, categoryData, currency, className }: E
             }
           </CardDescription>
         </div>
+        {categoryData && categoryData.length > 0 && (
         <div className="flex items-center gap-3">
           {/* 图表类型切换按钮 */}
-          <div className="flex items-center rounded-md border">
+          <div className="flex items-center rounded-lg border bg-background p-0.5">
             <Button
               variant={chartType === 'line' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setChartType('line')}
-              className="rounded-r-none h-8 px-3"
+              aria-label="Line chart"
+              aria-pressed={chartType === 'line'}
+              className="h-7 rounded-md px-2.5"
             >
               <LineChartIcon className="h-3 w-3" />
             </Button>
@@ -251,13 +252,15 @@ export function ExpenseTrendChart({ data, categoryData, currency, className }: E
               variant={chartType === 'groupedBar' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setChartType('groupedBar')}
-              disabled={!categoryData || categoryData.length === 0}
-              className="rounded-l-none h-8 px-3"
+              aria-label="Category bar chart"
+              aria-pressed={chartType === 'groupedBar'}
+              className="h-7 rounded-md px-2.5"
             >
               <BarChart3 className="h-3 w-3" />
             </Button>
           </div>
         </div>
+        )}
       </CardHeader>
       <CardContent className="px-2 sm:px-6">
         {(chartType === 'line' ? data.length === 0 : !categoryData || categoryData.length === 0) ? (

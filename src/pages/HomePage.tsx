@@ -1,10 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
-import {
-  Calendar,
-  Clock,
-  RefreshCw
-} from "lucide-react"
+import { RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { useTranslation } from "react-i18next"
 
@@ -23,7 +20,12 @@ import {
 } from "@/store/subscriptionStore"
 import { useSettingsStore } from "@/store/settingsStore"
 import { formatCurrencyAmount } from "@/utils/currency"
-import { getCurrentMonthSpending, getCurrentYearSpending } from "@/lib/expense-analytics-api"
+import {
+  getApiMonthlyExpenses,
+  getCurrentMonthSpending,
+  getCurrentYearSpending,
+  type MonthlyExpense,
+} from "@/lib/expense-analytics-api"
 
 import { SubscriptionForm } from "@/components/subscription/SubscriptionForm"
 import { StatCard } from "@/components/dashboard/StatCard"
@@ -31,6 +33,7 @@ import { UpcomingRenewals } from "@/components/dashboard/UpcomingRenewals"
 import { RecentlyPaid } from "@/components/dashboard/RecentlyPaid"
 import { CategoryBreakdown } from "@/components/dashboard/CategoryBreakdown"
 import { ImportModal } from "@/components/imports/ImportModal"
+import { ExpenseTrendChart } from "@/components/charts/ExpenseTrendChart"
 
 function HomePage() {
   const { toast } = useToast()
@@ -56,6 +59,7 @@ function HomePage() {
   // State for API-based spending data
   const [monthlySpending, setMonthlySpending] = useState<number>(0)
   const [yearlySpending, setYearlySpending] = useState<number>(0)
+  const [monthlyTrend, setMonthlyTrend] = useState<MonthlyExpense[]>([])
   const [isLoadingSpending, setIsLoadingSpending] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
 
@@ -75,13 +79,17 @@ function HomePage() {
       setIsLoadingSpending(true)
 
       try {
-        const [currentMonth, currentYear] = await Promise.all([
+        const endDate = new Date()
+        const startDate = new Date(endDate.getFullYear(), endDate.getMonth() - 6, 1)
+        const [currentMonth, currentYear, trend] = await Promise.all([
           getCurrentMonthSpending(userCurrency),
-          getCurrentYearSpending(userCurrency)
+          getCurrentYearSpending(userCurrency),
+          getApiMonthlyExpenses(startDate, endDate, userCurrency),
         ])
 
         setMonthlySpending(currentMonth)
         setYearlySpending(currentYear)
+        setMonthlyTrend(trend)
       } catch (error) {
         console.error('Failed to load spending data:', error)
       } finally {
@@ -122,12 +130,16 @@ function HomePage() {
 
       // Also refresh spending data
       if (userCurrency) {
-        const [currentMonth, currentYear] = await Promise.all([
+        const endDate = new Date()
+        const startDate = new Date(endDate.getFullYear(), endDate.getMonth() - 6, 1)
+        const [currentMonth, currentYear, trend] = await Promise.all([
           getCurrentMonthSpending(userCurrency),
-          getCurrentYearSpending(userCurrency)
+          getCurrentYearSpending(userCurrency),
+          getApiMonthlyExpenses(startDate, endDate, userCurrency),
         ])
         setMonthlySpending(currentMonth)
         setYearlySpending(currentYear)
+        setMonthlyTrend(trend)
       }
 
       toast({
@@ -189,10 +201,10 @@ function HomePage() {
 
   return (
     <>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{t('common:dashboard')}</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-semibold tracking-[-0.035em] sm:text-[30px]">{t('common:dashboard')}</h1>
+          <p className="mt-1 text-sm text-muted-foreground sm:text-base">
             {t('common:dashboardDescription')}
           </p>
         </div>
@@ -201,7 +213,7 @@ function HomePage() {
           disabled={isRefreshing}
           variant="outline"
           size="sm"
-          className="flex items-center gap-2"
+          className="self-start sm:self-auto"
         >
           <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           {isRefreshing ? t('common:refreshing') : t('common:refresh')}
@@ -209,42 +221,50 @@ function HomePage() {
       </div>
 
       {/* Dashboard Content */}
-      <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-3">
-            <StatCard
-              title={t('common:monthlySpending')}
-              value={formatCurrencyAmount(monthlySpending, userCurrency)}
-              description={t('common:currentMonthExpenses')}
-              icon={Calendar}
-              iconColor="text-blue-500"
-            />
-            <StatCard
-              title={t('common:yearlySpending')}
-              value={formatCurrencyAmount(yearlySpending, userCurrency)}
-              description={t('common:currentYearTotal')}
-              icon={Calendar}
-              iconColor="text-purple-500"
-            />
-            <StatCard
-              title={t('common:activeSubscriptions')}
-              value={subscriptions.filter(sub => sub.status === "active").length}
-              description={t('common:totalServices')}
-              icon={Clock}
-              iconColor="text-green-500"
-            />
-          </div>
+      <div className="space-y-5">
+          <Card className="overflow-hidden rounded-[18px] border-border/80 shadow-none">
+            <section
+              className="grid divide-y md:grid-cols-3 md:divide-y-0"
+              aria-label="Subscription summary"
+            >
+              <StatCard
+                title={t('common:monthlySpending')}
+                value={formatCurrencyAmount(monthlySpending, userCurrency)}
+                divider
+                align="center"
+              />
+              <StatCard
+                title={t('common:yearlySpending')}
+                value={formatCurrencyAmount(yearlySpending, userCurrency)}
+                divider
+                align="center"
+              />
+              <StatCard
+                title={t('common:activeSubscriptions')}
+                value={subscriptions.filter(sub => sub.status === "active").length}
+                description={t('common:totalServices')}
+                align="center"
+              />
+            </section>
+          </Card>
           
-          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
-            <RecentlyPaid
-              subscriptions={recentlyPaidSubscriptions}
+          <section
+            className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(360px,1fr)]"
+            aria-label="Expense activity"
+          >
+            <ExpenseTrendChart
+              data={monthlyTrend}
+              currency={userCurrency}
             />
-
             <UpcomingRenewals
               subscriptions={upcomingRenewals}
             />
+          </section>
 
+          <section className="grid grid-cols-1 gap-4 lg:grid-cols-2" aria-label="Recent subscription details">
+            <RecentlyPaid subscriptions={recentlyPaidSubscriptions} />
             <CategoryBreakdown data={spendingByCategory} />
-          </div>
+          </section>
         </div>
 
 

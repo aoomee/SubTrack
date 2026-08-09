@@ -1,8 +1,11 @@
-# 订阅管理系统 (Subscription Management System)
+# SubTrack
+
+[![CI](https://github.com/aoomee/SubTrack/actions/workflows/ci.yml/badge.svg)](https://github.com/aoomee/SubTrack/actions/workflows/ci.yml)
+[![Docker](https://github.com/aoomee/SubTrack/actions/workflows/docker-build.yml/badge.svg)](https://github.com/aoomee/SubTrack/actions/workflows/docker-build.yml)
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-一个现代化的订阅管理系统，帮助用户轻松管理和追踪各种订阅服务的费用和续费情况。
+一个简洁、本地优先的订阅管理工具，用于追踪周期费用、续费、支付历史、支出报表和通知。
 
 ## 📸 界面预览
 
@@ -33,7 +36,7 @@
 ## 🌟 项目特色
 
 - **智能订阅管理** - 全面的订阅生命周期管理，支持自动/手动续费
-- **多币种支持** - 支持7种主要货币，实时汇率自动更新
+- **多币种支持** - 支持9种主要货币，并可选用自动汇率更新
 - **费用分析报告** - 强大的数据分析和可视化图表功能
 - **响应式设计** - 完美适配桌面和移动端
 - **本地优先** - 基于SQLite的本地数据存储，保护隐私
@@ -96,8 +99,8 @@
 
 1. **克隆项目代码**
    ```bash
-   git clone <repository-url>
-   cd subscription-management
+   git clone https://github.com/aoomee/SubTrack.git
+   cd SubTrack
    ```
 
 2. **配置环境变量**
@@ -112,10 +115,10 @@
    ```bash
    docker compose up -d
    ```
-   - 默认使用最新版镜像（`ghcr.io/huhusmang/subscription-management:latest`）。
+   - 默认使用最新版镜像（`ghcr.io/aoomee/subtrack:latest`）。
    - 如需指定具体 tag，可编辑 `docker-compose.yml` 的 `image:` 字段，或用如下命令手动拉取：
      ```bash
-     docker pull ghcr.io/huhusmang/subscription-management:<tag>
+     docker pull ghcr.io/aoomee/subtrack:<tag>
    ```
 
    **B. 本地自定义构建镜像运行**
@@ -134,7 +137,7 @@
      -e PORT=3001 \
      -v subscription-data:/app/data \
      -p 3001:3001 \
-     ghcr.io/huhusmang/subscription-management:latest
+     ghcr.io/aoomee/subtrack:latest
    ```
    - 如需更多可选项，可继续追加 `-e`（例如 `-e TIANAPI_KEY=...`、`-e BASE_CURRENCY=USD`）。
    - 也推荐使用更安全的密钥管理方式，改为 `--env-file /绝对路径/.env`。
@@ -223,7 +226,7 @@ EMAIL_PORT=587
 EMAIL_SECURE=false
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASSWORD=your_app_password
-EMAIL_FROM=Subscription Manager <no-reply@example.com>
+EMAIL_FROM=SubTrack <no-reply@example.com>
 EMAIL_LOCALE=zh-CN
 
 # 通知设置
@@ -263,4 +266,6 @@ npm run db:reset
 
 ## 📄 许可证
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
+SubTrack 基于采用 MIT 许可证的 [huhusmang/Subscription-Management](https://github.com/huhusmang/Subscription-Management) 项目。
+
+本项目采用 MIT 许可证，详情请查看 [LICENSE](LICENSE)。

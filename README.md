@@ -1,8 +1,11 @@
-# Subscription Management System
+# SubTrack
+
+[![CI](https://github.com/aoomee/SubTrack/actions/workflows/ci.yml/badge.svg)](https://github.com/aoomee/SubTrack/actions/workflows/ci.yml)
+[![Docker](https://github.com/aoomee/SubTrack/actions/workflows/docker-build.yml/badge.svg)](https://github.com/aoomee/SubTrack/actions/workflows/docker-build.yml)
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-A modern subscription management system that helps users easily manage and track expenses and renewals for various subscription services.
+A clean, local-first subscription tracker for managing recurring expenses, renewals, payment history, reports, and notifications.
 
 ## 📸 Interface Preview
 
@@ -33,7 +36,7 @@ A modern subscription management system that helps users easily manage and track
 ## 🌟 Project Features
 
 - **Smart Subscription Management** - Comprehensive subscription lifecycle management with automatic/manual renewal support
-- **Multi-currency Support** - Support for 7 major currencies with real-time automatic exchange rate updates
+- **Multi-currency Support** - Support for 9 major currencies with optional automatic exchange rate updates
 - **Expense Analysis Reports** - Powerful data analysis and visualization chart functionality
 - **Responsive Design** - Perfect adaptation for desktop and mobile devices
 - **Local-first** - Local data storage based on SQLite for privacy protection
@@ -96,8 +99,8 @@ A modern subscription management system that helps users easily manage and track
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd subscription-management
+   git clone https://github.com/aoomee/SubTrack.git
+   cd SubTrack
    ```
 
 2. **Configure environment variables**
@@ -112,10 +115,10 @@ A modern subscription management system that helps users easily manage and track
    ```bash
    docker compose up -d
    ```
-   - By default, the latest image (`ghcr.io/huhusmang/subscription-management:latest`) will be used.
+   - By default, the latest image (`ghcr.io/aoomee/subtrack:latest`) will be used.
    - If you want to use a specific tag, edit the `image:` field in `docker-compose.yml`, or pull manually:
      ```bash
-     docker pull ghcr.io/huhusmang/subscription-management:<tag>
+     docker pull ghcr.io/aoomee/subtrack:<tag>
      ```
 
    **B. Build the image locally (optional)**
@@ -134,7 +137,7 @@ A modern subscription management system that helps users easily manage and track
      -e PORT=3001 \
      -v subscription-data:/app/data \
      -p 3001:3001 \
-     ghcr.io/huhusmang/subscription-management:latest
+     ghcr.io/aoomee/subtrack:latest
    ```
    - Add extra `-e` flags for optional settings (e.g. `-e TIANAPI_KEY=...`, `-e BASE_CURRENCY=USD`) as needed.
    - Prefer secrets management or an `.env` file in production; you can swap the `-e` flags for `--env-file /absolute/path/to/.env` if your environment supports it.
@@ -223,7 +226,7 @@ EMAIL_PORT=587
 EMAIL_SECURE=false
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASSWORD=your_app_password
-EMAIL_FROM=Subscription Manager <no-reply@example.com>
+EMAIL_FROM=SubTrack <no-reply@example.com>
 EMAIL_LOCALE=zh-CN
 
 # notification settings
@@ -263,4 +266,6 @@ npm run db:reset
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
+SubTrack is based on the MIT-licensed [huhusmang/Subscription-Management](https://github.com/huhusmang/Subscription-Management) project.
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

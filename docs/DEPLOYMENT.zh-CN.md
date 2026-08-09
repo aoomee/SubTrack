@@ -6,11 +6,11 @@
 
 ```bash
 # 拉取最新标签
-docker pull ghcr.io/huhusmang/subscription-management:latest
+docker pull ghcr.io/aoomee/subtrack:latest
 
 # 拉取指定标签（示例）
-docker pull ghcr.io/huhusmang/subscription-management:main
-docker pull ghcr.io/huhusmang/subscription-management:sha-<short_sha>
+docker pull ghcr.io/aoomee/subtrack:main
+docker pull ghcr.io/aoomee/subtrack:sha-<short_sha>
 ```
 
 镜像包页面会展示所有可用版本。
@@ -24,7 +24,7 @@ version: '3.8'
 
 services:
   subscription-manager:
-    image: ghcr.io/huhusmang/subscription-management:${IMAGE_TAG:-latest}
+    image: ghcr.io/aoomee/subtrack:${IMAGE_TAG:-latest}
     container_name: subscription-manager
     env_file:
       - .env
@@ -75,5 +75,4 @@ ADMIN_PASSWORD=your_secure_password
 ## 健康检查
 
 - 服务在端口 `PORT`（默认 3001）暴露 `/api/health` 健康检查端点。
-
 

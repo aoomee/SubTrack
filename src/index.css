@@ -2,98 +2,106 @@
  * **IMPORTANT** Never break the original structure, only add highly customized new styles
  */
 
+@font-face {
+  font-family: 'LXGW WenKai';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url('@fontsource/lxgw-wenkai/files/lxgw-wenkai-latin-500-normal.woff2') format('woff2');
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
+    --background: 42 20% 98%;
+    --foreground: 150 8% 11%;
+    --card: 40 20% 99%;
+    --card-foreground: 150 8% 11%;
+    --popover: 40 20% 99%;
+    --popover-foreground: 150 8% 11%;
+    --primary: 145 34% 29%;
+    --primary-foreground: 40 20% 99%;
+    --secondary: 50 8% 93%;
+    --secondary-foreground: 150 8% 16%;
+    --muted: 48 8% 94%;
+    --muted-foreground: 80 4% 45%;
+    --accent: 50 10% 91%;
+    --accent-foreground: 145 30% 24%;
+    --destructive: 6 69% 48%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
+    --border: 55 8% 86%;
+    --input: 55 8% 83%;
+    --ring: 145 34% 36%;
+    --chart-1: 145 34% 29%;
+    --chart-2: 150 18% 47%;
+    --chart-3: 36 64% 48%;
+    --chart-4: 93 18% 48%;
+    --chart-5: 7 56% 55%;
+    --radius: 0.75rem;
 
     /* Additional theme variables for better dark mode support */
-    --success: 142 76% 36%;
-    --success-foreground: 355 7% 97%;
-    --warning: 48 96% 53%;
-    --warning-foreground: 26 83% 14%;
-    --info: 199 89% 48%;
-    --info-foreground: 210 20% 98%;
+    --success: 145 34% 29%;
+    --success-foreground: 40 20% 99%;
+    --warning: 31 63% 52%;
+    --warning-foreground: 26 60% 15%;
+    --info: 190 36% 38%;
+    --info-foreground: 40 20% 99%;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 45 13% 95%;
+    --sidebar-foreground: 100 4% 26%;
+    --sidebar-primary: 145 34% 29%;
+    --sidebar-primary-foreground: 40 20% 99%;
+    --sidebar-accent: 50 9% 89%;
+    --sidebar-accent-foreground: 145 30% 24%;
+    --sidebar-border: 55 8% 86%;
+    --sidebar-ring: 145 34% 36%;
   }
 
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 6%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 6%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 16%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 16%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 16%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 27%;
-    --input: 0 0% 18%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --background: 150 7% 8%;
+    --foreground: 45 14% 93%;
+    --card: 150 6% 10%;
+    --card-foreground: 45 14% 93%;
+    --popover: 150 6% 10%;
+    --popover-foreground: 45 14% 93%;
+    --primary: 142 30% 65%;
+    --primary-foreground: 150 10% 10%;
+    --secondary: 150 5% 16%;
+    --secondary-foreground: 45 14% 93%;
+    --muted: 150 5% 15%;
+    --muted-foreground: 60 5% 65%;
+    --accent: 150 6% 18%;
+    --accent-foreground: 45 14% 93%;
+    --destructive: 6 60% 48%;
+    --destructive-foreground: 45 14% 96%;
+    --border: 140 4% 23%;
+    --input: 140 4% 25%;
+    --ring: 142 30% 65%;
+    --chart-1: 142 30% 65%;
+    --chart-2: 150 20% 50%;
+    --chart-3: 36 60% 58%;
+    --chart-4: 93 22% 58%;
+    --chart-5: 7 58% 62%;
 
     /* Dark mode theme variables */
-    --success: 142 71% 45%;
-    --success-foreground: 144 61% 20%;
-    --warning: 48 96% 53%;
-    --warning-foreground: 26 83% 14%;
-    --info: 199 89% 48%;
-    --info-foreground: 210 20% 98%;
+    --success: 142 30% 58%;
+    --success-foreground: 150 10% 10%;
+    --warning: 31 58% 58%;
+    --warning-foreground: 26 60% 12%;
+    --info: 190 38% 54%;
+    --info-foreground: 150 10% 10%;
 
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 150 7% 9%;
+    --sidebar-foreground: 45 10% 88%;
+    --sidebar-primary: 142 30% 65%;
+    --sidebar-primary-foreground: 150 10% 10%;
+    --sidebar-accent: 150 6% 16%;
+    --sidebar-accent-foreground: 45 14% 93%;
+    --sidebar-border: 140 4% 23%;
+    --sidebar-ring: 142 30% 65%;
   }
 }
 
@@ -102,12 +110,47 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Rubik Variable', 'LXGW WenKai', 'PingFang SC', 'Microsoft YaHei', ui-sans-serif, system-ui, sans-serif;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    font-optical-sizing: auto;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
   }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.18);
+  }
+}
+
+/* WenKai is most elegant at its native spacing and medium weight. */
+html:lang(zh-CN) h1,
+html:lang(zh-CN) h2,
+html:lang(zh-CN) h3 {
+  font-weight: 500;
+  letter-spacing: 0;
 }
 
 /* Enhanced border visibility for dark mode */
 @layer components {
+  .brand-wordmark {
+    @apply text-[15px] font-semibold tracking-[0.075em] text-foreground transition-opacity hover:opacity-70;
+  }
+
+  .sidebar-link {
+    @apply flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground;
+  }
+
+  .sidebar-link svg {
+    @apply h-[18px] w-[18px];
+  }
+
+  .sidebar-link-active {
+    @apply bg-sidebar-accent text-sidebar-primary;
+    box-shadow: inset 2px 0 0 hsl(var(--sidebar-primary));
+  }
+
   .dark .border {
     border-color: hsl(var(--border));
   }
@@ -115,7 +158,7 @@
   /* Ensure cards have visible borders in dark mode */
   .dark [data-card] {
     border-color: hsl(var(--border));
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    box-shadow: none;
   }
 }
 

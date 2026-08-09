@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next"
 import { useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { Navigate } from 'react-router-dom'
+import { Skeleton } from '@/components/ui/skeleton'
 
 // Lazy load pages for code splitting
 const HomePage = lazy(() => import("./pages/HomePage"))
@@ -24,16 +25,30 @@ function App() {
 
   const RequireAuth = ({ children }: { children: JSX.Element }) => {
     if (!initialized) {
-      return <div className="flex items-center justify-center h-64">{t('loading')}</div>
+      return <PageLoading label={t('loading')} />
     }
     if (!user) return <Navigate to="/login" replace />
     return children
   }
+
+  const PageLoading = ({ label }: { label: string }) => (
+    <div className="space-y-6" aria-label={label}>
+      <div className="space-y-2">
+        <Skeleton className="h-9 w-40" />
+        <Skeleton className="h-5 w-64" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Skeleton className="h-36 rounded-xl" />
+        <Skeleton className="h-36 rounded-xl" />
+        <Skeleton className="h-36 rounded-xl" />
+      </div>
+    </div>
+  )
   
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
       <MainLayout>
-        <Suspense fallback={<div className="flex items-center justify-center h-64">{t('loading')}</div>}>
+        <Suspense fallback={<PageLoading label={t('loading')} />}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/" element={<RequireAuth><HomePage /></RequireAuth>} />

@@ -387,10 +387,10 @@ export function SubscriptionsPage() {
   return (
     <>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between gap-4 mb-6">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{t('subscription:title')}</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-semibold tracking-[-0.035em] sm:text-[30px]">{t('subscription:title')}</h1>
+          <p className="mt-1 text-sm text-muted-foreground sm:text-base">
             {t('subscription:manageAllServices')}
           </p>
         </div>
@@ -398,7 +398,7 @@ export function SubscriptionsPage() {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button onClick={() => setShowAddForm(true)} size="icon">
+                <Button onClick={() => setShowAddForm(true)} size="icon" aria-label={t('subscription:add')}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
@@ -411,7 +411,7 @@ export function SubscriptionsPage() {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" onClick={() => setShowImportModal(true)} size="icon">
+                <Button variant="outline" onClick={() => setShowImportModal(true)} size="icon" aria-label={t('common:import')}>
                   <Upload className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
@@ -424,7 +424,7 @@ export function SubscriptionsPage() {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" onClick={handleExportSubscriptions} size="icon">
+                <Button variant="outline" onClick={handleExportSubscriptions} size="icon" aria-label={t('common:export')}>
                   <Download className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
@@ -437,8 +437,8 @@ export function SubscriptionsPage() {
       </div>
 
       {/* Filters and Search */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4 gap-3">
-        <div className="flex items-center gap-2 w-full max-w-sm">
+      <div className="mb-5 flex flex-col items-start justify-between gap-3 rounded-xl border bg-card p-3 md:flex-row md:items-center">
+        <div className="flex w-full items-center gap-2 md:max-w-lg">
           <SearchInput
             placeholder={t('subscription:searchPlaceholder')}
             value={searchTerm}
@@ -449,7 +449,12 @@ export function SubscriptionsPage() {
 
           <Popover open={categoryFilterOpen} onOpenChange={setCategoryFilterOpen}>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="icon" className="relative">
+              <Button
+                variant="outline"
+                size="icon"
+                className="relative"
+                aria-label={t('subscription:filterByCategory')}
+              >
                 <Tags className="h-4 w-4" />
                 {selectedCategories.length > 0 && (
                   <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full w-4 h-4 text-[10px] flex items-center justify-center">
@@ -508,7 +513,12 @@ export function SubscriptionsPage() {
           {/* Billing Cycle Filter */}
           <Popover open={billingCycleFilterOpen} onOpenChange={setBillingCycleFilterOpen}>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="icon" className="relative">
+              <Button
+                variant="outline"
+                size="icon"
+                className="relative"
+                aria-label={t('subscription:filterByBillingCycle')}
+              >
                 <CalendarIcon className="h-4 w-4" />
                 {selectedBillingCycles.length > 0 && (
                   <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full w-4 h-4 text-[10px] flex items-center justify-center">
@@ -574,6 +584,7 @@ export function SubscriptionsPage() {
                   variant="outline"
                   size="icon"
                   onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                  aria-label={`${t('subscription:sortByNextBilling')} (${sortOrder === 'asc' ? t('common:ascending') : t('common:descending')})`}
                 >
                   {sortOrder === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
                 </Button>
@@ -585,7 +596,7 @@ export function SubscriptionsPage() {
           </TooltipProvider>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center gap-2 overflow-x-auto md:w-auto">
           <Button
             variant={currentView === "all" ? "default" : "outline"}
             onClick={() => setCurrentView("all")}
@@ -687,7 +698,7 @@ export function SubscriptionsPage() {
 
       {/* Subscriptions Grid */}
       {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-2">
           {/* Loading skeleton cards */}
           {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="rounded-xl border bg-card shadow animate-pulse">
@@ -739,7 +750,7 @@ export function SubscriptionsPage() {
           </div>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-2">
           {sortedSubscriptions.map((subscription) => (
             <SubscriptionCard
               key={subscription.id}

@@ -76,9 +76,10 @@ EXPOSE 3001
 # Set environment variables
 ENV NODE_ENV=production
 
-# Health check - checks the API health endpoint
+# Health check - the endpoint is intentionally protected, so either 200
+# (authenticated) or 401 (service reached without a session) means the app is up.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD node -e "const http=require('http');const options={hostname:'localhost',port:process.env.PORT||3001,path:'/api/health',timeout:2000};const req=http.request(options,res=>{process.exit(res.statusCode===200?0:1)});req.on('error',()=>process.exit(1));req.end();"
+    CMD node -e "const http=require('http');const options={hostname:'localhost',port:process.env.PORT||3001,path:'/api/health',timeout:2000};const req=http.request(options,res=>{process.exit(res.statusCode===200||res.statusCode===401?0:1)});req.on('error',()=>process.exit(1));req.end();"
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]

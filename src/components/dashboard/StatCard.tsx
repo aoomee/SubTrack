@@ -1,52 +1,43 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle
-} from "@/components/ui/card"
-import { LucideIcon } from "lucide-react"
-
 interface StatCardProps {
   title: string
   value: string | number
   description?: string
-  icon?: LucideIcon
-  iconColor?: string
-  trend?: {
-    value: number
-    label: string
-    positive?: boolean
-  }
+  divider?: boolean
+  align?: "start" | "center"
 }
 
-export function StatCard({ title, value, description, icon: Icon, iconColor, trend }: StatCardProps) {
+export function StatCard({
+  title,
+  value,
+  description,
+  divider = false,
+  align = "start",
+}: StatCardProps) {
+  const rowAlignment = align === "center" ? "justify-center text-center" : "justify-start text-left"
+
   return (
-    <Card className="flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-between pb-2 flex-shrink-0">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {Icon && <Icon className={`h-4 w-4 ${iconColor || 'text-muted-foreground'}`} />}
-      </CardHeader>
-      <CardContent className="flex-1 flex flex-col justify-center">
-        <div className="text-2xl font-bold mb-2">{value}</div>
-        {description && (
-          <p className="text-xs text-muted-foreground mb-2">{description}</p>
+    <article
+      className={`relative min-w-0 px-5 py-[22px] sm:px-6 ${
+        divider
+          ? "md:after:absolute md:after:inset-y-6 md:after:right-0 md:after:w-px md:after:bg-border/80 md:after:content-['']"
+          : ""
+      }`}
+    >
+      <div className="grid grid-rows-[20px_34px_16px] gap-y-2.5">
+        <p className={`flex min-w-0 items-center truncate text-[13px] font-medium leading-none text-muted-foreground ${rowAlignment}`}>
+          {title}
+        </p>
+        <div className={`flex min-w-0 items-center text-[30px] font-semibold leading-none tracking-[-0.045em] tabular-nums ${rowAlignment}`}>
+          {value}
+        </div>
+        {description ? (
+          <p className={`flex min-w-0 items-center truncate text-xs leading-none text-muted-foreground ${rowAlignment}`}>
+            {description}
+          </p>
+        ) : (
+          <span aria-hidden="true" />
         )}
-        {trend && (
-          <div className="mt-auto flex items-center text-xs">
-            <span
-              className={
-                trend.positive !== false
-                  ? "text-success"
-                  : "text-destructive"
-              }
-            >
-              {trend.positive !== false ? "+" : "-"}
-              {trend.value}%
-            </span>
-            <span className="ml-1 text-muted-foreground">{trend.label}</span>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+    </article>
   )
 }

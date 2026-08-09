@@ -6,9 +6,9 @@ import {
   CreditCard,
   History,
   LogOut,
+  CircleUserRound,
 } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
 import { ModeToggle } from '@/components/ModeToggle'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
 import { useTranslation } from 'react-i18next'
@@ -52,89 +52,114 @@ export function MainLayout({ children }: MainLayoutProps) {
     },
   ]
 
-  return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
-        <div className="container flex h-16 items-center justify-between py-4 px-4 sm:px-6">
-          <div className="flex items-center gap-6 md:gap-10">
-            <Link to="/" className="flex items-center space-x-2">
-              <span className="font-bold text-lg sm:text-xl">SubManager</span>
+  if (location.pathname === '/login') {
+    return (
+      <div className="min-h-[100dvh] bg-background">
+        <div className="flex min-h-[100dvh] flex-col">
+          <header className="flex h-20 items-center justify-between px-6 sm:px-10">
+            <Link to="/" className="brand-wordmark" aria-label="SubTrack home">
+              SUBTRACK
             </Link>
-            <nav className="hidden md:flex items-center gap-1 sm:gap-2">
-              {navLinks.map((link) => (
-                <Link to={link.to} key={link.to}>
-                  <Button
-                    variant={
-                      location.pathname === link.to ? 'default' : 'ghost'
-                    }
-                    size="sm"
-                    className="px-2 sm:px-3"
-                  >
-                    {link.icon}
-                    <span className="md:ml-2">{link.text}</span>
-                  </Button>
-                </Link>
-              ))}
-            </nav>
-          </div>
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher />
+              <ModeToggle />
+            </div>
+          </header>
+          <main className="flex flex-1 items-center justify-center px-5 pb-20 pt-6">
+            {children}
+          </main>
+        </div>
+      </div>
+    )
+  }
 
-          <div className="flex items-center gap-2">
+  return (
+    <div className="min-h-[100dvh] bg-background md:grid md:grid-cols-[248px_minmax(0,1fr)]">
+      <aside className="sticky top-0 hidden h-[100dvh] flex-col border-r bg-sidebar px-4 py-7 md:flex">
+        <Link to="/" className="brand-wordmark px-3" aria-label="SubTrack home">
+          SUBTRACK
+        </Link>
+
+        <nav className="mt-10 space-y-1" aria-label="Primary navigation">
+          {navLinks.map((link) => {
+            const isActive = location.pathname === link.to
+            return (
+              <Link
+                to={link.to}
+                key={link.to}
+                className={`sidebar-link ${isActive ? 'sidebar-link-active' : ''}`}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                {link.icon}
+                <span>{link.text}</span>
+              </Link>
+            )
+          })}
+        </nav>
+
+        <div className="mt-auto space-y-3 border-t pt-5">
+          <div className="flex items-center gap-3 px-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <CircleUserRound className="h-[18px] w-[18px]" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">{user?.username || 'Admin'}</p>
+              <p className="text-xs text-muted-foreground">Personal workspace</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 px-1">
             <LanguageSwitcher />
             <ModeToggle />
             {user && (
-              <>
-                <UIButton
-                  variant="ghost"
-                  size="sm"
-                  onClick={logout}
-                  className="hidden md:inline-flex"
-                >
-                  {t('logout')}
-                </UIButton>
-                <UIButton
-                  variant="ghost"
-                  size="icon"
-                  onClick={logout}
-                  className="md:hidden"
-                >
-                  <LogOut className="h-5 w-5" />
-                </UIButton>
-              </>
+              <UIButton
+                variant="ghost"
+                size="icon"
+                onClick={logout}
+                className="ml-auto"
+                aria-label={t('logout')}
+                title={t('logout')}
+              >
+                <LogOut className="h-4 w-4" />
+              </UIButton>
             )}
           </div>
         </div>
-      </header>
+      </aside>
 
-      <main className="container py-4 sm:py-6 px-4 sm:px-6 flex-grow pb-20 md:pb-6">
-        {children}
-      </main>
+      <div className="min-w-0">
+        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b bg-background/95 px-5 backdrop-blur md:hidden">
+          <Link to="/" className="brand-wordmark" aria-label="SubTrack home">SUBTRACK</Link>
+          <div className="flex items-center gap-1">
+            <LanguageSwitcher />
+            <ModeToggle />
+            {user && (
+              <UIButton variant="ghost" size="icon" onClick={logout} aria-label={t('logout')}>
+                <LogOut className="h-5 w-5" />
+              </UIButton>
+            )}
+          </div>
+        </header>
 
-      <footer className="border-t py-4 sm:py-6 hidden md:block">
-        <div className="container flex flex-col items-center justify-center gap-4 md:flex-row md:gap-6 px-4 sm:px-6">
-          <p className="text-center text-sm leading-loose text-muted-foreground">
-            &copy; {new Date().getFullYear()} SubManager. All rights reserved.
-          </p>
-        </div>
-      </footer>
+        <main id="main-content" className="mx-auto min-h-[calc(100dvh-4rem)] w-full max-w-[1440px] px-4 pb-24 pt-6 sm:px-6 md:min-h-[100dvh] md:px-8 md:pb-10 md:pt-8 xl:px-10">
+          {children}
+        </main>
+      </div>
 
       {/* Bottom Navigation for Mobile */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t bg-background">
-        <div className="container mx-auto px-4">
-          <nav className="flex justify-around items-center h-16">
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur md:hidden">
+        <div className="mx-auto px-2">
+          <nav className="grid h-16 grid-cols-5 items-center">
             {navLinks.map((link) => (
               <Link
                 to={link.to}
                 key={link.to}
-                className="flex flex-col items-center justify-center text-muted-foreground hover:text-primary"
+                className={`flex h-12 flex-col items-center justify-center gap-1 rounded-lg text-[10px] font-medium transition-colors ${
+                  location.pathname === link.to ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                }`}
+                aria-current={location.pathname === link.to ? 'page' : undefined}
               >
-                <Button
-                  variant={
-                    location.pathname === link.to ? 'secondary' : 'ghost'
-                  }
-                  size="icon"
-                >
-                  {link.icon}
-                </Button>
+                {link.icon}
+                <span className="max-w-[64px] truncate">{link.text}</span>
               </Link>
             ))}
           </nav>

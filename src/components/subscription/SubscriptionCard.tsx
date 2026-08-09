@@ -23,8 +23,7 @@ import { formatWithUserCurrency } from "@/utils/currency"
 
 import {
   Card,
-  CardContent,
-  CardHeader
+  CardContent
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -99,113 +98,103 @@ export function SubscriptionCard({
 
   return (
     <Card
-      className="w-full cursor-pointer hover:shadow-md transition-shadow"
+      className="group w-full cursor-pointer overflow-hidden transition-[background-color,border-color,transform] duration-200 hover:border-primary/20 hover:bg-accent/35 active:translate-y-px"
       onClick={() => onViewDetails?.(subscription)}
     >
-      <CardHeader className="pb-2 flex flex-row items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="text-lg font-medium">{name}</h3>
-            <Badge variant={status === 'active' ? 'default' : 'secondary'}>
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </Badge>
-          </div>
-          <p className="text-sm text-muted-foreground">{plan}</p>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <MoreVertical className="h-4 w-4" />
-              <span className="sr-only">{t('common:options')}</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={(e) => {
-              e.stopPropagation()
-              onEdit(id)
-            }}>
-              <Pencil className="mr-2 h-4 w-4" />
-              {t('common:edit')}
-            </DropdownMenuItem>
-            {status === 'active' ? (
-              <DropdownMenuItem onClick={(e) => {
-                e.stopPropagation()
-                onStatusChange(id, 'cancelled')
-              }}>
-                <Ban className="mr-2 h-4 w-4" />
-                {t('subscription:cancelled')}
-              </DropdownMenuItem>
-            ) : (
-              <DropdownMenuItem onClick={(e) => {
-                e.stopPropagation()
-                onStatusChange(id, 'active')
-              }}>
-                <Calendar className="mr-2 h-4 w-4" />
-                {t('subscription:active')}
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation()
-                onDelete(id)
-              }}
-              className="text-destructive focus:text-destructive"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              {t('common:delete')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </CardHeader>
-      
-      <CardContent className="flex-1 flex flex-col">
-        <div className="flex justify-between items-center mb-2">
-          <div className="font-medium">{formatWithUserCurrency(amount, currency)}</div>
-          <Badge variant={getBillingCycleBadgeVariant()}>
-            {getBillingCycleLabel(billingCycle)}
-          </Badge>
-        </div>
-        
-        <div className="space-y-1 text-sm flex-1">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Tag className="h-4 w-4" />
-            <span className="font-medium">{categoryLabel}</span>
-          </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Calendar className="h-4 w-4" />
+      <CardContent className="p-0 sm:p-0">
+        <div className="grid min-h-[92px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 gap-y-3 px-5 py-4 sm:grid-cols-[minmax(190px,1.3fr)_minmax(110px,.65fr)_minmax(130px,.8fr)_minmax(160px,.9fr)_auto] sm:px-6 xl:grid-cols-[minmax(190px,1.25fr)_minmax(105px,.6fr)_minmax(130px,.75fr)_minmax(180px,1fr)_minmax(130px,.75fr)_auto]">
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span>{t('subscription:nextPayment')}:</span>
-              <span className={isExpiringSoon ? "text-destructive font-medium" : ""}>
-                {formatDate(nextBillingDate)}
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border bg-background text-sm font-semibold text-primary">
+                {name.slice(0, 1).toUpperCase()}
               </span>
-              {isExpiringSoon && status === 'active' && (
-                <Badge variant={getBadgeVariant()}>
-                  {daysLeft === 0 ? t('common:today') : `${daysLeft} ${t('common:days')}`}
-                </Badge>
-              )}
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="truncate text-[15px] font-semibold">{name}</h3>
+                  <Badge variant={status === 'active' ? 'success' : 'secondary'}>
+                    {t(`subscription:${status}`)}
+                  </Badge>
+                </div>
+                <p className="mt-0.5 truncate text-sm text-muted-foreground">{plan}</p>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <CreditCard className="h-4 w-4" />
-            <span>{paymentMethodLabel}</span>
+
+          <div className="text-right sm:text-left">
+            <p className="text-[15px] font-semibold tabular-nums">{formatWithUserCurrency(amount, currency)}</p>
+            <div className="mt-1">
+              <Badge variant={getBillingCycleBadgeVariant()}>{getBillingCycleLabel(billingCycle)}</Badge>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            {renewalType === 'auto' ? (
-              <RotateCcw className="h-4 w-4" />
-            ) : (
-              <Hand className="h-4 w-4" />
+
+          <div className="hidden min-w-0 items-center gap-2 text-sm text-muted-foreground sm:flex">
+            <Tag className="h-4 w-4 shrink-0" />
+            <span className="truncate">{categoryLabel}</span>
+          </div>
+
+          <div className="flex min-w-0 items-center justify-between gap-3 border-t pt-3 text-sm sm:border-0 sm:pt-0">
+            <div className="flex min-w-0 items-center gap-2 text-muted-foreground">
+              <Calendar className="h-4 w-4 shrink-0" />
+              <span className={isExpiringSoon ? "truncate font-medium text-warning" : "truncate"}>
+                {formatDate(nextBillingDate)}
+              </span>
+            </div>
+            {isExpiringSoon && status === 'active' && (
+              <Badge variant={getBadgeVariant()}>
+                {daysLeft === 0 ? t('common:today') : `${daysLeft} ${t('common:days')}`}
+              </Badge>
             )}
-            <span>{renewalType === 'auto' ? t('common:automaticRenewal') : t('common:manualRenewal')}</span>
           </div>
+
+          <div className="hidden min-w-0 items-center gap-3 text-sm text-muted-foreground xl:flex">
+            <span className="flex min-w-0 items-center gap-2">
+              <CreditCard className="h-4 w-4 shrink-0" />
+              <span className="truncate">{paymentMethodLabel}</span>
+            </span>
+            <span className="flex shrink-0 items-center gap-1.5">
+              {renewalType === 'auto' ? <RotateCcw className="h-4 w-4" /> : <Hand className="h-4 w-4" />}
+            </span>
+          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreVertical className="h-4 w-4" />
+                <span className="sr-only">{t('common:options')}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(id) }}>
+                <Pencil className="mr-2 h-4 w-4" />
+                {t('common:edit')}
+              </DropdownMenuItem>
+              {status === 'active' ? (
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onStatusChange(id, 'cancelled') }}>
+                  <Ban className="mr-2 h-4 w-4" />
+                  {t('subscription:cancelled')}
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onStatusChange(id, 'active') }}>
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {t('subscription:active')}
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem
+                onClick={(e) => { e.stopPropagation(); onDelete(id) }}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {t('common:delete')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </CardContent>
-
-
     </Card>
   )
 }

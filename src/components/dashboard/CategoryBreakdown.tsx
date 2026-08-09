@@ -37,9 +37,9 @@ export function CategoryBreakdown({ data }: CategoryBreakdownProps) {
   }
   
   return (
-    <Card className="min-h-[200px] flex flex-col">
+    <Card className="min-h-[280px] flex flex-col">
       <CardHeader className="flex-shrink-0">
-        <CardTitle className="text-lg">{t('spendingByCategory')}</CardTitle>
+        <CardTitle className="text-base">{t('spendingByCategory')}</CardTitle>
         <CardDescription>{t('annualBreakdownByCategory')}</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col">
@@ -50,7 +50,7 @@ export function CategoryBreakdown({ data }: CategoryBreakdownProps) {
             </p>
           </div>
         ) : (
-          <div className="space-y-4 flex-1">
+          <div className="space-y-5 flex-1">
             {sortedCategories.map((category) => {
               const value = data[category]
               const percentage = total > 0 ? (value / total) * 100 : 0
@@ -59,11 +59,11 @@ export function CategoryBreakdown({ data }: CategoryBreakdownProps) {
                 <div key={category} className="space-y-1">
                   <div className="flex items-center justify-between text-sm">
                     <span>{getCategoryLabel(category)}</span>
-                    <span className="font-medium">
+                    <span className="font-medium tabular-nums">
                       {formatCurrencyAmount(value, userCurrency)}
                     </span>
                   </div>
-                  <div className="w-full h-2 bg-secondary overflow-hidden rounded-full">
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
                     <div 
                       className="h-full bg-primary"
                       style={{ width: `${percentage}%` }}

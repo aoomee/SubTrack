@@ -363,12 +363,12 @@ export function ExpenseReportsPage() {
   }, [currentYearlyDateRange, userCurrency])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{t('title')}</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.035em] sm:text-[32px]">{t('title')}</h1>
+          <p className="mt-1 text-sm text-muted-foreground sm:text-base">
             {t('description')}
           </p>
         </div>
@@ -438,8 +438,8 @@ export function ExpenseReportsPage() {
       {/* Charts */}
       {!isLoadingExpenses && !expenseError && (
         <div className="space-y-4">
-          <Tabs defaultValue="monthly" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs defaultValue="monthly">
+            <TabsList className="grid w-full max-w-md grid-cols-2">
               <TabsTrigger value="monthly">{t('monthly')}</TabsTrigger>
               <TabsTrigger value="yearly">{t('yearly')}</TabsTrigger>
             </TabsList>

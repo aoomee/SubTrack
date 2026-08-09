@@ -150,11 +150,23 @@ function OptionItem({ value, label, onEdit, onDelete, canDelete = true }: Option
         </p>
       </div>
       <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button variant="ghost" size="sm" onClick={onEdit} className="h-6 w-6 p-0">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onEdit}
+          className="h-6 w-6 p-0"
+          aria-label={`Edit ${label}`}
+        >
           <Edit className="h-3 w-3" />
         </Button>
         {canDelete && (
-          <Button variant="ghost" size="sm" onClick={onDelete} className="h-6 w-6 p-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onDelete}
+            className="h-6 w-6 p-0"
+            aria-label={`Delete ${label}`}
+          >
             <Trash2 className="h-3 w-3" />
           </Button>
         )}

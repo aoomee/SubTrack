@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   Loader2,
   RefreshCw,
-  History,
   BarChart3,
   Search,
   CheckCircle,
@@ -234,13 +233,10 @@ export const NotificationHistory: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2">
-            <History className="h-8 w-8" />
-            {t('history.title')}
-          </h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.035em] sm:text-[32px]">{t('history.title')}</h1>
+          <p className="mt-1 text-sm text-muted-foreground sm:text-base">
             {t('history.description')}
           </p>
         </div>
@@ -251,7 +247,6 @@ export const NotificationHistory: React.FC = () => {
           }}
           disabled={historyLoading || statsLoading}
           variant="outline"
-          size="sm"
           className="flex items-center gap-2"
         >
           <RefreshCw className={`h-4 w-4 ${historyLoading || statsLoading ? 'animate-spin' : ''}`} />
@@ -261,64 +256,33 @@ export const NotificationHistory: React.FC = () => {
 
       {/* Statistics Cards */}
       {stats && (
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t('stats.total')}</CardTitle>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t('stats.sent')}</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.sent}</div>
-              {/* <p className="text-xs text-muted-foreground">
-                {stats.total > 0 ? `${Math.round((stats.sent / stats.total) * 100)}%` : '0%'} {t('stats.successRate')}
-              </p> */}
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t('stats.failed')}</CardTitle>
-              <XCircle className="h-4 w-4 text-red-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">{stats.failed}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t('stats.successRate')}</CardTitle>
-              <BarChart3 className="h-4 w-4 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                {stats.total > 0 ? `${Math.round((stats.sent / stats.total) * 100)}%` : '0%'}
-              </div>
-              {/* <p className="text-xs text-muted-foreground">
-                {stats.sent}/{stats.total} {t('stats.success')}
-              </p> */}
-            </CardContent>
-          </Card>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            { label: t('stats.total'), value: stats.total, icon: BarChart3 },
+            { label: t('stats.sent'), value: stats.sent, icon: CheckCircle },
+            { label: t('stats.failed'), value: stats.failed, icon: XCircle },
+            { label: t('stats.successRate'), value: stats.total > 0 ? `${Math.round((stats.sent / stats.total) * 100)}%` : '0%', icon: BarChart3 },
+          ].map(({ label, value, icon: Icon }) => (
+            <Card key={label} className="min-h-[132px]">
+              <CardContent className="flex h-full flex-col items-center justify-center p-5 text-center sm:p-5">
+                <div className="grid w-fit grid-cols-[1.25rem_auto_1.25rem] items-center gap-x-2">
+                  <span className="flex h-5 w-5 items-center justify-center text-primary">
+                    <Icon className="h-4 w-4" strokeWidth={1.8} />
+                  </span>
+                  <p className="text-sm font-medium leading-5 text-muted-foreground">{label}</p>
+                  <span className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <p className="mt-3 text-2xl font-semibold leading-none tracking-[-0.035em] tabular-nums">{value}</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
 
       {/* Filters */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Search className="h-5 w-5" />
-            {t('history.filterAndSearch')}
-          </CardTitle>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-base">{t('history.filterAndSearch')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
@@ -379,10 +343,7 @@ export const NotificationHistory: React.FC = () => {
       {/* History List */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <History className="h-5 w-5" />
-            {t('history.title')}
-          </CardTitle>
+          <CardTitle className="text-base">{t('history.title')}</CardTitle>
           <CardDescription>
             {searchTerm || channelFilter !== 'all' 
               ? t('history.recordsShown', { count: filteredHistory.length, total: historyPagination.total })
@@ -392,8 +353,8 @@ export const NotificationHistory: React.FC = () => {
         </CardHeader>
         <CardContent>
           {historyLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
+            <div className="flex items-center justify-center py-12 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" />
             </div>
           ) : filteredHistory.length === 0 ? (
             <Alert>

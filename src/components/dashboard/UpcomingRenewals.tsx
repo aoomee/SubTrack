@@ -35,9 +35,9 @@ export function UpcomingRenewals({ subscriptions, className }: UpcomingRenewalsP
   }
 
   return (
-    <Card className={cn("min-h-[200px] flex flex-col", className)}>
+    <Card className={cn("min-h-[340px] flex flex-col", className)}>
       <CardHeader className="flex-shrink-0">
-        <CardTitle className="text-lg">{t('upcomingRenewals')}</CardTitle>
+        <CardTitle className="text-base">{t('upcomingRenewals')}</CardTitle>
         <CardDescription>
           {t('subscriptionsRenewingInNext7Days')}
         </CardDescription>
@@ -49,26 +49,28 @@ export function UpcomingRenewals({ subscriptions, className }: UpcomingRenewalsP
             <p className="text-muted-foreground">{t('noUpcomingRenewalsNext7Days')}</p>
           </div>
         ) : (
-          <div className="space-y-4 flex-1">
+          <div className="flex-1 divide-y">
             {subscriptions.map((subscription) => {
               const daysRemaining = daysUntil(subscription.nextBillingDate)
               return (
                 <div
                   key={subscription.id}
-                  className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0"
+                  className="grid min-h-16 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-3 first:pt-0 last:pb-0 xl:grid-cols-[minmax(6.5rem,1fr)_auto]"
                 >
-                  <div className="flex flex-col">
-                    <div className="font-medium">{subscription.name}</div>
-                    <div className="text-sm text-muted-foreground">
+                  <div className="flex min-w-0 flex-col">
+                    <div className="truncate font-medium xl:overflow-visible xl:text-clip xl:whitespace-nowrap">
+                      {subscription.name}
+                    </div>
+                    <div className="truncate text-sm text-muted-foreground">
                       {subscription.plan}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <div className="font-medium">
+                      <div className="font-medium tabular-nums">
                         {formatWithUserCurrency(subscription.amount, subscription.currency)}
                       </div>
-                      <div className="text-xs text-muted-foreground flex items-center gap-1">
+                      <div className="flex items-center justify-end gap-1 text-xs text-muted-foreground tabular-nums">
                         <CalendarIcon className="h-3 w-3" />
                         {formatDate(subscription.nextBillingDate)}
                       </div>

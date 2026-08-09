@@ -235,6 +235,8 @@ export function YearlyTrendChart({ data, categoryData, currency, className }: Ye
               variant={chartType === 'line' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setChartType('line')}
+              aria-label="Line chart"
+              aria-pressed={chartType === 'line'}
               className="rounded-r-none h-8 px-3"
             >
               <LineChartIcon className="h-3 w-3" />
@@ -244,6 +246,8 @@ export function YearlyTrendChart({ data, categoryData, currency, className }: Ye
               size="sm"
               onClick={() => setChartType('groupedBar')}
               disabled={!categoryData || categoryData.length === 0}
+              aria-label="Category bar chart"
+              aria-pressed={chartType === 'groupedBar'}
               className="rounded-l-none h-8 px-3"
             >
               <BarChart3 className="h-3 w-3" />

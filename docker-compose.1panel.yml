@@ -1,0 +1,53 @@
+# SubTrack for 1Panel
+#
+# In 1Panel, create a Compose project with this file and provide SESSION_SECRET
+# and ADMIN_PASSWORD in the project environment-variable editor. No secret is
+# stored in this file or committed to the repository.
+# The host port is intentionally bound to 127.0.0.1 for use behind 1Panel's
+# reverse proxy. Change SUBTRACK_HOST_PORT only when port 3001 is occupied.
+
+services:
+  subtrack:
+    image: ghcr.io/aoomee/subtrack:${IMAGE_TAG:-latest}
+    container_name: subtrack
+    pull_policy: always
+    restart: unless-stopped
+
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      DATABASE_PATH: /app/data/database.sqlite
+      SESSION_SECRET: "${SESSION_SECRET:?Please set SESSION_SECRET in 1Panel}"
+      ADMIN_USERNAME: "${ADMIN_USERNAME:-admin}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:?Please set ADMIN_PASSWORD in 1Panel}"
+      BASE_CURRENCY: "${BASE_CURRENCY:-CNY}"
+      TRUST_PROXY: "1"
+      SESSION_COOKIE_SECURE: auto
+      SESSION_COOKIE_SAMESITE: lax
+      SCHEDULER_TIMEZONE: "${SCHEDULER_TIMEZONE:-Asia/Shanghai}"
+      SCHEDULER_CHECK_TIME: "${SCHEDULER_CHECK_TIME:-09:00}"
+
+      # Optional integrations can be added here when needed. Their full list is
+      # documented in .env.production.example (Telegram, email and TianAPI).
+
+    ports:
+      - "127.0.0.1:${SUBTRACK_HOST_PORT:-3001}:3001"
+
+    volumes:
+      - subtrack-data:/app/data
+
+    healthcheck:
+      # /api/health remains login-protected. HTTP 401 proves that the app is
+      # responding normally without exposing any account or service details.
+      test: ["CMD", "node", "-e", "const http=require('http');const req=http.request({hostname:'localhost',port:3001,path:'/api/health',timeout:2000},res=>process.exit(res.statusCode===200||res.statusCode===401?0:1));req.on('error',()=>process.exit(1));req.end();"]
+      interval: 30s
+      timeout: 3s
+      start_period: 15s
+      retries: 3
+
+    stop_grace_period: 20s
+
+volumes:
+  subtrack-data:
+    name: subtrack-data
+    driver: local

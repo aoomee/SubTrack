@@ -5,6 +5,8 @@ set -Eeuo pipefail
 APP_DIR="${SUBTRACK_INSTALL_DIR:-/opt/subtrack}"
 HOST_PORT="${SUBTRACK_HOST_PORT:-3001}"
 IMAGE_REF="${SUBTRACK_IMAGE:-ghcr.io/aoomee/subtrack:latest}"
+CONTAINER_NAME="${SUBTRACK_CONTAINER_NAME:-subtrack}"
+DATA_VOLUME="${SUBTRACK_DATA_VOLUME:-}"
 ENV_FILE="${APP_DIR}/.env"
 COMPOSE_FILE="${APP_DIR}/docker-compose.yml"
 generated_password=""
@@ -54,6 +56,37 @@ docker compose version >/dev/null 2>&1 || die "未检测到 Docker Compose 插�
 
 install -d -m 700 "$APP_DIR"
 
+if [[ -z "$DATA_VOLUME" ]]; then
+  if docker volume inspect subtrack-data >/dev/null 2>&1; then
+    DATA_VOLUME="subtrack-data"
+  elif docker volume inspect subscription-data >/dev/null 2>&1; then
+    DATA_VOLUME="subscription-data"
+  else
+    DATA_VOLUME="subtrack-data"
+  fi
+fi
+
+for old_container in subtrack subscription-manager; do
+  if [[ "$old_container" == "$CONTAINER_NAME" ]]; then
+    continue
+  fi
+  if docker container inspect "$old_container" >/dev/null 2>&1; then
+    old_image="$(docker inspect --format '{{.Config.Image}}' "$old_container" 2>/dev/null || true)"
+    if [[ "$old_image" == *subtrack* || "$old_image" == *subscription* ]]; then
+      echo "[INFO] 替换旧的 SubTrack 容器：$old_container（数据卷不会删除）"
+      docker rm -f "$old_container" >/dev/null
+    fi
+  fi
+done
+
+if docker container inspect "$CONTAINER_NAME" >/dev/null 2>&1; then
+  current_image="$(docker inspect --format '{{.Config.Image}}' "$CONTAINER_NAME" 2>/dev/null || true)"
+  [[ "$current_image" == *subtrack* || "$current_image" == *subscription* ]] \
+    || die "容器名 $CONTAINER_NAME 已被其他镜像占用，请设置 SUBTRACK_CONTAINER_NAME。"
+  echo "[INFO] 替换现有容器：$CONTAINER_NAME（数据卷不会删除）"
+  docker rm -f "$CONTAINER_NAME" >/dev/null
+fi
+
 if [[ -f "$ENV_FILE" ]]; then
   grep -Eq '^SESSION_SECRET=[^[:space:]]+' "$ENV_FILE" \
     || die "$ENV_FILE 缺少 SESSION_SECRET，请补充后重新执行。"
@@ -91,7 +124,7 @@ services:
   subscription-manager:
     image: ${IMAGE_REF}
     pull_policy: always
-    container_name: subscription-manager
+    container_name: ${CONTAINER_NAME}
     env_file:
       - .env
     environment:
@@ -101,7 +134,7 @@ services:
     ports:
       - "0.0.0.0:${HOST_PORT}:3001"
     volumes:
-      - subscription-data:/app/data
+      - subtrack-data:/app/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "const http=require('http');const req=http.request({hostname:'localhost',port:3001,path:'/api/health',timeout:2000},res=>process.exit(res.statusCode===200||res.statusCode===401?0:1));req.on('error',()=>process.exit(1));req.end();"]
@@ -111,8 +144,8 @@ services:
       retries: 3
 
 volumes:
-  subscription-data:
-    name: subscription-data
+  subtrack-data:
+    name: ${DATA_VOLUME}
     driver: local
 EOF
 
@@ -146,7 +179,7 @@ fi
 echo
 echo "访问地址：http://你的VPS公网IP:${HOST_PORT}"
 echo "如果无法访问，请在云厂商安全组和 VPS 防火墙放行 TCP ${HOST_PORT}。"
-echo "数据卷：subscription-data（不要删除）"
+echo "数据卷：${DATA_VOLUME}（不要删除）"
 
 if [[ -n "$generated_password" ]]; then
   echo

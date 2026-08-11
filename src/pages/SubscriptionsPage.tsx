@@ -52,7 +52,7 @@ import { useSettingsStore } from "@/store/settingsStore"
 import { exportSubscriptionsToJSON } from "@/lib/subscription-utils"
 
 import { SubscriptionCard } from "@/components/subscription/SubscriptionCard"
-import { LoadingIndicator } from "@/components/ui/loading-indicator"
+import { PageLoading } from "@/components/ui/page-loading"
 import { SubscriptionForm } from "@/components/subscription/SubscriptionForm"
 import { SubscriptionDetailDialog } from "@/components/subscription/SubscriptionDetailDialog"
 import { ImportModal } from "@/components/imports/ImportModal"
@@ -71,6 +71,7 @@ export function SubscriptionsPage() {
   const [showImportModal, setShowImportModal] = useState(false)
   const [detailSubscription, setDetailSubscription] = useState<Subscription | null>(null)
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
+  const [isInitializing, setIsInitializing] = useState(true)
 
   const { fetchSettings } = useSettingsStore()
   
@@ -91,8 +92,12 @@ export function SubscriptionsPage() {
 
   // Initialize subscriptions without auto-renewals
   const initialize = useCallback(async () => {
-    await fetchSettings()
-    await initializeData()
+    try {
+      await fetchSettings()
+      await initializeData()
+    } finally {
+      setIsInitializing(false)
+    }
   }, [fetchSettings, initializeData])
 
   useEffect(() => {
@@ -374,12 +379,8 @@ export function SubscriptionsPage() {
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[calc(100dvh-10rem)] items-center justify-center" aria-busy="true">
-        <LoadingIndicator size="lg" />
-      </div>
-    )
+  if (isInitializing || isLoading) {
+    return <PageLoading />
   }
 
   return (

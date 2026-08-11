@@ -34,7 +34,7 @@ import { RecentlyPaid } from "@/components/dashboard/RecentlyPaid"
 import { CategoryBreakdown } from "@/components/dashboard/CategoryBreakdown"
 import { ImportModal } from "@/components/imports/ImportModal"
 import { ExpenseTrendChart } from "@/components/charts/ExpenseTrendChart"
-import { LoadingIndicator } from "@/components/ui/loading-indicator"
+import { PageLoading } from "@/components/ui/page-loading"
 
 function HomePage() {
   const { toast } = useToast()
@@ -43,6 +43,7 @@ function HomePage() {
   const [showImportModal, setShowImportModal] = useState(false)
   // Get the default view from settings
   const { currency: userCurrency, fetchSettings } = useSettingsStore()
+  const [isInitializing, setIsInitializing] = useState(true)
   
   const {
     subscriptions,
@@ -61,13 +62,17 @@ function HomePage() {
   const [monthlySpending, setMonthlySpending] = useState<number>(0)
   const [yearlySpending, setYearlySpending] = useState<number>(0)
   const [monthlyTrend, setMonthlyTrend] = useState<MonthlyExpense[]>([])
-  const [isLoadingSpending, setIsLoadingSpending] = useState(false)
+  const [isLoadingSpending, setIsLoadingSpending] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
 
   // Initialize subscriptions without auto-renewals
   const initialize = useCallback(async () => {
-    await fetchSettings()
-    await initializeData()
+    try {
+      await fetchSettings()
+      await initializeData()
+    } finally {
+      setIsInitializing(false)
+    }
   }, [fetchSettings, initializeData])
 
   useEffect(() => {
@@ -100,6 +105,8 @@ function HomePage() {
 
     if (userCurrency) {
       loadSpendingData()
+    } else {
+      setIsLoadingSpending(false)
     }
   }, [userCurrency])
 
@@ -189,12 +196,8 @@ function HomePage() {
   const recentlyPaidSubscriptions = getRecentlyPaid(7)
   const spendingByCategory = getSpendingByCategory()
 
-  if (isLoading || isLoadingSpending) {
-    return (
-      <div className="flex min-h-[calc(100dvh-10rem)] items-center justify-center" aria-busy="true">
-        <LoadingIndicator size="lg" />
-      </div>
-    )
+  if (isInitializing || isLoading || isLoadingSpending) {
+    return <PageLoading />
   }
 
   return (

@@ -25,6 +25,8 @@
   "billingCycle": "计费周期",
   "startDate": "开始日期",
   "renewalType": "续费类型",
+  "automaticRenewal": "自动续费",
+  "manualRenewal": "手动续费",
   "website": "网站",
   "today": "今天",
   "days": "天",

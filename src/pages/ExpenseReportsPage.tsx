@@ -30,6 +30,7 @@ import type { PaymentRecordApi } from '@/utils/dataTransform'
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { LoadingIndicator } from "@/components/ui/loading-indicator"
+import { PageLoading } from "@/components/ui/page-loading"
 
 
 export function ExpenseReportsPage() {
@@ -376,14 +377,7 @@ export function ExpenseReportsPage() {
     || isLoadingYearlyGroupedCategoryExpenses
 
   if (isPageLoading) {
-    return (
-      <div
-        className="flex min-h-[calc(100dvh-10rem)] items-center justify-center"
-        aria-busy="true"
-      >
-        <LoadingIndicator size="lg" />
-      </div>
-    )
+    return <PageLoading />
   }
 
   return (

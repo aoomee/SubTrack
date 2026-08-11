@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +21,7 @@ import { notificationApi, NotificationHistory as NotificationHistoryType, Notifi
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/utils/date';
 import { LoadingIndicator } from '@/components/ui/loading-indicator';
+import { PageLoading } from '@/components/ui/page-loading';
 
 
 // Helper function to parse and format message content (supports zh-CN and en templates)
@@ -95,8 +96,10 @@ export const NotificationHistory: React.FC = () => {
   
   const [history, setHistory] = useState<NotificationHistoryType[]>([]);
   const [stats, setStats] = useState<NotificationStats | null>(null);
-  const [historyLoading, setHistoryLoading] = useState(false);
-  const [statsLoading, setStatsLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const initialLoadRef = useRef(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -162,15 +165,18 @@ export const NotificationHistory: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    loadHistory();
-    loadStats();
-  }, [loadHistory, loadStats]);
+    if (initialLoadRef.current) {
+      initialLoadRef.current = false;
+      Promise.all([loadHistory(1), loadStats()]).finally(() => {
+        setIsInitializing(false);
+      });
+      return;
+    }
 
-  // Reload data when status or type filter changes
-  useEffect(() => {
+    // Reload data when status or type filter changes.
     setHistoryPagination(prev => ({ ...prev, page: 1 }));
     loadHistory(1);
-  }, [statusFilter, typeFilter, loadHistory]);
+  }, [statusFilter, typeFilter, loadHistory, loadStats]);
 
   const handlePageChange = (page: number) => {
     loadHistory(page);
@@ -229,6 +235,10 @@ export const NotificationHistory: React.FC = () => {
   const allChannels = ['telegram', 'email'];
   
   // Get unique values from current data for information purposes
+
+  if (isInitializing) {
+    return <PageLoading />;
+  }
 
   return (
     <div className="space-y-6">

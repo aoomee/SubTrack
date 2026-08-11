@@ -76,7 +76,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               <ModeToggle />
             </div>
           </header>
-          <main className="flex flex-1 items-center justify-center px-5 pb-20 pt-6">
+          <main className="relative flex flex-1 items-center justify-center px-5 pb-20 pt-6">
             {children}
           </main>
         </div>
@@ -166,7 +166,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           </div>
         </header>
 
-        <main id="main-content" className="mx-auto min-h-[calc(100dvh-4rem)] w-full max-w-[1440px] px-4 pb-24 pt-6 sm:px-6 md:min-h-[100dvh] md:px-8 md:pb-10 md:pt-8 xl:px-10">
+        <main id="main-content" className="relative isolate mx-auto min-h-[calc(100dvh-4rem)] w-full max-w-[1440px] px-4 pb-24 pt-6 sm:px-6 md:min-h-[100dvh] md:px-8 md:pb-10 md:pt-8 xl:px-10">
           {children}
         </main>
       </div>

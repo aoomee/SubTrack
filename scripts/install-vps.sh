@@ -10,6 +10,7 @@ DATA_VOLUME="${SUBTRACK_DATA_VOLUME:-}"
 ENV_FILE="${APP_DIR}/.env"
 COMPOSE_FILE="${APP_DIR}/docker-compose.yml"
 generated_password=""
+login_password=""
 
 die() {
   echo "[ERROR] $*" >&2
@@ -105,6 +106,8 @@ else
     admin_password="$generated_password"
   fi
 
+  login_password="$admin_password"
+
   session_secret="$(generate_secret)"
   {
     printf 'SESSION_SECRET=%s\n' "$session_secret"
@@ -181,9 +184,12 @@ echo "访问地址：http://你的VPS公网IP:${HOST_PORT}"
 echo "如果无法访问，请在云厂商安全组和 VPS 防火墙放行 TCP ${HOST_PORT}。"
 echo "数据卷：${DATA_VOLUME}（不要删除）"
 
-if [[ -n "$generated_password" ]]; then
+if [[ -n "$login_password" ]]; then
   echo
   echo "首次登录账号：admin"
-  echo "首次登录密码：${generated_password}"
+  echo "首次登录密码：${login_password}"
   echo "请立即保存此密码。"
+else
+  echo
+  echo "账号信息沿用已有 /opt/subtrack/.env，脚本没有覆盖原密码。"
 fi

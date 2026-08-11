@@ -1,6 +1,7 @@
-import { Loader2, AlertCircle, Calendar } from "lucide-react"
+import { AlertCircle, Calendar } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
+import { LoadingIndicator } from "@/components/ui/loading-indicator"
 
 interface PaymentListStateProps {
   isLoading: boolean
@@ -20,9 +21,8 @@ export function PaymentListState({
   const { t } = useTranslation(['common', 'subscription'])
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-6 w-6 animate-spin" />
-        <span className="ml-2 text-sm">{t('common:loadingPayments')}</span>
+      <div className="flex items-center justify-center py-8" aria-busy="true">
+        <LoadingIndicator />
       </div>
     )
   }

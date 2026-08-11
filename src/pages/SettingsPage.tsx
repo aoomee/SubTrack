@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Skeleton } from "@/components/ui/skeleton"
+import { LoadingIndicator } from "@/components/ui/loading-indicator"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { useConfirmation } from "@/hooks/use-confirmation"
 import { useToast } from "@/hooks/use-toast"
@@ -188,13 +188,7 @@ export function SettingsPage() {
   })
 
   if (isLoading) {
-    return (
-      <div className="space-y-6" aria-label={t('loadingSettings')}>
-        <Skeleton className="h-10 w-40" />
-        <Skeleton className="h-10 w-full max-w-3xl" />
-        <Skeleton className="h-56 w-full max-w-3xl rounded-xl" />
-      </div>
-    )
+    return <div className="flex min-h-[calc(100dvh-10rem)] items-center justify-center" aria-busy="true"><LoadingIndicator size="lg" /></div>
   }
 
   return (

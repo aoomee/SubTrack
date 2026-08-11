@@ -52,6 +52,7 @@ import { useSettingsStore } from "@/store/settingsStore"
 import { exportSubscriptionsToJSON } from "@/lib/subscription-utils"
 
 import { SubscriptionCard } from "@/components/subscription/SubscriptionCard"
+import { LoadingIndicator } from "@/components/ui/loading-indicator"
 import { SubscriptionForm } from "@/components/subscription/SubscriptionForm"
 import { SubscriptionDetailDialog } from "@/components/subscription/SubscriptionDetailDialog"
 import { ImportModal } from "@/components/imports/ImportModal"
@@ -375,11 +376,8 @@ export function SubscriptionsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-16rem)]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg font-medium">{t('subscription:loadingSubscriptions')}</p>
-        </div>
+      <div className="flex min-h-[calc(100dvh-10rem)] items-center justify-center" aria-busy="true">
+        <LoadingIndicator size="lg" />
       </div>
     )
   }

@@ -1,13 +1,12 @@
-import { Route, Routes } from "react-router-dom"
+import { Route, Routes, useLocation } from "react-router-dom"
 import { Suspense, lazy } from "react"
 import { Toaster } from "./components/ui/toaster"
 import { ThemeProvider } from "./components/ThemeProvider"
 import { MainLayout } from "./components/layouts/MainLayout"
-import { useTranslation } from "react-i18next"
 import { useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { Navigate } from 'react-router-dom'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingIndicator } from '@/components/ui/loading-indicator'
 
 // Lazy load pages for code splitting
 const HomePage = lazy(() => import("./pages/HomePage"))
@@ -17,39 +16,35 @@ const ExpenseReportsPage = lazy(() => import("./pages/ExpenseReportsPage").then(
 const NotificationHistoryPage = lazy(() => import("./pages/NotificationHistoryPage").then(module => ({ default: module.NotificationHistoryPage })))
 const LoginPage = lazy(() => import("./pages/LoginPage"))
 
+function PageLoading() {
+  return (
+    <div
+      className="flex min-h-[calc(100dvh-4rem)] items-center justify-center"
+      aria-busy="true"
+    >
+      <LoadingIndicator size="lg" />
+    </div>
+  )
+}
 
 function App() {
-  const { t } = useTranslation()
+  const location = useLocation()
   const { user, fetchMe, initialized } = useAuthStore()
   useEffect(() => { fetchMe() }, [fetchMe])
 
   const RequireAuth = ({ children }: { children: JSX.Element }) => {
     if (!initialized) {
-      return <PageLoading label={t('loading')} />
+      return <PageLoading />
     }
     if (!user) return <Navigate to="/login" replace />
     return children
   }
 
-  const PageLoading = ({ label }: { label: string }) => (
-    <div className="space-y-6" aria-label={label}>
-      <div className="space-y-2">
-        <Skeleton className="h-9 w-40" />
-        <Skeleton className="h-5 w-64" />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Skeleton className="h-36 rounded-xl" />
-        <Skeleton className="h-36 rounded-xl" />
-        <Skeleton className="h-36 rounded-xl" />
-      </div>
-    </div>
-  )
-  
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
       <MainLayout>
-        <Suspense fallback={<PageLoading label={t('loading')} />}>
-          <Routes>
+        <Suspense fallback={<PageLoading />}>
+          <Routes key={location.pathname}>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/" element={<RequireAuth><HomePage /></RequireAuth>} />
             <Route path="/subscriptions" element={<RequireAuth><SubscriptionsPage /></RequireAuth>} />

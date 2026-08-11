@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 import { ExpenseDetailDialog } from "./ExpenseDetailDialog"
 import { useTranslation } from "react-i18next"
+import { formatExpensePeriodLabel } from "@/utils/expense-period"
 
 export interface ExpenseInfoData {
   period: string
@@ -40,7 +41,7 @@ export function ExpenseInfoCards({
   isLoading = false,
   className
 }: ExpenseInfoCardsProps) {
-  const { t } = useTranslation('reports')
+  const { t, i18n } = useTranslation('reports')
   const [selectedPeriod, setSelectedPeriod] = useState<ExpenseInfoData | null>(null)
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
 
@@ -64,7 +65,9 @@ export function ExpenseInfoCards({
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary">
                 <Calendar className="h-4 w-4" strokeWidth={1.8} />
               </span>
-              <p className="truncate text-sm font-semibold">{data.period}</p>
+              <p className="truncate text-sm font-semibold">
+                {formatExpensePeriodLabel(data, i18n.resolvedLanguage)}
+              </p>
             </div>
             <span
               className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground opacity-60 transition-opacity group-hover:opacity-100"

@@ -3,11 +3,11 @@
  */
 
 @font-face {
-  font-family: 'LXGW WenKai';
+  font-family: 'LXGW WenKai Lite';
   font-style: normal;
   font-display: swap;
-  font-weight: 500;
-  src: url('@fontsource/lxgw-wenkai/files/lxgw-wenkai-latin-500-normal.woff2') format('woff2');
+  font-weight: 400;
+  src: url('/fonts/LXGWWenKaiLite-Regular.ttf') format('truetype');
 }
 
 @tailwind base;
@@ -111,7 +111,7 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Rubik Variable', 'LXGW WenKai', 'PingFang SC', 'Microsoft YaHei', ui-sans-serif, system-ui, sans-serif;
+    font-family: 'Rubik Variable', 'LXGW WenKai Lite', 'PingFang SC', 'Microsoft YaHei', ui-sans-serif, system-ui, sans-serif;
     font-weight: 400;
     font-variant-numeric: tabular-nums;
     font-optical-sizing: auto;
@@ -139,7 +139,7 @@ html:lang(zh-CN) h3 {
   }
 
   .sidebar-link {
-    @apply flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground;
+    @apply flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar;
   }
 
   .sidebar-link svg {

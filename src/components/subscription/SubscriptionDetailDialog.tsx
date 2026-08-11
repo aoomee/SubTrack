@@ -16,7 +16,6 @@ import { Subscription, useSubscriptionStore } from "@/store/subscriptionStore"
 import {
   formatDate,
   daysUntil,
-  getBillingCycleLabel,
   getCategoryLabel,
   getPaymentMethodLabel
 } from "@/lib/subscription-utils"
@@ -182,7 +181,7 @@ const ContentComponent = ({
           <div className="flex items-center justify-between gap-2">
             <span className="text-sm">{t('subscription:details.billingCycle')}</span>
             <Badge variant={getBillingCycleBadgeVariant()} className="text-xs h-5 shrink-0">
-              {getBillingCycleLabel(billingCycle)}
+              {t(`common:${billingCycle}`, { defaultValue: billingCycle })}
             </Badge>
           </div>
         </div>

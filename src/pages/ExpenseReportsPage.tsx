@@ -36,6 +36,7 @@ export function ExpenseReportsPage() {
   const { fetchSubscriptions, fetchCategories } = useSubscriptionStore()
   const { t } = useTranslation(['reports', 'common'])
   const { currency: userCurrency, fetchSettings } = useSettingsStore()
+  const [isInitializingData, setIsInitializingData] = useState(true)
   
   // Filter states
   const [selectedDateRange] = useState('Last 12 Months')
@@ -46,9 +47,13 @@ export function ExpenseReportsPage() {
 
   // Fetch data when component mounts
   const initializeData = useCallback(async () => {
-    await fetchSubscriptions()
-    await fetchCategories()
-    await fetchSettings()
+    try {
+      await fetchSubscriptions()
+      await fetchCategories()
+      await fetchSettings()
+    } finally {
+      setIsInitializingData(false)
+    }
   }, [fetchSubscriptions, fetchCategories, fetchSettings])
 
   useEffect(() => {
@@ -125,14 +130,14 @@ export function ExpenseReportsPage() {
     yearly: []
   })
 
-  const [isLoadingExpenses, setIsLoadingExpenses] = useState(false)
-  const [isLoadingYearlyExpenses, setIsLoadingYearlyExpenses] = useState(false)
-  const [isLoadingCategoryExpenses, setIsLoadingCategoryExpenses] = useState(false)
-  const [isLoadingYearlyCategoryExpenses, setIsLoadingYearlyCategoryExpenses] = useState(false)
-  const [, setIsLoadingMonthlyCategoryExpenses] = useState(false)
-  const [, setIsLoadingYearlyGroupedCategoryExpenses] = useState(false)
+  const [isLoadingExpenses, setIsLoadingExpenses] = useState(true)
+  const [isLoadingYearlyExpenses, setIsLoadingYearlyExpenses] = useState(true)
+  const [isLoadingCategoryExpenses, setIsLoadingCategoryExpenses] = useState(true)
+  const [isLoadingYearlyCategoryExpenses, setIsLoadingYearlyCategoryExpenses] = useState(true)
+  const [isLoadingMonthlyCategoryExpenses, setIsLoadingMonthlyCategoryExpenses] = useState(true)
+  const [isLoadingYearlyGroupedCategoryExpenses, setIsLoadingYearlyGroupedCategoryExpenses] = useState(true)
 
-  const [isLoadingExpenseInfo, setIsLoadingExpenseInfo] = useState(false)
+  const [isLoadingExpenseInfo, setIsLoadingExpenseInfo] = useState(true)
   const [expenseError, setExpenseError] = useState<string | null>(null)
   const [yearlyExpenseError, setYearlyExpenseError] = useState<string | null>(null)
   const [categoryExpenseError, setCategoryExpenseError] = useState<string | null>(null)
@@ -141,8 +146,6 @@ export function ExpenseReportsPage() {
   const [, setYearlyGroupedCategoryExpenseError] = useState<string | null>(null)
 
   const [expenseInfoError, setExpenseInfoError] = useState<string | null>(null)
-
-
 
   // Load expense info data (recent periods)
   useEffect(() => {
@@ -362,6 +365,26 @@ export function ExpenseReportsPage() {
     loadYearlyCategoryExpenseData()
     loadYearlyGroupedCategoryExpenseData()
   }, [currentYearlyDateRange, userCurrency])
+
+  const isPageLoading = isInitializingData
+    || isLoadingExpenseInfo
+    || isLoadingExpenses
+    || isLoadingMonthlyCategoryExpenses
+    || isLoadingYearlyExpenses
+    || isLoadingCategoryExpenses
+    || isLoadingYearlyCategoryExpenses
+    || isLoadingYearlyGroupedCategoryExpenses
+
+  if (isPageLoading) {
+    return (
+      <div
+        className="flex min-h-[calc(100dvh-10rem)] items-center justify-center"
+        aria-busy="true"
+      >
+        <LoadingIndicator size="lg" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-7">

@@ -1,9 +1,8 @@
 import { Route, Routes, useLocation } from "react-router-dom"
-import { Suspense, lazy } from "react"
+import { Suspense, lazy, useEffect, useState } from "react"
 import { Toaster } from "./components/ui/toaster"
 import { ThemeProvider } from "./components/ThemeProvider"
 import { MainLayout } from "./components/layouts/MainLayout"
-import { useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { Navigate } from 'react-router-dom'
 import { LoadingIndicator } from '@/components/ui/loading-indicator'
@@ -27,6 +26,28 @@ function PageLoading() {
   )
 }
 
+function RouteTransition({ children }: { children: React.ReactNode }) {
+  const location = useLocation()
+  const routeKey = `${location.pathname}${location.search}${location.hash}`
+  const [settledRouteKey, setSettledRouteKey] = useState(routeKey)
+
+  useEffect(() => {
+    if (settledRouteKey === routeKey) return
+
+    const timeoutId = window.setTimeout(() => {
+      setSettledRouteKey(routeKey)
+    }, 140)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [routeKey, settledRouteKey])
+
+  if (settledRouteKey !== routeKey) {
+    return <PageLoading />
+  }
+
+  return <>{children}</>
+}
+
 function App() {
   const location = useLocation()
   const { user, fetchMe, initialized } = useAuthStore()
@@ -43,16 +64,18 @@ function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
       <MainLayout>
-        <Suspense fallback={<PageLoading />}>
-          <Routes key={location.pathname}>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/" element={<RequireAuth><HomePage /></RequireAuth>} />
-            <Route path="/subscriptions" element={<RequireAuth><SubscriptionsPage /></RequireAuth>} />
-            <Route path="/expense-reports" element={<RequireAuth><ExpenseReportsPage /></RequireAuth>} />
-            <Route path="/notifications" element={<RequireAuth><NotificationHistoryPage /></RequireAuth>} />
-            <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
-          </Routes>
-        </Suspense>
+        <RouteTransition>
+          <Suspense fallback={<PageLoading />}>
+            <Routes key={location.pathname}>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/" element={<RequireAuth><HomePage /></RequireAuth>} />
+              <Route path="/subscriptions" element={<RequireAuth><SubscriptionsPage /></RequireAuth>} />
+              <Route path="/expense-reports" element={<RequireAuth><ExpenseReportsPage /></RequireAuth>} />
+              <Route path="/notifications" element={<RequireAuth><NotificationHistoryPage /></RequireAuth>} />
+              <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
+            </Routes>
+          </Suspense>
+        </RouteTransition>
       </MainLayout>
       <Toaster />
     </ThemeProvider>

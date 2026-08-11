@@ -1,4 +1,5 @@
 import { format, isValid, startOfMonth, endOfMonth, startOfYear, endOfYear, getDaysInMonth, getDaysInYear, differenceInDays } from 'date-fns';
+import { getAppLocale } from '@/utils/locale';
 
 // Date formatting functions
 export const formatDate = (date: Date | string | null | undefined): string => {
@@ -21,7 +22,11 @@ export const formatDateDisplay = (date: Date | string | null | undefined): strin
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     if (!isValid(dateObj)) return '';
     
-    return format(dateObj, 'MMM d, yyyy');
+    return new Intl.DateTimeFormat(getAppLocale(), {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }).format(dateObj);
   } catch {
     return '';
   }

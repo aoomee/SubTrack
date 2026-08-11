@@ -97,64 +97,70 @@ export function SubscriptionCard({
 
   return (
     <Card
-      className="group w-full cursor-pointer overflow-hidden transition-[background-color,border-color,transform] duration-200 hover:border-primary/20 hover:bg-accent/35 active:translate-y-px"
+      className="group w-full cursor-pointer overflow-hidden rounded-[18px] border-border/80 shadow-none transition-[background-color,border-color,transform] duration-200 hover:border-primary/20 hover:bg-accent/35 active:translate-y-px"
       onClick={() => onViewDetails?.(subscription)}
     >
       <CardContent className="p-0 sm:p-0">
-        <div className="grid min-h-[92px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 gap-y-3 px-5 py-4 sm:grid-cols-[minmax(190px,1.3fr)_minmax(110px,.65fr)_minmax(130px,.8fr)_minmax(160px,.9fr)_auto] sm:px-6 xl:grid-cols-[minmax(190px,1.25fr)_minmax(105px,.6fr)_minmax(130px,.75fr)_minmax(180px,1fr)_minmax(130px,.75fr)_auto]">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border bg-background text-sm font-semibold text-primary">
-                {name.slice(0, 1).toUpperCase()}
-              </span>
+        <div className="grid min-h-[88px] grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-4 gap-y-3 px-5 py-2 sm:grid-cols-[minmax(220px,1.35fr)_minmax(140px,.8fr)_minmax(150px,.9fr)_minmax(190px,1fr)_minmax(180px,1fr)_auto] sm:items-stretch sm:gap-x-0 sm:px-6">
+          <div className="min-w-0 sm:flex sm:self-stretch sm:items-center sm:justify-center">
+            <div className="min-w-0 max-w-full sm:grid sm:w-[168px] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-2">
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className="truncate text-[15px] font-semibold">{name}</h3>
-                  <Badge variant={status === 'active' ? 'success' : 'secondary'}>
-                    {t(`subscription:${status}`)}
-                  </Badge>
-                </div>
-                <p className="mt-0.5 truncate text-sm text-muted-foreground">{plan}</p>
+                <h3 className="break-words text-[15px] font-semibold leading-5">{name}</h3>
+                <p className="mt-0.5 break-words text-[13px] leading-4 text-muted-foreground">{plan}</p>
               </div>
+              <Badge className="mt-1.5 h-5 shrink-0 rounded-md px-2 text-[11px] font-medium sm:mt-0 sm:justify-self-end" variant={status === 'active' ? 'success' : 'secondary'}>
+                {t(`subscription:${status}`)}
+              </Badge>
             </div>
           </div>
 
-          <div className="text-right sm:text-left">
-            <p className="text-[15px] font-semibold tabular-nums">{formatWithUserCurrency(amount, currency)}</p>
-            <div className="mt-1">
+          <div className="col-start-2 row-start-1 text-right sm:col-auto sm:row-auto sm:flex sm:self-stretch sm:flex-col sm:items-center sm:justify-center sm:gap-0.5 sm:border-l sm:border-border/60 sm:px-4 sm:text-center">
+            <p className="mb-1 text-[11px] font-medium tracking-[0.03em] text-muted-foreground/80 sm:mb-0 sm:leading-4">{t('subscription:amount')}</p>
+            <p className="whitespace-nowrap text-[15px] font-semibold tabular-nums sm:flex sm:min-h-5 sm:items-center">{formatWithUserCurrency(amount, currency)}</p>
+            <div className="mt-2 sm:flex sm:min-h-[22px] sm:items-center sm:justify-center sm:mt-0">
               <Badge variant={getBillingCycleBadgeVariant()}>
                 {t(`common:${billingCycle}`, { defaultValue: billingCycle })}
               </Badge>
             </div>
           </div>
 
-          <div className="hidden min-w-0 items-center gap-2 text-sm text-muted-foreground sm:flex">
-            <Tag className="h-4 w-4 shrink-0" />
-            <span className="truncate">{categoryLabel}</span>
+          <div className="hidden min-w-0 border-border/60 text-sm sm:flex sm:self-stretch sm:flex-col sm:items-center sm:justify-center sm:gap-1 sm:border-l sm:px-4 sm:text-center">
+            <p className="text-[11px] font-medium leading-4 tracking-[0.03em] text-muted-foreground/80">{t('subscription:category')}</p>
+            <div className="grid min-h-8 w-full grid-cols-[20px_minmax(0,1fr)_20px] items-center text-center text-muted-foreground">
+              <Tag className="col-start-1 h-4 w-4 shrink-0 justify-self-start text-muted-foreground/80" />
+              <span className="col-start-2 min-w-0 justify-self-center break-words text-center text-[13px] font-medium leading-4 text-foreground/75">{categoryLabel}</span>
+            </div>
           </div>
 
-          <div className="flex min-w-0 items-center justify-between gap-3 border-t pt-3 text-sm sm:border-0 sm:pt-0">
-            <div className="flex min-w-0 items-center gap-2 text-muted-foreground">
-              <Calendar className="h-4 w-4 shrink-0" />
-              <span className={isExpiringSoon ? "truncate font-medium text-warning" : "truncate"}>
+          <div className="col-span-3 row-start-2 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center border-t pt-3 text-sm sm:col-auto sm:row-auto sm:flex sm:self-stretch sm:flex-col sm:items-center sm:justify-center sm:gap-0.5 sm:border-l sm:border-t-0 sm:border-border/60 sm:px-4 sm:pt-0 sm:text-center">
+            <p className="col-start-1 row-start-1 text-[11px] font-medium tracking-[0.03em] text-muted-foreground/80 sm:col-auto sm:row-auto sm:leading-4">{t('subscription:nextPayment')}</p>
+            <div className="col-start-1 row-start-2 flex h-7 min-w-0 items-center gap-2 text-muted-foreground sm:col-auto sm:row-auto sm:grid sm:min-h-[22px] sm:w-full sm:grid-cols-[20px_minmax(0,1fr)_20px] sm:text-center">
+              <Calendar className="h-4 w-4 shrink-0 text-muted-foreground/80 sm:col-start-1 sm:justify-self-start" />
+              <span className={isExpiringSoon ? "whitespace-nowrap text-sm font-medium text-warning sm:col-start-2 sm:justify-self-center" : "whitespace-nowrap text-sm font-medium text-foreground/75 sm:col-start-2 sm:justify-self-center"}>
                 {formatDate(nextBillingDate)}
               </span>
             </div>
             {isExpiringSoon && status === 'active' && (
-              <Badge variant={getBadgeVariant()}>
-                {daysLeft === 0 ? t('common:today') : `${daysLeft} ${t('common:days')}`}
-              </Badge>
+              <div className="col-start-2 row-span-2 row-start-1 flex items-center pl-3 sm:col-auto sm:row-auto sm:row-span-1 sm:min-h-[22px] sm:justify-center sm:pl-0">
+                <Badge variant={getBadgeVariant()}>
+                  {daysLeft === 0 ? t('common:today') : `${daysLeft} ${t('common:days')}`}
+                </Badge>
+              </div>
             )}
           </div>
 
-          <div className="hidden min-w-0 items-center gap-3 text-sm text-muted-foreground xl:flex">
-            <span className="flex min-w-0 items-center gap-2">
-              <CreditCard className="h-4 w-4 shrink-0" />
-              <span className="truncate">{paymentMethodLabel}</span>
-            </span>
-            <span className="flex shrink-0 items-center gap-1.5">
-              {renewalType === 'auto' ? <RotateCcw className="h-4 w-4" /> : <Hand className="h-4 w-4" />}
-            </span>
+          <div className="hidden min-w-0 border-border/60 text-sm sm:flex sm:self-stretch sm:flex-col sm:items-center sm:justify-center sm:gap-0.5 sm:border-l sm:px-4 sm:text-center">
+            <p className="text-[11px] font-medium leading-4 tracking-[0.03em] text-muted-foreground/80">{t('subscription:paymentMethod')}</p>
+            <div className="grid min-h-[22px] w-full grid-cols-[20px_minmax(0,1fr)_20px] items-center text-center text-muted-foreground">
+              <CreditCard className="col-start-1 h-4 w-4 shrink-0 justify-self-start text-muted-foreground/80" />
+              <span className="col-start-2 min-w-0 justify-self-center break-words text-center text-sm font-medium leading-4 text-foreground/75">{paymentMethodLabel}</span>
+            </div>
+            <div className="grid min-h-[22px] w-full grid-cols-[20px_minmax(0,1fr)_20px] items-center text-center text-muted-foreground">
+              {renewalType === 'auto' ? <RotateCcw className="col-start-1 h-4 w-4 shrink-0 justify-self-start text-muted-foreground/80" /> : <Hand className="col-start-1 h-4 w-4 shrink-0 justify-self-start text-muted-foreground/80" />}
+              <span className="col-start-2 min-w-0 justify-self-center break-words text-center text-sm leading-4 text-muted-foreground">
+                {renewalType === 'auto' ? t('subscription:automaticRenewal') : t('subscription:manualRenewal')}
+              </span>
+            </div>
           </div>
 
           <DropdownMenu>
@@ -162,7 +168,7 @@ export function SubscriptionCard({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9"
+                className="col-start-3 row-start-1 h-9 w-9 sm:col-auto sm:row-auto sm:self-center sm:justify-self-center"
                 onClick={(e) => e.stopPropagation()}
               >
                 <MoreVertical className="h-4 w-4" />
@@ -194,6 +200,32 @@ export function SubscriptionCard({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <div className="col-span-3 row-start-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t pt-3 text-sm sm:hidden">
+            <div className="min-w-0">
+              <p className="mb-1 text-[11px] font-medium text-muted-foreground">{t('subscription:category')}</p>
+              <div className="flex min-w-0 items-center gap-2 text-muted-foreground">
+                <Tag className="h-4 w-4 shrink-0" />
+                <span className="break-words">{categoryLabel}</span>
+              </div>
+            </div>
+            <div className="min-w-0">
+              <p className="mb-1 text-[11px] font-medium text-muted-foreground">{t('subscription:paymentMethod')}</p>
+              <div className="flex min-w-0 items-center gap-2 text-muted-foreground">
+                <CreditCard className="h-4 w-4 shrink-0" />
+                <span className="break-words">{paymentMethodLabel}</span>
+              </div>
+            </div>
+            <div className="min-w-0">
+              <p className="mb-1 text-[11px] font-medium text-muted-foreground">{t('subscription:renewalType')}</p>
+              <div className="flex min-w-0 items-center gap-2 text-muted-foreground">
+                {renewalType === 'auto' ? <RotateCcw className="h-4 w-4 shrink-0" /> : <Hand className="h-4 w-4 shrink-0" />}
+                <span className="break-words">
+                  {renewalType === 'auto' ? t('subscription:automaticRenewal') : t('subscription:manualRenewal')}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>

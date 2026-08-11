@@ -1,4 +1,4 @@
-import { Calendar, Edit, Trash2, MoreHorizontal } from "lucide-react"
+import { Calendar, CalendarRange, Edit, Trash2, MoreHorizontal } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -40,45 +40,55 @@ export function PaymentListItem({
     }
   }
 
+  const statusLabel = t(`common:${payment.status.toLowerCase()}`, {
+    defaultValue: payment.status.charAt(0).toUpperCase() + payment.status.slice(1)
+  })
+
   return (
-    <Card className="group hover:bg-muted/50 transition-all duration-200 border hover:border-muted-foreground/20">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 space-y-2">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-              <span className="font-semibold text-base">
-                {formatWithUserCurrency(payment.amountPaid, payment.currency)}
-              </span>
-              <Badge
-                variant={getStatusBadgeVariant(payment.status)}
-                className="text-xs h-5 px-2 w-fit font-medium"
-              >
-                {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
-              </Badge>
+    <Card className="group rounded-[16px] border-border/80 shadow-none transition-[background-color,border-color] duration-200 hover:border-primary/15 hover:bg-accent/25">
+      <CardContent className="p-0 sm:p-0">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-3 px-4 py-3.5 sm:h-[56px] sm:grid-cols-[minmax(152px,.8fr)_minmax(0,2fr)_auto] sm:items-center sm:gap-x-5 sm:px-5 sm:py-0">
+          <div className="min-w-0 sm:flex sm:items-center sm:justify-center sm:gap-2 sm:text-center">
+            <p className="whitespace-nowrap text-lg font-semibold leading-6 tabular-nums">
+              {formatWithUserCurrency(payment.amountPaid, payment.currency)}
+            </p>
+            <Badge
+              variant={getStatusBadgeVariant(payment.status)}
+              className="mt-1.5 h-5 w-fit px-2 text-xs font-medium sm:mt-0"
+            >
+              {statusLabel}
+            </Badge>
+          </div>
+
+          <div className="col-span-2 grid min-w-0 gap-1.5 border-t border-border/60 pt-3 sm:col-span-1 sm:gap-1 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0">
+            <div className="grid min-w-0 grid-cols-[16px_minmax(0,1fr)] gap-x-2.5 sm:grid-cols-[16px_68px_minmax(0,1fr)] sm:items-center">
+              <Calendar className="h-4 w-4 text-muted-foreground/75" />
+              <p className="text-[11px] font-medium leading-4 tracking-[0.03em] text-muted-foreground/80 sm:text-xs">
+                {t('common:paid')}
+              </p>
+              <p className="col-start-2 text-sm font-medium leading-5 tabular-nums text-foreground/80 sm:col-start-3 sm:whitespace-nowrap">
+                {formatDateDisplay(payment.paymentDate)}
+              </p>
             </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Calendar className="h-3 w-3" />
-                <span>{t('common:paid')}: {formatDateDisplay(payment.paymentDate)}</span>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                <span className="font-medium">{t('common:billingPeriod')}:</span>
-                <br className="sm:hidden" />
-                <span className="sm:ml-2">
-                  {formatDateDisplay(payment.billingPeriod.start)} - {formatDateDisplay(payment.billingPeriod.end)}
-                </span>
-              </div>
+
+            <div className="grid min-w-0 grid-cols-[16px_minmax(0,1fr)] gap-x-2.5 sm:grid-cols-[16px_68px_minmax(0,1fr)] sm:items-center">
+              <CalendarRange className="h-4 w-4 text-muted-foreground/75" />
+              <p className="text-[11px] font-medium leading-4 tracking-[0.03em] text-muted-foreground/80 sm:text-xs">
+                {t('common:billingPeriod')}
+              </p>
+              <p className="col-start-2 break-words text-[13px] leading-5 tabular-nums text-muted-foreground sm:col-start-3 sm:whitespace-nowrap">
+                {formatDateDisplay(payment.billingPeriod.start)} – {formatDateDisplay(payment.billingPeriod.end)}
+              </p>
             </div>
           </div>
 
-          {/* Menu button positioned at top-right */}
-          <div className="shrink-0">
+          <div className="col-start-2 row-start-1 shrink-0 self-start sm:col-start-3 sm:self-center">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-9 w-9 p-0 opacity-70 group-hover:opacity-100 transition-opacity touch-manipulation"
+                  className="h-9 w-9 touch-manipulation rounded-xl p-0 opacity-65 transition-opacity group-hover:opacity-100"
                 >
                   <MoreHorizontal className="h-4 w-4" />
                   <span className="sr-only">Open menu</span>

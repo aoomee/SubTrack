@@ -25,6 +25,8 @@
   "billingCycle": "Billing Cycle",
   "startDate": "Start Date",
   "renewalType": "Renewal Type",
+  "automaticRenewal": "Automatic Renewal",
+  "manualRenewal": "Manual Renewal",
   "website": "Website",
   "today": "Today",
   "days": "days",

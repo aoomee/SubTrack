@@ -20,6 +20,7 @@ import { formatExpensePeriodLabel } from '@/utils/expense-period'
 import {
   Search,
   Calendar,
+  CalendarRange,
   DollarSign,
   CreditCard,
   ChevronLeft,
@@ -130,8 +131,8 @@ export function ExpenseDetailDialog({ isOpen, onClose, periodData }: ExpenseDeta
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[88vh] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[22px] p-5 sm:max-w-[960px] sm:p-6">
+        <DialogHeader className="pb-1">
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
             {formatExpensePeriodLabel(periodData, i18n.resolvedLanguage)} - {t('reports:chart.paymentDetails')}
@@ -142,26 +143,26 @@ export function ExpenseDetailDialog({ isOpen, onClose, periodData }: ExpenseDeta
         </DialogHeader>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
+        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <Card className="rounded-[16px] border-border/80 shadow-none">
+            <CardContent className="p-0 sm:p-0">
+              <div className="flex h-[76px] items-center gap-3 px-4">
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-sm text-muted-foreground">{t('reports:chart.total')}</p>
-                  <p className="font-semibold">{formatCurrencyAmount(periodData.totalSpent, periodData.currency)}</p>
+                  <p className="text-[11px] font-medium tracking-[0.03em] text-muted-foreground/80">{t('reports:chart.total')}</p>
+                  <p className="mt-0.5 text-base font-semibold tabular-nums">{formatCurrencyAmount(periodData.totalSpent, periodData.currency)}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
+          <Card className="rounded-[16px] border-border/80 shadow-none">
+            <CardContent className="p-0 sm:p-0">
+              <div className="flex h-[76px] items-center gap-3 px-4">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-sm text-muted-foreground">{t('reports:chart.payments')}</p>
-                  <p className="font-semibold">
+                  <p className="text-[11px] font-medium tracking-[0.03em] text-muted-foreground/80">{t('reports:chart.payments')}</p>
+                  <p className="mt-0.5 text-base font-semibold tabular-nums">
                     {payments.length}
                   </p>
                 </div>
@@ -169,13 +170,13 @@ export function ExpenseDetailDialog({ isOpen, onClose, periodData }: ExpenseDeta
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
+          <Card className="rounded-[16px] border-border/80 shadow-none">
+            <CardContent className="p-0 sm:p-0">
+              <div className="flex h-[76px] items-center gap-3 px-4">
                 <CreditCard className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-sm text-muted-foreground">{t('reports:chart.dailyAvg')}</p>
-                  <p className="font-semibold">{formatCurrencyAmount(periodData.dailyAverage, periodData.currency)}</p>
+                  <p className="text-[11px] font-medium tracking-[0.03em] text-muted-foreground/80">{t('reports:chart.dailyAvg')}</p>
+                  <p className="mt-0.5 text-base font-semibold tabular-nums">{formatCurrencyAmount(periodData.dailyAverage, periodData.currency)}</p>
                 </div>
               </div>
             </CardContent>
@@ -185,21 +186,21 @@ export function ExpenseDetailDialog({ isOpen, onClose, periodData }: ExpenseDeta
         </div>
 
         {/* Search */}
-        <div className="flex items-center gap-2 mb-4">
+        <div className="mb-4 flex items-center gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder={t('reports:chart.searchSubscriptions')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="h-10 rounded-xl pl-10"
             />
           </div>
         </div>
 
         {/* Payment List */}
-        <div className="h-[400px] w-full border border-gray-200 rounded-md overflow-y-auto">
-          <div className="space-y-2 p-4">
+        <div className="max-h-[400px] min-h-0 w-full overflow-y-auto rounded-[18px] border border-border/80 bg-muted/10 p-2">
+          <div className="space-y-2">
             {isLoading ? (
               <div className="flex h-32 items-center justify-center" aria-busy="true">
                 <LoadingIndicator />
@@ -219,43 +220,40 @@ export function ExpenseDetailDialog({ isOpen, onClose, periodData }: ExpenseDeta
               paginatedPayments.map((payment, index) => (
                 <Card
                   key={payment.id}
-                  className="hover:bg-muted/50 transition-all duration-200 hover:shadow-md animate-in fade-in slide-in-from-bottom-2"
+                  className="group rounded-[16px] border-border/80 shadow-none transition-[background-color,border-color] duration-200 hover:border-primary/15 hover:bg-accent/25 animate-in fade-in slide-in-from-bottom-2"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium">{payment.subscriptionName || t('reports:chart.unknownSubscription')}</h4>
-                          <Badge variant="secondary" className="text-xs">
-                            {payment.subscriptionPlan || t('reports:chart.unknownPlan')}
-                          </Badge>
-                          <Badge className={`text-xs ${getStatusColor(payment.status || 'unknown')}`}>
-                            {payment.status || t('reports:chart.unknown')}
-                          </Badge>
-                          {payment.billingCycle && payment.billingCycle !== 'monthly' && (
-                            <Badge variant="outline" className="text-xs">
-                              {payment.billingCycle}
-                            </Badge>
-                          )}
-                          {(payment.billingCycle === 'yearly' || payment.billingCycle === 'quarterly') && (
-                            <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
-                              {t('reports:chart.allocated')}
-                            </Badge>
-                          )}
+                  <CardContent className="p-0 sm:p-0">
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-3 px-4 py-3.5 sm:h-[68px] sm:grid-cols-[minmax(150px,.9fr)_minmax(0,2fr)_auto] sm:items-center sm:gap-x-5 sm:px-5 sm:py-0">
+                      <div className="min-w-0">
+                        <h4 className="truncate text-sm font-semibold leading-5">{payment.subscriptionName || t('reports:chart.unknownSubscription')}</h4>
+                        <p className="mt-0.5 truncate text-[13px] leading-4 text-muted-foreground">
+                          {payment.subscriptionPlan || t('reports:chart.unknownPlan')}
+                          {payment.billingCycle && ` · ${t(`common:${payment.billingCycle}`, { defaultValue: payment.billingCycle })}`}
+                          {(payment.billingCycle === 'yearly' || payment.billingCycle === 'quarterly') && ` · ${t('reports:chart.allocated')}`}
+                        </p>
+                      </div>
+
+                      <div className="col-span-2 grid min-w-0 gap-1.5 border-t border-border/60 pt-3 sm:col-span-1 sm:gap-1 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0">
+                        <div className="grid min-w-0 grid-cols-[16px_minmax(0,1fr)] gap-x-2.5 sm:grid-cols-[16px_68px_minmax(0,1fr)] sm:items-center">
+                          <Calendar className="h-4 w-4 text-muted-foreground/75" />
+                          <p className="text-[11px] font-medium leading-4 tracking-[0.03em] text-muted-foreground/80 sm:text-xs">{t('common:paid')}</p>
+                          <p className="col-start-2 text-sm font-medium leading-5 tabular-nums text-foreground/80 sm:col-start-3 sm:whitespace-nowrap">{formatDateDisplay(payment.paymentDate)}</p>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>{t('common:paid')}: {formatDateDisplay(payment.paymentDate)}</span>
-                          <span>
-                            {t('common:billing')}: {formatDateDisplay(payment.billingPeriod?.start)} - {formatDateDisplay(payment.billingPeriod?.end)}
-                          </span>
+                        <div className="grid min-w-0 grid-cols-[16px_minmax(0,1fr)] gap-x-2.5 sm:grid-cols-[16px_68px_minmax(0,1fr)] sm:items-center">
+                          <CalendarRange className="h-4 w-4 text-muted-foreground/75" />
+                          <p className="text-[11px] font-medium leading-4 tracking-[0.03em] text-muted-foreground/80 sm:text-xs">{t('common:billingPeriod')}</p>
+                          <p className="col-start-2 break-words text-[13px] leading-5 tabular-nums text-muted-foreground sm:col-start-3 sm:whitespace-nowrap">
+                            {formatDateDisplay(payment.billingPeriod?.start)} – {formatDateDisplay(payment.billingPeriod?.end)}
+                          </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold">
-                          {formatCurrencyAmount(payment.amountPaid, payment.currency)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{payment.currency}</p>
+
+                      <div className="col-start-2 row-start-1 flex min-w-[84px] flex-col items-end justify-center sm:col-start-3 sm:self-center">
+                        <p className="whitespace-nowrap text-[15px] font-semibold leading-5 tabular-nums">{formatCurrencyAmount(payment.amountPaid, payment.currency)}</p>
+                        <Badge className={`mt-1 h-5 rounded-md px-2 text-[11px] font-medium ${getStatusColor(payment.status || 'unknown')}`}>
+                          {t(`common:${payment.status || 'unknown'}`, { defaultValue: payment.status || t('reports:chart.unknown') })}
+                        </Badge>
                       </div>
                     </div>
                   </CardContent>

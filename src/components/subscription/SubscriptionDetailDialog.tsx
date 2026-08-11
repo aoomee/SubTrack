@@ -387,7 +387,7 @@ export function SubscriptionDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md sm:max-w-lg max-h-[85vh] overflow-y-auto p-4">
+      <DialogContent className="max-h-[88vh] max-w-md overflow-y-auto rounded-[22px] p-5 sm:max-w-[640px] sm:p-6">
         <DialogHeader className="pb-3">
           <DialogTitle className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
             <span className="text-base sm:text-lg">{subscription.name}</span>

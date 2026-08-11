@@ -1,271 +1,216 @@
 # SubTrack
 
-[![CI](https://github.com/aoomee/SubTrack/actions/workflows/ci.yml/badge.svg)](https://github.com/aoomee/SubTrack/actions/workflows/ci.yml)
-[![Docker](https://github.com/aoomee/SubTrack/actions/workflows/docker-build.yml/badge.svg)](https://github.com/aoomee/SubTrack/actions/workflows/docker-build.yml)
+<p align="center">
+  <strong>简洁、现代、本地优先的订阅管理与支出追踪工具</strong>
+</p>
 
-[English](README.md) | [简体中文](README.zh-CN.md)
+<p align="center">
+  管理周期订阅、续费日期、支付历史、支出报表与通知提醒。数据保存在你自己的 SQLite 数据库中。
+</p>
 
-A clean, local-first subscription tracker for managing recurring expenses, renewals, payment history, reports, and notifications.
+<p align="center">
+  <a href="https://github.com/aoomee/SubTrack/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/aoomee/SubTrack/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/aoomee/SubTrack/actions/workflows/docker-build.yml"><img alt="Docker" src="https://github.com/aoomee/SubTrack/actions/workflows/docker-build.yml/badge.svg"></a>
+  <a href="https://github.com/aoomee/SubTrack/pkgs/container/subtrack"><img alt="GHCR" src="https://img.shields.io/badge/GHCR-latest-2f6b4f?logo=docker&logoColor=white"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-1f2328"></a>
+</p>
 
-## 📸 Interface Preview
+<p align="center">
+  <a href="#-一键部署">一键部署</a> ·
+  <a href="#-docker-compose">Docker Compose</a> ·
+  <a href="#-镜像标签">镜像标签</a> ·
+  <a href="README.en.md">English</a>
+</p>
 
-### Dashboard - Smart Expense Overview
-![Dashboard](docs/images/dashboard.png)
-*Smart dashboard displaying monthly/yearly expense statistics, upcoming subscription reminders, and categorized expense analysis*
+![SubTrack 仪表板](docs/images/dashboard.png)
 
-### Subscription Management - Complete Service Management
-![Subscription Management](docs/images/subscriptions.png)
-*Complete subscription lifecycle management with support for adding, editing, status management, and batch import*
+## ✨ 界面预览
 
-### Payment History - Detailed Record Tracking
-![Payment History](docs/images/subscriptions-payments.png)
-*Complete payment history records with search support and CRUD operations for orders*
+### 订阅管理
 
-### Monthly Expenses - Trend Analysis
-![Monthly Expenses](docs/images/monthly-expense.png)
-*Monthly expense orders with intuitive display of spending details*
+![订阅管理](docs/images/subscriptions.png)
 
-### Expense Reports - In-depth Data Analysis
-![Expense Reports](docs/images/reports.png)
-*Powerful expense analysis features including trend charts, category statistics, and multi-dimensional data display*
+### 支出报表
 
-### Dark Theme - Modern Interface
-![Dark Theme Reports](docs/images/reports-dark.png)
-*Dark theme support*
+![支出报表](docs/images/reports.png)
 
-## 🌟 Project Features
+## 功能
 
-- **Smart Subscription Management** - Comprehensive subscription lifecycle management with automatic/manual renewal support
-- **Multi-currency Support** - Support for 9 major currencies with optional automatic exchange rate updates
-- **Expense Analysis Reports** - Powerful data analysis and visualization chart functionality
-- **Responsive Design** - Perfect adaptation for desktop and mobile devices
-- **Local-first** - Local data storage based on SQLite for privacy protection
-- **Docker Deployment** - One-click deployment, ready to use out of the box
+| 订阅与支付 | 分析与提醒 | 使用体验 |
+| --- | --- | --- |
+| 订阅增删改查 | 月度、季度、年度报表 | 中英文界面 |
+| 自动与手动续费 | 分类与支付方式统计 | 浅色、深色与系统主题 |
+| 支付历史追踪 | Telegram、邮件通知 | 桌面端与移动端适配 |
+| CSV / JSON 导入导出 | 九种常用货币与汇率更新 | SQLite 本地数据存储 |
 
-## 📊 Feature Overview
+## 🚀 一键部署
 
-### Core Features
-- ✅ **Subscription Management** - Add, edit, delete subscription services
-- ✅ **Smart Dashboard** - Expense overview and upcoming expiration reminders
-- ✅ **Category Statistics** - Expense statistics by category and payment method
-- ✅ **Search & Filter** - Multi-dimensional search and status filtering
-- ✅ **Custom Configuration** - Custom categories and payment methods
+适用于已取得 `root` 权限的 Linux VPS。脚本会自动安装 Docker（如未安装）、拉取最新镜像、创建数据卷，并在结束时显示登录账号和密码。
 
-### Advanced Features
-- ✅ **Automatic Renewal Processing** - Smart detection of expiring subscriptions with automatic updates
-- ✅ **Multi-currency Support** - Real-time conversion for 9 major currencies (USD, EUR, GBP, CAD, AUD, JPY, CNY, TRY, HKD)
-- ✅ **Automatic Exchange Rate Updates** - Integrated with Tianapi for daily exchange rate updates
-- ✅ **Expense Report Dashboard** - Comprehensive expense analysis and visualization
-- ✅ **Payment History Tracking** - Complete payment records and historical analysis
-- ✅ **Data Import/Export** - CSV and JSON format data import/export
-- ✅ **Theme Switching** - Support for light/dark/system themes
-- ✅ **Internationalization (i18n)** - Multi-language support with English and Chinese
-- ✅ **Notification System** - Multi-channel notification system with Telegram and Email support
-
-## 🛠 Technology Stack
-
-### Frontend
-- **Framework**: React 18 + TypeScript
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS + shadcn/ui
-- **State Management**: Zustand
-- **Routing**: React Router
-- **Charts**: Recharts
-- **UI Components**: Radix UI
-- **Internationalization**: React i18next + i18next-browser-languagedetector
-
-### Backend
-- **Runtime**: Node.js
-- **Framework**: Express 5
-- **Database**: SQLite + better-sqlite3
-- **Scheduled Tasks**: node-cron
-- **Authentication**: Session-based login (username/password with bcrypt hashing), all endpoints require login
-- **Notifications**: Telegram Bot API + Email (SMTP with nodemailer)
-- **Session Management**: express-session with HTTP-only cookies
-- **Password Hashing**: bcryptjs for secure password storage
-
-### Deployment
-- **Containerization**: Docker + Docker Compose
-- **Process Management**: dumb-init
-- **Health Checks**: Built-in health check endpoints
-
-## 🚀 Quick Start
-
-### Requirements
-- Node.js 20+
-- Docker & Docker Compose (recommended)
-
-### Docker Deployment (Recommended)
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/aoomee/SubTrack.git
-   cd SubTrack
-   ```
-
-2. **Configure environment variables**
-   ```bash
-   cp .env.production.example .env
-   # Open the .env file to fill in or modify parameters (such as port, database path, Telegram settings, etc.)
-   ```
-
-3. **Choose image source and start the service**
-   
-   **A. Start with the latest published image (fastest and simplest)**
-   ```bash
-   docker compose up -d
-   ```
-   - By default, the latest image (`ghcr.io/aoomee/subtrack:latest`) will be used.
-   - If you want to use a specific tag, edit the `image:` field in `docker-compose.yml`, or pull manually:
-     ```bash
-     docker pull ghcr.io/aoomee/subtrack:<tag>
-     ```
-
-   **B. Build the image locally (optional)**
-   - Comment out the `image` line and uncomment the `build` section in `docker-compose.yml`, then:
-     ```bash
-     docker compose build && docker compose up -d
-     ```
-
-   **C. Run with `docker run`**
-   ```bash
-   docker run -d \
-     --name subscription-manager \
-     -e SESSION_SECRET=your_session_secret \
-     -e ADMIN_USERNAME=admin \
-     -e ADMIN_PASSWORD=your_admin_password \
-     -e PORT=3001 \
-     -v subscription-data:/app/data \
-     -p 3001:3001 \
-     ghcr.io/aoomee/subtrack:latest
-   ```
-   - Add extra `-e` flags for optional settings (e.g. `-e TIANAPI_KEY=...`, `-e BASE_CURRENCY=USD`) as needed.
-   - Prefer secrets management or an `.env` file in production; you can swap the `-e` flags for `--env-file /absolute/path/to/.env` if your environment supports it.
-
-4. **Access the application**
-   - Frontend: http://localhost:3001
-   - The default port can be customized in the `.env` file (if you change it, make sure to update the `ports` setting accordingly)
-
-### Local Development
-
-1. **Install dependencies**
 ```bash
-# Frontend dependencies
-npm install
-
-# Backend dependencies
-cd server
-npm install
-cd ..
+curl -fsSL https://raw.githubusercontent.com/aoomee/SubTrack/main/scripts/install-vps.sh | bash
 ```
 
-2. **Initialize database**
-```bash
-cd server
-npm run db:init
-cd ..
+部署完成后访问：
+
+```text
+http://你的服务器IP:3001
 ```
 
-3. **Start development services**
-```bash
-# Start backend (Terminal 1)
-cd server
-npm start
+自定义端口（示例：8080）：
 
-# Start frontend (Terminal 2)
+```bash
+curl -fsSL https://raw.githubusercontent.com/aoomee/SubTrack/main/scripts/install-vps.sh | env SUBTRACK_HOST_PORT=8080 bash
+```
+
+> 再次执行同一条脚本即可更新镜像。已有 `.env`、管理员密码和 `subtrack-data` 数据卷会被保留。
+
+## 🐳 Docker Compose
+
+下面是可直接复制的完整配置。GitHub 代码块右上角提供一键复制按钮；启动前只需替换两个标有 `CHANGE_ME` 的必填值。
+
+```yaml
+services:
+  subtrack:
+    image: ghcr.io/aoomee/subtrack:latest
+    pull_policy: always
+    container_name: subtrack
+    restart: unless-stopped
+
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      DATABASE_PATH: /app/data/database.sqlite
+
+      # 必填：请替换为随机长字符串，可用 openssl rand -base64 48 生成
+      SESSION_SECRET: "CHANGE_ME_TO_A_LONG_RANDOM_STRING"
+
+      # 必填：管理员登录信息
+      ADMIN_USERNAME: "admin"
+      ADMIN_PASSWORD: "CHANGE_ME_TO_A_STRONG_PASSWORD"
+
+      # 基础设置
+      BASE_CURRENCY: "CNY"
+      SCHEDULER_TIMEZONE: "Asia/Shanghai"
+      SCHEDULER_CHECK_TIME: "09:00"
+      TRUST_PROXY: "1"
+      SESSION_COOKIE_SECURE: "auto"
+      SESSION_COOKIE_SAMESITE: "lax"
+
+      # 可选：需要通知或实时汇率时取消注释并替换占位符
+      # TIANAPI_KEY: "YOUR_TIANAPI_KEY"
+      # TELEGRAM_BOT_TOKEN: "YOUR_TELEGRAM_BOT_TOKEN"
+      # EMAIL_HOST: "smtp.example.com"
+      # EMAIL_PORT: "587"
+      # EMAIL_SECURE: "false"
+      # EMAIL_USER: "YOUR_SMTP_USERNAME"
+      # EMAIL_PASSWORD: "YOUR_SMTP_PASSWORD"
+      # EMAIL_FROM: "SubTrack <no-reply@example.com>"
+
+    ports:
+      - "3001:3001"
+
+    volumes:
+      - subtrack-data:/app/data
+
+    healthcheck:
+      test: ["CMD", "node", "-e", "const http=require('http');const req=http.request({hostname:'localhost',port:3001,path:'/api/health',timeout:2000},res=>process.exit(res.statusCode===200||res.statusCode===401?0:1));req.on('error',()=>process.exit(1));req.end();"]
+      interval: 30s
+      timeout: 3s
+      start_period: 15s
+      retries: 3
+
+volumes:
+  subtrack-data:
+    name: subtrack-data
+```
+
+保存为 `docker-compose.yml` 后启动：
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+### 1Panel / 本地端口模式
+
+如果通过 1Panel 反向代理访问，建议不要把应用端口直接暴露到公网。将上面 Compose 中的端口映射替换为：
+
+```yaml
+ports:
+  - "127.0.0.1:3001:3001"
+```
+
+仓库也提供了专用文件：[docker-compose.1panel.yml](docker-compose.1panel.yml)。在 1Panel 的环境变量中至少设置：
+
+```dotenv
+SESSION_SECRET=CHANGE_ME_TO_A_LONG_RANDOM_STRING
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=CHANGE_ME_TO_A_STRONG_PASSWORD
+```
+
+## 🏷️ 镜像标签
+
+镜像地址：[`ghcr.io/aoomee/subtrack`](https://github.com/aoomee/SubTrack/pkgs/container/subtrack)
+
+| 标签 | 用途 |
+| --- | --- |
+| `latest` | 最新稳定版，跟随默认分支，推荐日常部署 |
+| `main` | `main` 分支的最新构建 |
+| `sha-xxxxxxx` | 固定到某次 Git 提交，适合需要可复现版本的部署 |
+| `v*` | Git 版本标签对应的发布镜像 |
+
+支持 `linux/amd64` 与 `linux/arm64`。
+
+## 常用命令
+
+```bash
+# 查看运行状态
+docker compose ps
+
+# 查看日志
+docker compose logs -f --tail=100
+
+# 更新到最新版
+docker compose pull && docker compose up -d
+
+# 停止服务（不会删除数据卷）
+docker compose down
+```
+
+> 请勿执行 `docker compose down -v`，其中的 `-v` 会删除保存订阅数据的卷。
+
+## 配置与文档
+
+- [生产环境变量示例](.env.production.example)
+- [部署说明](docs/DEPLOYMENT.zh-CN.md)
+- [认证与安全](docs/AUTHENTICATION.md)
+- [通知系统](docs/NOTIFICATION_SYSTEM.md)
+- [API 文档](docs/API_DOCUMENTATION.md)
+
+## 本地开发
+
+需要 Node.js 20+。
+
+```bash
+npm install
 npm run dev
 ```
-Frontend interface: http://localhost:5173
-Backend service: http://localhost:3001/api
 
-## 🔧 Configuration
-
-### Environment Variables
-
-Create a `.env` file and configure the following variables:
-
-**Regarding the generation methods for SESSION_SECRET and ADMIN_PASSWORD_HASH:**
-
-- It is recommended to use a sufficiently long, high-strength random string for `SESSION_SECRET` (you can generate one using `openssl rand -base64 48`).
-- For `ADMIN_PASSWORD_HASH`, it is recommended to have the system automatically generate it upon first startup, or to generate it offline using a bcrypt tool (with a cost factor ≥12).
-- For detailed steps and security recommendations, please refer to [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md#session_secret-and-admin_password_hash-generation-methods).
+另开一个终端启动后端：
 
 ```bash
-# Service port (optional, default 3001)
-PORT=3001
-
-# Base currency (optional, default CNY)
-# Supported: USD, EUR, GBP, CNY, JPY, CAD, AUD, TRY, HKD
-BASE_CURRENCY=CNY
-
-# Database path (used for Docker deployment)
-DATABASE_PATH=/app/data/database.sqlite
-
-# Tianapi API key (optional, for real-time exchange rate updates)
-# Get your key from: https://www.tianapi.com/
-TIANAPI_KEY=your_tianapi_key_here
-
-# Session auth (required)
-SESSION_SECRET=your_random_session_secret
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=your_secure_password
-# ADMIN_PASSWORD_HASH=your_password_hash (optional)
-# TRUST_PROXY=1                     # Set when running behind reverse proxies/CDNs
-# SESSION_COOKIE_SECURE=auto        # Override secure cookie behavior (auto|true|false)
-# SESSION_COOKIE_SAMESITE=lax       # Adjust SameSite policy (lax|strict|none)
-# On first start the server will print a derived ADMIN_PASSWORD_HASH. Copy that hash into your .env and remove ADMIN_PASSWORD when you deploy.
-
-# Telegram notification settings (optional, for Telegram notifications)
-# Get from @BotFather on Telegram
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
-
-# Email notification settings (optional, for Email notifications)
-# SMTP server configuration (Gmail example)
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_SECURE=false
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASSWORD=your_app_password
-EMAIL_FROM=SubTrack <no-reply@example.com>
-EMAIL_LOCALE=zh-CN
-
-# notification settings
-NOTIFICATION_DEFAULT_CHANNELS=["telegram"]
-NOTIFICATION_DEFAULT_LANGUAGE=en
-SCHEDULER_TIMEZONE=UTC
-SCHEDULER_CHECK_TIME=09:00
-NOTIFICATION_DEFAULT_ADVANCE_DAYS=7
-NOTIFICATION_DEFAULT_REPEAT_NOTIFICATION=false
-
-# Container image selection (optional)
-# IMAGE_TAG controls which published image tag docker compose uses
-# e.g. IMAGE_TAG=sha-d025f79 or IMAGE_TAG=main or IMAGE_TAG=latest
-# IMAGE_TAG=latest
-```
-
-### Database Management
-
-```bash
-# Initialize database
+cd server
+npm install
 npm run db:init
-
-# Run migrations
-npm run db:migrate
-
-# Reset database
-npm run db:reset
+npm start
 ```
 
-## 🤝 Contributing
+- 前端：http://localhost:5173
+- 后端：http://localhost:3001/api
 
-1. Fork the project
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+## License
 
-## 📄 License
+SubTrack 基于 MIT 许可的 [huhusmang/Subscription-Management](https://github.com/huhusmang/Subscription-Management) 项目继续开发。
 
-SubTrack is based on the MIT-licensed [huhusmang/Subscription-Management](https://github.com/huhusmang/Subscription-Management) project.
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+本项目采用 [MIT License](LICENSE)。

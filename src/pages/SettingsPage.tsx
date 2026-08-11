@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { LoadingIndicator } from "@/components/ui/loading-indicator"
+import { PageLoading } from "@/components/ui/page-loading"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { useConfirmation } from "@/hooks/use-confirmation"
 import { useToast } from "@/hooks/use-toast"
@@ -62,6 +62,7 @@ export function SettingsPage() {
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null)
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const [isInitializing, setIsInitializing] = useState(true)
 
   const defaultTab = searchParams.get('tab') || 'general'
 
@@ -77,8 +78,12 @@ export function SettingsPage() {
 
   const { subscriptions, resetSubscriptions, addSubscription } = useSubscriptionStore()
 
-  const initializeSettings = useCallback(() => {
-    fetchSettings()
+  const initializeSettings = useCallback(async () => {
+    try {
+      await fetchSettings()
+    } finally {
+      setIsInitializing(false)
+    }
   }, [fetchSettings])
 
   useEffect(() => {
@@ -187,8 +192,8 @@ export function SettingsPage() {
     onConfirm: handleResetData,
   })
 
-  if (isLoading) {
-    return <div className="flex min-h-[calc(100dvh-10rem)] items-center justify-center" aria-busy="true"><LoadingIndicator size="lg" /></div>
+  if (isInitializing || isLoading) {
+    return <PageLoading />
   }
 
   return (

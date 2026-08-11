@@ -16,6 +16,7 @@ import { formatCurrencyAmount } from "@/utils/currency"
 import { transformPaymentsFromApi, type PaymentRecord, type PaymentRecordApi } from '@/utils/dataTransform'
 import { apiClient } from '@/utils/api-client'
 import { formatDateDisplay } from '@/utils/date'
+import { formatExpensePeriodLabel } from '@/utils/expense-period'
 import {
   Search,
   Calendar,
@@ -37,7 +38,7 @@ interface ExpenseDetailDialogProps {
 }
 
 export function ExpenseDetailDialog({ isOpen, onClose, periodData }: ExpenseDetailDialogProps) {
-  const { t } = useTranslation(['reports', 'common'])
+  const { t, i18n } = useTranslation(['reports', 'common'])
   const [payments, setPayments] = useState<PaymentRecord[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -133,7 +134,7 @@ export function ExpenseDetailDialog({ isOpen, onClose, periodData }: ExpenseDeta
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            {periodData.period} - {t('reports:chart.paymentDetails')}
+            {formatExpensePeriodLabel(periodData, i18n.resolvedLanguage)} - {t('reports:chart.paymentDetails')}
           </DialogTitle>
           <DialogDescription>
             {t('reports:chart.viewPaymentRecords')}

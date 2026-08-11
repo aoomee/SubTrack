@@ -6,5 +6,7 @@
   "dashboard": "Dashboard",
   "expenseReports": "Expense Reports",
   "notifications": "Notification History",
-  "logout": "Logout"
+  "logout": "Logout",
+  "collapseSidebar": "Collapse sidebar",
+  "expandSidebar": "Expand sidebar"
 }

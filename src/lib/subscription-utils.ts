@@ -1,4 +1,5 @@
 import { BillingCycle, Subscription, SubscriptionStatus } from '@/store/subscriptionStore'
+import { getAppLocale } from '@/utils/locale'
 
 
 
@@ -75,7 +76,7 @@ export function formatDate(dateString: string): string {
     day: 'numeric'
   }
   
-  return new Date(dateString).toLocaleDateString(undefined, options)
+  return new Date(dateString).toLocaleDateString(getAppLocale(), options)
 }
 
 /**

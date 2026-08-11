@@ -15,7 +15,6 @@ import { Subscription, useSubscriptionStore } from "@/store/subscriptionStore"
 import {
   formatDate,
   daysUntil,
-  getBillingCycleLabel,
   getCategoryLabel,
   getPaymentMethodLabel
 } from "@/lib/subscription-utils"
@@ -123,7 +122,9 @@ export function SubscriptionCard({
           <div className="text-right sm:text-left">
             <p className="text-[15px] font-semibold tabular-nums">{formatWithUserCurrency(amount, currency)}</p>
             <div className="mt-1">
-              <Badge variant={getBillingCycleBadgeVariant()}>{getBillingCycleLabel(billingCycle)}</Badge>
+              <Badge variant={getBillingCycleBadgeVariant()}>
+                {t(`common:${billingCycle}`, { defaultValue: billingCycle })}
+              </Badge>
             </div>
           </div>
 

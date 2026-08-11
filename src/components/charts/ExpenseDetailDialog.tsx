@@ -217,11 +217,10 @@ export function ExpenseDetailDialog({ isOpen, onClose, periodData }: ExpenseDeta
                 {t('reports:chart.noPaymentsFoundPeriod')}
               </div>
             ) : (
-              paginatedPayments.map((payment, index) => (
+              paginatedPayments.map((payment) => (
                 <Card
                   key={payment.id}
-                  className="group rounded-[16px] border-border/80 shadow-none transition-[background-color,border-color] duration-200 hover:border-primary/15 hover:bg-accent/25 animate-in fade-in slide-in-from-bottom-2"
-                  style={{ animationDelay: `${index * 50}ms` }}
+                  className="group rounded-[16px] border-border/80 shadow-none transition-[background-color,border-color] duration-200 hover:border-primary/15 hover:bg-accent/25"
                 >
                   <CardContent className="p-0 sm:p-0">
                     <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-3 px-4 py-3.5 sm:h-[68px] sm:grid-cols-[minmax(150px,.9fr)_minmax(0,2fr)_auto] sm:items-center sm:gap-x-5 sm:px-5 sm:py-0">

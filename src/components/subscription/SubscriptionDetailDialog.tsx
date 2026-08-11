@@ -225,25 +225,25 @@ const ContentComponent = ({
         <div className="pl-6 space-y-2">
           <div className="flex items-center justify-between gap-2">
             <span className="text-sm">{t('subscription:details.startDate')}</span>
-            <span className="text-sm">{formatDate(startDate)}</span>
+            <span className="text-right text-sm tabular-nums">{formatDate(startDate)}</span>
           </div>
           {lastBillingDate && (
             <div className="flex items-center justify-between gap-2">
               <span className="text-sm">{t('subscription:details.lastPayment')}</span>
-              <span className="text-sm">{formatDate(lastBillingDate)}</span>
+              <span className="text-right text-sm tabular-nums">{formatDate(lastBillingDate)}</span>
             </div>
           )}
           <div className="flex items-center justify-between gap-2">
             <span className="text-sm">{t('subscription:details.nextPayment')}</span>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span className={`text-sm ${isExpiringSoon ? "text-destructive font-medium" : ""}`}>
-                {formatDate(nextBillingDate)}
-              </span>
+            <div className="flex shrink-0 items-center justify-end gap-2">
               {isExpiringSoon && status === 'active' && (
-                <Badge variant={getBadgeVariant()} className="text-xs h-5 shrink-0">
+                <Badge variant={getBadgeVariant()} className="h-5 shrink-0 whitespace-nowrap rounded-md px-2 text-xs">
                   {daysLeft === 0 ? t('common:today') : `${daysLeft} ${t('common:days')}`}
                 </Badge>
               )}
+              <span className={`text-right text-sm tabular-nums ${isExpiringSoon ? "text-destructive font-medium" : ""}`}>
+                {formatDate(nextBillingDate)}
+              </span>
             </div>
           </div>
         </div>
@@ -313,7 +313,7 @@ const ContentComponent = ({
               onEdit(id)
               onOpenChange(false)
             }}
-            className="w-full h-10 text-sm"
+            className="h-10 w-full justify-center text-center text-sm leading-none"
             size="default"
           >
             {t('subscription:details.editSubscription')}
@@ -326,10 +326,9 @@ const ContentComponent = ({
               onManualRenew(id)
               onOpenChange(false)
             }}
-            className="w-full gap-2 h-10 text-sm"
+            className="h-10 w-full justify-center text-center text-sm leading-none"
             size="default"
           >
-            <RotateCcw className="h-4 w-4" />
             {t('subscription:details.renewNow')}
           </Button>
         )}
@@ -387,7 +386,7 @@ export function SubscriptionDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88vh] max-w-md overflow-y-auto rounded-[22px] p-5 sm:max-w-[640px] sm:p-6">
+      <DialogContent className="max-h-[88vh] max-w-md overflow-y-auto rounded-[22px] p-5 sm:max-w-[760px] sm:p-6">
         <DialogHeader className="pb-3">
           <DialogTitle className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
             <span className="text-base sm:text-lg">{subscription.name}</span>

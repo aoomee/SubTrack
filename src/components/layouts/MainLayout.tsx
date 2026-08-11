@@ -17,6 +17,7 @@ import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/store/authStore'
 import { Button as UIButton } from '@/components/ui/button'
+import { SubTrackBrand } from '@/components/brand/SubTrackBrand'
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -68,8 +69,8 @@ export function MainLayout({ children }: MainLayoutProps) {
       <div className="min-h-[100dvh] bg-background">
         <div className="flex min-h-[100dvh] flex-col">
           <header className="flex h-20 items-center justify-between px-6 sm:px-10">
-            <Link to="/" className="brand-wordmark" aria-label="SubTrack home">
-              SUBTRACK
+            <Link to="/" className="brand-link" aria-label="SubTrack home">
+              <SubTrackBrand />
             </Link>
             <div className="flex items-center gap-2">
               <LanguageSwitcher />
@@ -89,8 +90,8 @@ export function MainLayout({ children }: MainLayoutProps) {
       <aside className="sticky top-0 hidden h-[100dvh] flex-col border-r bg-sidebar px-3 py-6 md:flex">
         <div className={`flex items-center gap-2 ${isSidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
           {!isSidebarCollapsed && (
-            <Link to="/" className="brand-wordmark px-3" aria-label="SubTrack home">
-              SUBTRACK
+            <Link to="/" className="brand-link px-3" aria-label="SubTrack home">
+              <SubTrackBrand />
             </Link>
           )}
           <UIButton
@@ -154,7 +155,9 @@ export function MainLayout({ children }: MainLayoutProps) {
 
       <div className="min-w-0">
         <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b bg-background/95 px-5 backdrop-blur md:hidden">
-          <Link to="/" className="brand-wordmark" aria-label="SubTrack home">SUBTRACK</Link>
+          <Link to="/" className="brand-link" aria-label="SubTrack home">
+            <SubTrackBrand />
+          </Link>
           <div className="flex items-center gap-1">
             <LanguageSwitcher />
             <ModeToggle />

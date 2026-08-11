@@ -7,7 +7,6 @@ import { Pagination } from '@/components/ui/pagination';
 import { SearchInput } from '@/components/ui/search-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-  Loader2,
   RefreshCw,
   BarChart3,
   Search,
@@ -21,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 import { notificationApi, NotificationHistory as NotificationHistoryType, NotificationStats } from '@/services/notificationApi';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/utils/date';
+import { LoadingIndicator } from '@/components/ui/loading-indicator';
 
 
 // Helper function to parse and format message content (supports zh-CN and en templates)
@@ -353,8 +353,8 @@ export const NotificationHistory: React.FC = () => {
         </CardHeader>
         <CardContent>
           {historyLoading ? (
-            <div className="flex items-center justify-center py-12 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
+            <div className="flex items-center justify-center py-12">
+              <LoadingIndicator size="md" />
             </div>
           ) : filteredHistory.length === 0 ? (
             <Alert>

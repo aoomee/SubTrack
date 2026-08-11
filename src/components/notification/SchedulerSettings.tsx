@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, Play, Settings, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { schedulerApi, SchedulerSettings as SchedulerSettingsType, SchedulerStatus } from '@/services/schedulerApi';
+import { LoadingIndicator } from '@/components/ui/loading-indicator';
 
 export function SchedulerSettings() {
   const { t } = useTranslation('notification');
@@ -97,11 +98,11 @@ export function SchedulerSettings() {
   if (loading) {
     return (
       <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center">
-            <div className="text-muted-foreground">{t('scheduler.loading')}</div>
-          </div>
-        </CardContent>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-center">
+            <LoadingIndicator size="md" />
+            </div>
+          </CardContent>
       </Card>
     );
   }

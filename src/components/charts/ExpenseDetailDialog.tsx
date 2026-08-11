@@ -23,9 +23,9 @@ import {
   CreditCard,
   ChevronLeft,
   ChevronRight,
-  Loader2
 } from "lucide-react"
 import { ExpenseInfoData } from "./ExpenseInfoCards"
+import { LoadingIndicator } from "@/components/ui/loading-indicator"
 
 // The API client already extracts the data field, so we get the array directly
 type PaymentHistoryApiResponse = PaymentRecordApi[]
@@ -200,9 +200,8 @@ export function ExpenseDetailDialog({ isOpen, onClose, periodData }: ExpenseDeta
         <div className="h-[400px] w-full border border-gray-200 rounded-md overflow-y-auto">
           <div className="space-y-2 p-4">
             {isLoading ? (
-              <div className="flex items-center justify-center h-32">
-                <Loader2 className="h-6 w-6 animate-spin" />
-                <span className="ml-2">{t('common:loadingPayments')}</span>
+              <div className="flex h-32 items-center justify-center" aria-busy="true">
+                <LoadingIndicator />
               </div>
             ) : error ? (
               <div className="text-center text-destructive p-4">

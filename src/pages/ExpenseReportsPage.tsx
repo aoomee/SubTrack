@@ -29,6 +29,7 @@ import type { PaymentRecordApi } from '@/utils/dataTransform'
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { LoadingIndicator } from "@/components/ui/loading-indicator"
 
 
 export function ExpenseReportsPage() {
@@ -379,7 +380,6 @@ export function ExpenseReportsPage() {
         <div>
           {isLoadingExpenseInfo ? (
             <div>
-              <p className="text-sm text-muted-foreground mb-4">{t('loadingExpenseOverview')}</p>
               <ExpenseInfoCards
                 monthlyData={[]}
                 quarterlyData={[]}
@@ -415,11 +415,8 @@ export function ExpenseReportsPage() {
       {/* Loading and Error States */}
       {isLoadingExpenses && (
         <Card>
-          <CardContent className="flex items-center justify-center h-32">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-              <p className="text-sm text-muted-foreground">{t('loadingExpenseData')}</p>
-            </div>
+          <CardContent className="flex h-32 items-center justify-center" aria-busy="true">
+            <LoadingIndicator />
           </CardContent>
         </Card>
       )}
@@ -453,11 +450,8 @@ export function ExpenseReportsPage() {
                 />
                 {isLoadingCategoryExpenses ? (
                   <Card>
-                    <CardContent className="flex items-center justify-center h-[400px]">
-                      <div className="text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                        <p className="text-sm text-muted-foreground">{t('loadingCategoryData')}</p>
-                      </div>
+                    <CardContent className="flex h-[400px] items-center justify-center" aria-busy="true">
+                      <LoadingIndicator />
                     </CardContent>
                   </Card>
                 ) : categoryExpenseError ? (
@@ -481,11 +475,8 @@ export function ExpenseReportsPage() {
 
             <TabsContent value="yearly" className="space-y-4">
               {isLoadingYearlyExpenses ? (
-                <div className="flex items-center justify-center h-32">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                    <p className="text-sm text-muted-foreground">{t('loadingYearlyData')}</p>
-                  </div>
+                <div className="flex h-32 items-center justify-center" aria-busy="true">
+                  <LoadingIndicator />
                 </div>
               ) : yearlyExpenseError ? (
                 <div className="flex items-center justify-center h-32">
@@ -503,11 +494,8 @@ export function ExpenseReportsPage() {
                   />
                   {isLoadingYearlyCategoryExpenses ? (
                     <Card>
-                      <CardContent className="flex items-center justify-center h-[400px]">
-                        <div className="text-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                          <p className="text-sm text-muted-foreground">{t('loadingYearlyCategoryData')}</p>
-                        </div>
+                      <CardContent className="flex h-[400px] items-center justify-center" aria-busy="true">
+                        <LoadingIndicator />
                       </CardContent>
                     </Card>
                   ) : yearlyCategoryExpenseError ? (

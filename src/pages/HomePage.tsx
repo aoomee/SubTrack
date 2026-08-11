@@ -34,6 +34,7 @@ import { RecentlyPaid } from "@/components/dashboard/RecentlyPaid"
 import { CategoryBreakdown } from "@/components/dashboard/CategoryBreakdown"
 import { ImportModal } from "@/components/imports/ImportModal"
 import { ExpenseTrendChart } from "@/components/charts/ExpenseTrendChart"
+import { LoadingIndicator } from "@/components/ui/loading-indicator"
 
 function HomePage() {
   const { toast } = useToast()
@@ -190,11 +191,8 @@ function HomePage() {
 
   if (isLoading || isLoadingSpending) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-16rem)]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg font-medium">{t('common:loading')} {t('common:subscriptions')}...</p>
-        </div>
+      <div className="flex min-h-[calc(100dvh-10rem)] items-center justify-center" aria-busy="true">
+        <LoadingIndicator size="lg" />
       </div>
     )
   }

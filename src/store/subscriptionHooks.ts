@@ -83,6 +83,8 @@ export const useSpendingByCategory = () => {
               return total + convertedAmount
             case 'quarterly':
               return total + (convertedAmount * 4)
+            case 'semiannual':
+              return total + (convertedAmount * 2)
             default:
               return total
           }

@@ -18,12 +18,11 @@ import {
   useSubscriptionStore,
   Subscription
 } from "@/store/subscriptionStore"
+import { useSubscriptionStats } from "@/store/subscriptionHooks"
 import { useSettingsStore } from "@/store/settingsStore"
 import { formatCurrencyAmount } from "@/utils/currency"
 import {
   getApiMonthlyExpenses,
-  getCurrentMonthSpending,
-  getCurrentYearSpending,
   type MonthlyExpense,
 } from "@/lib/expense-analytics-api"
 
@@ -46,7 +45,6 @@ function HomePage() {
   const [isInitializing, setIsInitializing] = useState(true)
   
   const {
-    subscriptions,
     bulkAddSubscriptions,
     updateSubscription,
     fetchSubscriptions,
@@ -58,9 +56,9 @@ function HomePage() {
     isLoading
   } = useSubscriptionStore()
 
-  // State for API-based spending data
-  const [monthlySpending, setMonthlySpending] = useState<number>(0)
-  const [yearlySpending, setYearlySpending] = useState<number>(0)
+  // Projected recurring costs come directly from active subscriptions.
+  // Historical trend data continues to come from successful payment records.
+  const { totalMonthlySpending, totalYearlySpending, activeCount } = useSubscriptionStats()
   const [monthlyTrend, setMonthlyTrend] = useState<MonthlyExpense[]>([])
   const [isLoadingSpending, setIsLoadingSpending] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -87,14 +85,7 @@ function HomePage() {
       try {
         const endDate = new Date()
         const startDate = new Date(endDate.getFullYear(), endDate.getMonth() - 6, 1)
-        const [currentMonth, currentYear, trend] = await Promise.all([
-          getCurrentMonthSpending(userCurrency),
-          getCurrentYearSpending(userCurrency),
-          getApiMonthlyExpenses(startDate, endDate, userCurrency),
-        ])
-
-        setMonthlySpending(currentMonth)
-        setYearlySpending(currentYear)
+        const trend = await getApiMonthlyExpenses(startDate, endDate, userCurrency)
         setMonthlyTrend(trend)
       } catch (error) {
         console.error('Failed to load spending data:', error)
@@ -140,13 +131,7 @@ function HomePage() {
       if (userCurrency) {
         const endDate = new Date()
         const startDate = new Date(endDate.getFullYear(), endDate.getMonth() - 6, 1)
-        const [currentMonth, currentYear, trend] = await Promise.all([
-          getCurrentMonthSpending(userCurrency),
-          getCurrentYearSpending(userCurrency),
-          getApiMonthlyExpenses(startDate, endDate, userCurrency),
-        ])
-        setMonthlySpending(currentMonth)
-        setYearlySpending(currentYear)
+        const trend = await getApiMonthlyExpenses(startDate, endDate, userCurrency)
         setMonthlyTrend(trend)
       }
 
@@ -230,19 +215,19 @@ function HomePage() {
             >
               <StatCard
                 title={t('common:monthlySpending')}
-                value={formatCurrencyAmount(monthlySpending, userCurrency)}
+                value={formatCurrencyAmount(totalMonthlySpending, userCurrency)}
                 divider
                 align="center"
               />
               <StatCard
                 title={t('common:yearlySpending')}
-                value={formatCurrencyAmount(yearlySpending, userCurrency)}
+                value={formatCurrencyAmount(totalYearlySpending, userCurrency)}
                 divider
                 align="center"
               />
               <StatCard
                 title={t('common:activeSubscriptions')}
-                value={subscriptions.filter(sub => sub.status === "active").length}
+                value={activeCount}
                 description={t('common:totalServices')}
                 align="center"
               />

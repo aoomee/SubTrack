@@ -61,6 +61,9 @@ export const useMonthlyExpenses = (months: number = 12) => {
             case 'quarterly':
               tempDate.setMonth(tempDate.getMonth() + 3)
               break
+            case 'semiannual':
+              tempDate.setMonth(tempDate.getMonth() + 6)
+              break
             case 'yearly':
               tempDate.setFullYear(tempDate.getFullYear() + 1)
               break

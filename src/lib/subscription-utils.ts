@@ -356,8 +356,8 @@ export function parseCSVToSubscriptions(
       }
 
       // Validate billing cycle
-      if (!['monthly', 'yearly', 'quarterly'].includes(subscription.billingCycle as string)) {
-        throw new Error(`Invalid billingCycle value: ${subscription.billingCycle}. Must be 'monthly', 'yearly', or 'quarterly'.`)
+      if (!['monthly', 'yearly', 'quarterly', 'semiannual'].includes(subscription.billingCycle as string)) {
+        throw new Error(`Invalid billingCycle value: ${subscription.billingCycle}. Must be 'monthly', 'yearly', 'quarterly', or 'semiannual'.`)
       }
 
       // Validate renewal type (optional field with default)

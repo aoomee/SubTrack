@@ -89,6 +89,12 @@ class MonthlyCategorySummaryService {
             const payments = paymentsStmt.all(startDate, endDate);
             
             if (payments.length === 0) {
+                // A payment may have been deleted or moved to another month.
+                // Clear any previously cached aggregate so reports cannot show stale data.
+                this.db.prepare(`
+                    DELETE FROM monthly_category_summary
+                    WHERE year = ? AND month = ?
+                `).run(year, month);
                 logger.info(`No payments found for ${year}-${month.toString().padStart(2, '0')}`);
                 return;
             }

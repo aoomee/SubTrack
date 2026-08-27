@@ -3,14 +3,18 @@
 import * as React from "react"
 import { ThemeProvider as NextThemesProvider } from "next-themes"
 import { useSettingsStore } from "@/store/settingsStore"
+import { useAuthStore } from "@/store/authStore"
 
 function ThemeSync() {
   const { fetchSettings } = useSettingsStore()
+  const user = useAuthStore(state => state.user)
 
   React.useEffect(() => {
-    // Fetch settings on app start to sync with backend
-    fetchSettings()
-  }, [fetchSettings])
+    // Backend settings are protected; wait until authentication succeeds.
+    if (user) {
+      fetchSettings()
+    }
+  }, [fetchSettings, user])
 
   return null
 }

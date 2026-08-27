@@ -22,11 +22,10 @@ class SubscriptionRenewalScheduler {
         }
 
         // 每天凌晨2点执行自动续费和过期处理
-        this.dailyTask = cron.schedule('0 2 * * *', async () => {
+        this.dailyTask = cron.createTask('0 2 * * *', async () => {
             logger.info('Starting daily subscription maintenance...');
             await this.runDailyMaintenance();
         }, {
-            scheduled: false,
             timezone: "Asia/Shanghai" // 可以根据需要调整时区
         });
 

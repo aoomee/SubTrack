@@ -8,9 +8,6 @@ function createSubscriptionRoutes(db) {
     // GET all subscriptions (Public)
     router.get('/', controller.getAllSubscriptions);
 
-    // GET single subscription by ID (Public)
-    router.get('/:id', controller.getSubscriptionById);
-
     // GET subscription statistics (Public)
     router.get('/stats/overview', controller.getSubscriptionStats);
 
@@ -28,6 +25,11 @@ function createSubscriptionRoutes(db) {
 
     // GET search subscriptions (Public)
     router.get('/search', controller.searchSubscriptions);
+
+    // GET single subscription by ID (Public)
+    // Keep parameterized routes after fixed paths so values such as "search"
+    // are not interpreted as subscription IDs.
+    router.get('/:id', controller.getSubscriptionById);
 
     // GET subscription payment history (Public)
     router.get('/:id/payment-history', controller.getSubscriptionPaymentHistory);

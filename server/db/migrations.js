@@ -1,7 +1,7 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
-const bcrypt = require('bcryptjs');
+const { resolveAdminPasswordHashFromEnv } = require('../config/authCredentials');
 
 class DatabaseMigrations {
   constructor(dbPath) {
@@ -611,16 +611,10 @@ class DatabaseMigrations {
 
     if (!existingAdmin) {
       const now = new Date().toISOString();
-      const configuredHash = process.env.ADMIN_PASSWORD_HASH;
-      const configuredPassword = process.env.ADMIN_PASSWORD;
+      const { passwordHash, source } = resolveAdminPasswordHashFromEnv();
 
-      let passwordHash = configuredHash;
-      if (!passwordHash) {
-        if (!configuredPassword) {
-          console.warn('⚠️  ADMIN_PASSWORD or ADMIN_PASSWORD_HASH not provided. Using default password "admin" for seeding.');
-        }
-        const passwordToHash = configuredPassword || 'admin';
-        passwordHash = bcrypt.hashSync(passwordToHash, 12);
+      if (source === 'default') {
+        console.warn('⚠️  ADMIN_PASSWORD or ADMIN_PASSWORD_HASH not provided. Using development-only default password "admin" for seeding.');
       }
 
       this.db.prepare(`
@@ -630,11 +624,10 @@ class DatabaseMigrations {
 
       console.log(`✅ Seeded default admin user \`${adminUsername}\``);
 
-      if (!configuredHash && configuredPassword) {
-        const generatedHash = passwordHash;
+      if (source === 'password') {
         console.warn('⚠️  Generated ADMIN_PASSWORD_HASH from ADMIN_PASSWORD during migration.');
         console.warn('   Consider storing the following hash and removing ADMIN_PASSWORD for improved security:');
-        console.warn(`   ADMIN_PASSWORD_HASH=${generatedHash}`);
+        console.warn(`   ADMIN_PASSWORD_HASH=${passwordHash}`);
       }
     } else {
       const updates = {};

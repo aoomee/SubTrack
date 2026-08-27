@@ -11,6 +11,7 @@ import {
 } from './dropdown-menu'; // 引入 DropdownMenu
 import { cn } from '@/lib/utils';
 import { apiClient } from '@/utils/api-client';
+import { useAuthStore } from '@/store/authStore';
 
 const languages = [
   { code: 'en', name: 'English' },
@@ -19,6 +20,7 @@ const languages = [
 
 export function LanguageSwitcher() {
   const { i18n } = useTranslation();
+  const user = useAuthStore(state => state.user);
 
   const handleLanguageChange = async (language: string) => {
     i18n.changeLanguage(language);
@@ -35,6 +37,8 @@ export function LanguageSwitcher() {
 
   // 初始化时从后端读取语言并同步到 i18n
   useEffect(() => {
+    if (!user) return;
+
     const loadLanguage = async () => {
       try {
         const res = await apiClient.get<{ language: string; languageName: string }>(
@@ -49,7 +53,7 @@ export function LanguageSwitcher() {
       }
     };
     loadLanguage();
-  }, [i18n]);
+  }, [i18n, user]);
 
   return (
     <DropdownMenu>

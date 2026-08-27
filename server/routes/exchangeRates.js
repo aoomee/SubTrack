@@ -9,9 +9,6 @@ function createExchangeRateRoutes(db) {
     // GET all exchange rates (Public)
     router.get('/', controller.getAllExchangeRates);
 
-    // GET specific exchange rate (Public)
-    router.get('/:from/:to', controller.getExchangeRate);
-
     // GET rates for specific currency (Public)
     router.get('/currency/:currency', controller.getRatesForCurrency);
 
@@ -30,6 +27,11 @@ function createExchangeRateRoutes(db) {
             baseCurrency: getBaseCurrency()
         });
     });
+
+    // GET specific exchange rate (Public)
+    // Keep this generic two-parameter route last so /currency/:currency is
+    // dispatched to the intended handler.
+    router.get('/:from/:to', controller.getExchangeRate);
 
     return router;
 }

@@ -6,8 +6,8 @@ WORKDIR /app
 # Copy frontend package files first (for better caching)
 COPY package*.json ./
 
-# Install frontend dependencies
-RUN npm install
+# Install the exact dependency versions from package-lock.json
+RUN npm ci
 
 # Copy configuration files
 COPY tsconfig*.json ./
@@ -20,6 +20,7 @@ COPY env.d.ts ./
 
 # Copy frontend source code (most likely to change)
 COPY src/ ./src/
+COPY public/ ./public/
 
 # Build frontend
 RUN npm run build
@@ -35,8 +36,8 @@ WORKDIR /app/server
 # Copy backend package files
 COPY server/package*.json ./
 
-# Install backend dependencies (production only)
-RUN npm install --omit=dev
+# Install the exact production dependency versions from package-lock.json
+RUN npm ci --omit=dev
 
 # Production stage
 FROM node:20-alpine AS production

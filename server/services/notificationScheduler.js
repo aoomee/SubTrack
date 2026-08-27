@@ -52,11 +52,10 @@ class NotificationScheduler {
             const cronExpression = `${minute} ${hour} * * *`;
 
             // 创建新的定时任务
-            this.job = cron.schedule(cronExpression, async () => {
+            this.job = cron.createTask(cronExpression, async () => {
                 console.log(`🔔 Starting notification check at ${settings.notification_check_time}...`);
                 await this.checkAndSendNotifications();
             }, {
-                scheduled: false,
                 timezone: settings.timezone
             });
 

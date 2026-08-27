@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const { rateLimit } = require('express-rate-limit');
 const path = require('path');
 const ExchangeRateScheduler = require('./services/exchangeRateScheduler');
 const SubscriptionRenewalScheduler = require('./services/subscriptionRenewalScheduler');
@@ -10,6 +12,7 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 // Import modules
 const { initializeDatabase } = require('./config/database');
+const { createCorsOptions } = require('./config/cors');
 const { createSessionMiddleware } = require('./middleware/session');
 const { requireLogin } = require('./middleware/requireLogin');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
@@ -48,12 +51,18 @@ if (trustProxyConfig !== undefined) {
 }
 
 // Middleware
-app.use(cors({ origin: true, credentials: true }));
+app.use(helmet({
+  // The frontend currently defines its CSP in index.html because it contains
+  // inline bootstrap styles and scripts.
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+}));
+app.use(cors(createCorsOptions()));
 app.use(express.json());
-app.use(createSessionMiddleware());
 
 // Database setup
 const db = initializeDatabase();
+app.use(createSessionMiddleware(db));
 
 // Initialize exchange rate scheduler
 const exchangeRateScheduler = new ExchangeRateScheduler(db, process.env.TIANAPI_KEY);
@@ -80,6 +89,15 @@ const apiRouter = express.Router();
 const protectedApiRouter = express.Router();
 
 // Auth routes (no login required)
+const loginLimiter = rateLimit({
+  windowMs: Number(process.env.LOGIN_RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  limit: Number(process.env.LOGIN_RATE_LIMIT_MAX) || 10,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  message: { message: 'Too many login attempts. Please try again later.' },
+});
+app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth', createAuthRoutes(db));
 
 // Apply session auth to all API routes

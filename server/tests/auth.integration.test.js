@@ -8,7 +8,7 @@ const Database = require('better-sqlite3');
 
 const DatabaseMigrations = require('../db/migrations');
 const createAuthRoutes = require('../routes/auth');
-const { createAdminUserManager } = require('../config/authCredentials');
+const { createAdminUserManager, resolveAdminPasswordHashFromEnv } = require('../config/authCredentials');
 
 function createTempDatabasePath() {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'subscription-db-'));
@@ -31,6 +31,7 @@ describe('Admin authentication and migrations', () => {
         ADMIN_USERNAME: process.env.ADMIN_USERNAME,
         ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
         ADMIN_PASSWORD_HASH: process.env.ADMIN_PASSWORD_HASH,
+        NODE_ENV: process.env.NODE_ENV,
     };
 
     afterAll(() => {
@@ -51,12 +52,29 @@ describe('Admin authentication and migrations', () => {
         } else {
             process.env.ADMIN_PASSWORD_HASH = originalEnv.ADMIN_PASSWORD_HASH;
         }
+
+        if (originalEnv.NODE_ENV === undefined) {
+            delete process.env.NODE_ENV;
+        } else {
+            process.env.NODE_ENV = originalEnv.NODE_ENV;
+        }
     });
 
     beforeEach(() => {
+        process.env.NODE_ENV = 'test';
         process.env.ADMIN_USERNAME = 'admin';
         process.env.ADMIN_PASSWORD = 'super-secret';
         delete process.env.ADMIN_PASSWORD_HASH;
+    });
+
+    test('production refuses to create an administrator without configured credentials', () => {
+        process.env.NODE_ENV = 'production';
+        delete process.env.ADMIN_PASSWORD;
+        delete process.env.ADMIN_PASSWORD_HASH;
+
+        expect(() => resolveAdminPasswordHashFromEnv()).toThrow(
+            'ADMIN_PASSWORD or ADMIN_PASSWORD_HASH is required'
+        );
     });
 
     test('migration creates users table and seeds admin user', async () => {

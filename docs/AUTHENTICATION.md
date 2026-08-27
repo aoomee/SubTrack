@@ -4,7 +4,7 @@
 
 ## 高层设计
 
-- **基于会话的认证**：后端使用 `express-session` 在成功登录后颁发仅限HTTP的Cookie。该Cookie仅存储会话ID，用户数据保存在服务器端的会话存储（默认情况下为内存存储）。
+- **基于会话的认证**：后端使用 `express-session` 在成功登录后颁发仅限HTTP的Cookie。该Cookie仅存储会话ID；生产环境会话保存在同一个 SQLite 数据库中，开发环境使用内存存储。
 - **单一管理员账户**：通过环境变量配置一个管理员用户。所有发送到 `/api/**` 或 `/api/protected/**` 的请求必须来自经过认证的会话。
 - **前端保护**：React应用在启动时获取当前会话（`GET /api/auth/me`），并在检查完成之前阻止所有受保护的路由。
 - **通知系统集成**：所有通知相关的配置和管理功能都通过相同的会话认证系统进行保护，确保只有认证用户才能配置和使用通知功能。
@@ -27,7 +27,10 @@ ADMIN_PASSWORD=your_secure_password
 
 其他注意事项：
 
-- `SESSION_SECRET` 必须是一个长随机字符串，以确保会话Cookie无法被伪造。如果缺失，后端会为每个进程生成一个临时密钥并打印警告；这样会导致每次重启时会话失效，因此建议明确设置。
+- `SESSION_SECRET` 必须是一个长随机字符串，以确保会话Cookie无法被伪造。生产环境缺失时服务会拒绝启动；开发与测试环境仍会生成临时密钥。
+- 生产环境首次创建管理员时必须提供 `ADMIN_PASSWORD` 或 `ADMIN_PASSWORD_HASH`，不会再回退到 `admin/admin`。
+- 如需让不同域名上的前端调用 API，可使用逗号分隔的 `CORS_ORIGINS` 明确列出允许的来源；同源部署无需配置。
+- 登录接口默认限制为每个客户端每15分钟10次失败，可通过 `LOGIN_RATE_LIMIT_MAX` 和 `LOGIN_RATE_LIMIT_WINDOW_MS` 调整。
 - `ADMIN_PASSWORD_HASH`（如果提供）优先于明文密码。它应是使用成本≥12生成的bcrypt哈希值。
 - 密钥轮换：更新 `ADMIN_USERNAME` 或 `ADMIN_PASSWORD_HASH` 需要重启服务器。现有会话在到期前仍然有效。
 - `TRUST_PROXY`：当后端部署在反向代理、负载均衡或 CDN（如 Nginx、Caddy、Cloudflare）之后时，需要设置代理层级（例如单层代理设为 `1`）。未设置时 `secure` Cookie 可能无法生效，从而导致浏览器丢弃 `sid`。
@@ -149,8 +152,8 @@ ADMIN_PASSWORD_HASH=$2a$12$XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 ### 运维与安全建议
 
-- 为 `SESSION_SECRET` 设置稳定且足够随机的值。若缺失或每次启动生成临时密钥，会导致重启后所有会话失效。
-- 生产环境使用持久化的 session 存储（如 Redis）替代默认内存存储，以避免重启丢失会话。
+- 为 `SESSION_SECRET` 设置稳定且足够随机的值。生产环境缺失时服务会拒绝启动；开发环境的临时密钥会导致重启后会话失效。
+- 生产环境默认使用 SQLite 持久化 session；如果部署多个应用实例，应改用 Redis 等共享存储。
 - 切勿将 `.env` 提交到版本控制。使用环境注入或密钥管理服务（KMS/Secrets Manager）。
 - 仅保留 `ADMIN_PASSWORD_HASH`，删除明文 `ADMIN_PASSWORD`，减少凭证暴露面。
 - 通过 HTTPS 提供服务，确保 Cookie 的 `secure` 标志生效。
@@ -178,7 +181,7 @@ ADMIN_PASSWORD_HASH=$2a$12$XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
      - `httpOnly=true`
      - 当 `NODE_ENV=production` 时，`secure=true`
      - `sameSite=lax`
-   - 加载或生成 `SESSION_SECRET`。
+   - 加载 `SESSION_SECRET`；仅开发与测试环境会在缺失时生成临时密钥。
 
 2. **凭证初始化（`server/config/authCredentials.js`）**
    - 读取 `ADMIN_USERNAME`、`ADMIN_PASSWORD_HASH` 和 `ADMIN_PASSWORD`。
@@ -209,7 +212,7 @@ ADMIN_PASSWORD_HASH=$2a$12$XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 - Cookie限定于后端的来源（`/api`）。前端代码不会直接操作它们。
 - 在通过HTTPS部署的生产环境中，`secure: true` 确保Cookie仅通过TLS传输。
 - 会话生命周期限制为12小时。如果浏览器清除会话Cookie，则关闭浏览器会提前结束会话。
-- 因为默认的会话存储是基于内存的，服务器重启时会话会丢失。需要持久化的部署应通过 `express-session` 配置插入存储（例如Redis）。
+- 生产环境会话默认保存在 SQLite 的 `sessions` 表中，服务器重启后仍然有效。开发环境的内存会话会在进程退出后清空。
 
 ## 故障模式与排查
 

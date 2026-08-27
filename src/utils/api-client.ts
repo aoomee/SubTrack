@@ -7,7 +7,7 @@ type RequestOptions = {
   signal?: AbortSignal;
 };
 
-class ApiClient {
+export class ApiClient {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private pendingRequests = new Map<string, Promise<any>>();
 
@@ -34,9 +34,13 @@ class ApiClient {
       const cacheKey = this.getCacheKey(endpoint, options);
       this.pendingRequests.set(cacheKey, requestPromise);
       
-      requestPromise.finally(() => {
-        this.pendingRequests.delete(cacheKey);
-      });
+      // Clean up without creating an unobserved rejected promise. Calling
+      // `finally()` here and ignoring its return value would surface handled
+      // API failures as browser-level unhandled rejections.
+      requestPromise.then(
+        () => this.pendingRequests.delete(cacheKey),
+        () => this.pendingRequests.delete(cacheKey),
+      );
     }
 
     return requestPromise;
@@ -119,6 +123,3 @@ class ApiClient {
 
 // Export singleton instance
 export const apiClient = new ApiClient();
-
-// Export type for dependency injection if needed
-export type { ApiClient };

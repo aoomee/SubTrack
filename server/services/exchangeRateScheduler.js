@@ -25,10 +25,9 @@ class ExchangeRateScheduler {
         }
 
         // 每天凌晨2点执行 (0 2 * * *)
-        this.task = cron.schedule('0 2 * * *', async () => {
+        this.task = cron.createTask('0 2 * * *', async () => {
             await this.updateExchangeRates();
         }, {
-            scheduled: false,
             timezone: 'Asia/Shanghai' // 使用中国时区
         });
 

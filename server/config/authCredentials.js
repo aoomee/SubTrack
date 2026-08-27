@@ -27,6 +27,12 @@ function resolveAdminPasswordHashFromEnv() {
         };
     }
 
+    if (process.env.NODE_ENV === 'production') {
+        throw new Error(
+            'ADMIN_PASSWORD or ADMIN_PASSWORD_HASH is required when creating the administrator in production'
+        );
+    }
+
     return {
         passwordHash: hashAdminPassword('admin'),
         source: 'default',

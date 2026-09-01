@@ -1,5 +1,6 @@
 const BaseRepository = require('../utils/BaseRepository');
 const logger = require('../utils/logger');
+const { getMonthDateRange } = require('../utils/dateUtils');
 
 /**
  * 分析服务类
@@ -91,8 +92,7 @@ class AnalyticsService extends BaseRepository {
         const targetMonth = `${year}-${monthStr}`;
 
         // 计算月份的第一天和最后一天
-        const firstDay = `${targetMonth}-01`;
-        const lastDay = new Date(year, month, 0).toISOString().split('T')[0];
+        const { startDate: firstDay, endDate: lastDay } = getMonthDateRange(year, month);
 
         const query = `
             SELECT DISTINCT
@@ -103,13 +103,14 @@ class AnalyticsService extends BaseRepository {
                 s.currency,
                 s.billing_cycle,
                 s.status,
-                s.category,
+                c.value as category,
                 COUNT(ph.id) as payment_count_in_month,
                 SUM(ph.amount_paid) as total_paid_in_month,
                 MIN(ph.billing_period_start) as earliest_period_start,
                 MAX(ph.billing_period_end) as latest_period_end
             FROM subscriptions s
             INNER JOIN payment_history ph ON s.id = ph.subscription_id
+            LEFT JOIN categories c ON s.category_id = c.id
             WHERE ph.status = 'succeeded'
                 AND (
                     -- 支付周期与目标月份重叠
@@ -117,7 +118,7 @@ class AnalyticsService extends BaseRepository {
                     (ph.billing_period_start <= ? AND ph.billing_period_end >= ?) OR
                     (ph.billing_period_start >= ? AND ph.billing_period_start <= ?)
                 )
-            GROUP BY s.id, s.name, s.plan, s.amount, s.currency, s.billing_cycle, s.status, s.category
+            GROUP BY s.id, s.name, s.plan, s.amount, s.currency, s.billing_cycle, s.status, c.value
             ORDER BY s.name
         `;
 

@@ -11,7 +11,7 @@ const { getBaseCurrency } = require('../config/currencies');
 class MonthlyCategorySummaryController {
     constructor(db) {
         this.db = db;
-        this.monthlyCategorySummaryService = new MonthlyCategorySummaryService(db.name);
+        this.monthlyCategorySummaryService = new MonthlyCategorySummaryService(db);
     }
 
     /**

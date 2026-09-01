@@ -37,4 +37,32 @@ describe('MonthlyCategorySummaryService', () => {
 
         expect(service.getMonthCategorySummary(2026, 8)).toEqual([]);
     });
+
+    test('stores summaries in the configured base currency', () => {
+        service.close();
+        const db = new Database(dbPath);
+        const categoryId = db.prepare("SELECT id FROM categories WHERE value = 'other'").get().id;
+        const paymentMethodId = db.prepare('SELECT id FROM payment_methods LIMIT 1').get().id;
+        const subscriptionId = db.prepare(`
+            INSERT INTO subscriptions (
+                name, plan, billing_cycle, amount, currency, payment_method_id,
+                status, category_id, renewal_type
+            ) VALUES ('Currency test', 'Standard', 'monthly', 65, 'CNY', ?, 'active', ?, 'manual')
+        `).run(paymentMethodId, categoryId).lastInsertRowid;
+        db.prepare(`
+            INSERT INTO payment_history (
+                subscription_id, payment_date, amount_paid, currency,
+                billing_period_start, billing_period_end, status
+            ) VALUES (?, '2026-09-10', 65, 'CNY', '2026-09-01', '2026-09-30', 'succeeded')
+        `).run(subscriptionId);
+        db.close();
+
+        service = new MonthlyCategorySummaryService(dbPath, { baseCurrency: 'USD' });
+        service.updateMonthlyCategorySummary(2026, 9);
+
+        expect(service.getMonthCategorySummary(2026, 9)[0]).toMatchObject({
+            base_currency: 'USD',
+            total_amount_in_base_currency: 10
+        });
+    });
 });

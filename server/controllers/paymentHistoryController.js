@@ -118,7 +118,12 @@ class PaymentHistoryController {
      * 创建支付记录
      */
     createPayment = asyncHandler(async (req, res) => {
-        const paymentData = req.body;
+        const paymentData = req.body || {};
+
+        const unknownFields = this.getUnknownPaymentFields(paymentData);
+        if (unknownFields.length > 0) {
+            return validationError(res, `Unknown payment field(s): ${unknownFields.join(', ')}`);
+        }
 
         // 转换前端camelCase字段名为数据库snake_case字段名
         const transformedData = this.transformPaymentData(paymentData);
@@ -138,7 +143,16 @@ class PaymentHistoryController {
      */
     updatePayment = asyncHandler(async (req, res) => {
         const { id } = req.params;
-        const updateData = req.body;
+        const updateData = req.body || {};
+
+        if (Object.keys(updateData).length === 0) {
+            return validationError(res, 'At least one payment field is required');
+        }
+
+        const unknownFields = this.getUnknownPaymentFields(updateData);
+        if (unknownFields.length > 0) {
+            return validationError(res, `Unknown payment field(s): ${unknownFields.join(', ')}`);
+        }
 
         // 转换前端camelCase字段名为数据库snake_case字段名
         const transformedData = this.transformPaymentData(updateData);
@@ -168,13 +182,20 @@ class PaymentHistoryController {
     bulkCreatePayments = asyncHandler(async (req, res) => {
         const paymentsData = req.body;
 
-        if (!Array.isArray(paymentsData)) {
-            return validationError(res, 'Request body must be an array of payment records');
+        if (!Array.isArray(paymentsData) || paymentsData.length === 0) {
+            return validationError(res, 'Request body must be a non-empty array of payment records');
         }
 
         // 转换并验证每条记录
         const transformedPaymentsData = [];
         for (let i = 0; i < paymentsData.length; i++) {
+            if (!paymentsData[i] || typeof paymentsData[i] !== 'object' || Array.isArray(paymentsData[i])) {
+                return validationError(res, `Record ${i + 1}: payment record must be an object`);
+            }
+            const unknownFields = this.getUnknownPaymentFields(paymentsData[i]);
+            if (unknownFields.length > 0) {
+                return validationError(res, `Record ${i + 1}: unknown field(s): ${unknownFields.join(', ')}`);
+            }
             const transformedData = this.transformPaymentData(paymentsData[i]);
             const validator = this.validatePaymentData(transformedData);
             if (validator.hasErrors()) {
@@ -191,7 +212,7 @@ class PaymentHistoryController {
      * 重新计算月度费用
      */
     recalculateMonthlyExpenses = asyncHandler(async (req, res) => {
-        await this.paymentHistoryService.recalculateMonthlyExpenses();
+        await this.paymentHistoryService.recalculateMonthlyCategorySummaries();
         handleQueryResult(res, { message: 'Monthly expenses recalculated successfully' }, 'Recalculation result');
     });
 
@@ -206,7 +227,9 @@ class PaymentHistoryController {
                 .required(data.subscription_id, 'subscription_id')
                 .required(data.payment_date, 'payment_date')
                 .required(data.amount_paid, 'amount_paid')
-                .required(data.currency, 'currency');
+                .required(data.currency, 'currency')
+                .required(data.billing_period_start, 'billing_period_start')
+                .required(data.billing_period_end, 'billing_period_end');
         }
 
         validator
@@ -222,7 +245,7 @@ class PaymentHistoryController {
             )
             .date(data.billing_period_start, 'billing_period_start')
             .date(data.billing_period_end, 'billing_period_end')
-            .enum(data.status, 'status', ['succeeded', 'failed', 'pending', 'cancelled', 'refunded'])
+            .enum(data.status, 'status', ['succeeded', 'failed', 'pending', 'refunded'])
             .string(data.notes, 'notes');
 
         return validator;
@@ -250,6 +273,16 @@ class PaymentHistoryController {
         });
 
         return transformed;
+    }
+
+    getUnknownPaymentFields(data) {
+        const allowedFields = new Set([
+            'subscriptionId', 'subscription_id', 'paymentDate', 'payment_date',
+            'amountPaid', 'amount_paid', 'currency',
+            'billingPeriodStart', 'billing_period_start',
+            'billingPeriodEnd', 'billing_period_end', 'status', 'notes'
+        ]);
+        return Object.keys(data || {}).filter(key => !allowedFields.has(key));
     }
 }
 

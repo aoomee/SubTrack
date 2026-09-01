@@ -67,6 +67,21 @@ function getTodayString() {
     return new Date().toISOString().split('T')[0];
 }
 
+function getMonthDateRange(year, month) {
+    const numericYear = Number(year);
+    const numericMonth = Number(month);
+    if (!Number.isInteger(numericYear) || !Number.isInteger(numericMonth) || numericMonth < 1 || numericMonth > 12) {
+        throw new Error('Invalid year or month');
+    }
+
+    const monthString = String(numericMonth).padStart(2, '0');
+    const lastDay = new Date(Date.UTC(numericYear, numericMonth, 0)).getUTCDate();
+    return {
+        startDate: `${numericYear}-${monthString}-01`,
+        endDate: `${numericYear}-${monthString}-${String(lastDay).padStart(2, '0')}`
+    };
+}
+
 // Function to check if a date is today or in the past
 function isDateDueOrOverdue(dateString) {
     const today = new Date();
@@ -115,5 +130,6 @@ module.exports = {
     calculateNextBillingDate,
     calculateNextBillingDateFromStart,
     getTodayString,
+    getMonthDateRange,
     isDateDueOrOverdue
 };

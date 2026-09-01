@@ -1,8 +1,8 @@
 # SubTrack for 1Panel
 #
-# In 1Panel, create a Compose project with this file and provide SESSION_SECRET
-# and ADMIN_PASSWORD in the project environment-variable editor. No secret is
-# stored in this file or committed to the repository.
+# In 1Panel, create a Compose project with this file and provide SESSION_SECRET.
+# A new database also needs ADMIN_PASSWORD_HASH or ADMIN_PASSWORD; an existing
+# database keeps its stored administrator hash. No secret is committed here.
 # The host port is intentionally bound to 127.0.0.1 for use behind 1Panel's
 # reverse proxy. Change SUBTRACK_HOST_PORT only when port 3001 is occupied.
 
@@ -19,7 +19,8 @@ services:
       DATABASE_PATH: /app/data/database.sqlite
       SESSION_SECRET: "${SESSION_SECRET:?Please set SESSION_SECRET in 1Panel}"
       ADMIN_USERNAME: "${ADMIN_USERNAME:-admin}"
-      ADMIN_PASSWORD: "${ADMIN_PASSWORD:?Please set ADMIN_PASSWORD in 1Panel}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:-}"
+      ADMIN_PASSWORD_HASH: "${ADMIN_PASSWORD_HASH:-}"
       BASE_CURRENCY: "${BASE_CURRENCY:-CNY}"
       TRUST_PROXY: "1"
       SESSION_COOKIE_SECURE: auto

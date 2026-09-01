@@ -30,7 +30,12 @@ class SubscriptionController {
      * 创建新订阅
      */
     createSubscription = asyncHandler(async (req, res) => {
-        const subscriptionData = req.body;
+        const subscriptionData = req.body || {};
+
+        const unknownFields = this.getUnknownSubscriptionFields(subscriptionData);
+        if (unknownFields.length > 0) {
+            return validationError(res, `Unknown subscription field(s): ${unknownFields.join(', ')}`);
+        }
 
         // 验证数据（包含外键验证）
         const validator = validateSubscriptionWithForeignKeys(subscriptionData, this.db);
@@ -48,12 +53,19 @@ class SubscriptionController {
     bulkCreateSubscriptions = asyncHandler(async (req, res) => {
         const subscriptionsData = req.body;
         
-        if (!Array.isArray(subscriptionsData)) {
-            return validationError(res, 'Request body must be an array of subscriptions');
+        if (!Array.isArray(subscriptionsData) || subscriptionsData.length === 0) {
+            return validationError(res, 'Request body must be a non-empty array of subscriptions');
         }
 
         // 验证每个订阅
         for (let i = 0; i < subscriptionsData.length; i++) {
+            if (!subscriptionsData[i] || typeof subscriptionsData[i] !== 'object' || Array.isArray(subscriptionsData[i])) {
+                return validationError(res, `Subscription ${i + 1}: record must be an object`);
+            }
+            const unknownFields = this.getUnknownSubscriptionFields(subscriptionsData[i]);
+            if (unknownFields.length > 0) {
+                return validationError(res, `Subscription ${i + 1}: unknown field(s): ${unknownFields.join(', ')}`);
+            }
             const validator = validateSubscriptionWithForeignKeys(subscriptionsData[i], this.db);
             if (validator.hasErrors()) {
                 return validationError(res, `Subscription ${i + 1}: ${validator.getErrors().map(e => e.message).join(', ')}`);
@@ -69,7 +81,16 @@ class SubscriptionController {
      */
     updateSubscription = asyncHandler(async (req, res) => {
         const { id } = req.params;
-        const updateData = req.body;
+        const updateData = req.body || {};
+
+        if (Object.keys(updateData).length === 0) {
+            return validationError(res, 'At least one subscription field is required');
+        }
+
+        const unknownFields = this.getUnknownSubscriptionFields(updateData);
+        if (unknownFields.length > 0) {
+            return validationError(res, `Unknown subscription field(s): ${unknownFields.join(', ')}`);
+        }
 
         // 验证数据（更新时不需要所有字段都必填）
         const validator = validateSubscriptionWithForeignKeys(updateData, this.db);
@@ -165,6 +186,15 @@ class SubscriptionController {
         const result = await this.subscriptionService.resetAllSubscriptions();
         handleQueryResult(res, result, 'Reset result');
     });
+
+    getUnknownSubscriptionFields(data) {
+        const allowedFields = new Set([
+            'name', 'plan', 'billing_cycle', 'next_billing_date', 'amount',
+            'currency', 'payment_method_id', 'start_date', 'status',
+            'category_id', 'renewal_type', 'notes', 'website'
+        ]);
+        return Object.keys(data || {}).filter(key => !allowedFields.has(key));
+    }
 }
 
 module.exports = SubscriptionController;

@@ -7,7 +7,26 @@ const logger = require('./logger');
 class BaseRepository {
     constructor(db, tableName) {
         this.db = db;
-        this.tableName = tableName;
+        this.tableName = this._identifier(tableName);
+    }
+
+    _identifier(value) {
+        if (typeof value !== 'string' || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(value)) {
+            throw new Error(`Invalid SQL identifier: ${String(value)}`);
+        }
+        return value;
+    }
+
+    _identifiers(values) {
+        return values.map(value => this._identifier(value));
+    }
+
+    _orderBy(value) {
+        return value.split(',').map(part => {
+            const match = part.trim().match(/^([A-Za-z_][A-Za-z0-9_]*)(?:\s+(ASC|DESC))?$/i);
+            if (!match) throw new Error(`Invalid ORDER BY clause: ${value}`);
+            return `${this._identifier(match[1])}${match[2] ? ` ${match[2].toUpperCase()}` : ''}`;
+        }).join(', ');
     }
 
     /**
@@ -29,7 +48,7 @@ class BaseRepository {
         const whereConditions = [];
         Object.entries(filters).forEach(([key, value]) => {
             if (value !== undefined && value !== null) {
-                whereConditions.push(`${key} = ?`);
+                whereConditions.push(`${this._identifier(key)} = ?`);
                 params.push(value);
             }
         });
@@ -40,7 +59,7 @@ class BaseRepository {
         
         // 添加排序
         if (orderBy) {
-            query += ` ORDER BY ${orderBy}`;
+            query += ` ORDER BY ${this._orderBy(orderBy)}`;
         }
         
         // 添加分页
@@ -65,7 +84,7 @@ class BaseRepository {
      * @returns {Object|null} 查询结果
      */
     findById(id, idField = 'id') {
-        const stmt = this.db.prepare(`SELECT * FROM ${this.tableName} WHERE ${idField} = ?`);
+        const stmt = this.db.prepare(`SELECT * FROM ${this.tableName} WHERE ${this._identifier(idField)} = ?`);
         return stmt.get(id);
     }
 
@@ -81,7 +100,7 @@ class BaseRepository {
         const whereConditions = [];
         Object.entries(filters).forEach(([key, value]) => {
             if (value !== undefined && value !== null) {
-                whereConditions.push(`${key} = ?`);
+                whereConditions.push(`${this._identifier(key)} = ?`);
                 params.push(value);
             }
         });
@@ -102,7 +121,8 @@ class BaseRepository {
      * @returns {Object} 插入结果，包含 lastInsertRowid
      */
     create(data) {
-        const fields = Object.keys(data);
+        const fields = this._identifiers(Object.keys(data));
+        if (fields.length === 0) throw new Error('Create data cannot be empty');
         const values = Object.values(data);
         const placeholders = fields.map(() => '?').join(', ');
         
@@ -122,7 +142,7 @@ class BaseRepository {
             return [];
         }
         
-        const fields = Object.keys(dataArray[0]);
+        const fields = this._identifiers(Object.keys(dataArray[0]));
         const placeholders = fields.map(() => '?').join(', ');
         const query = `INSERT INTO ${this.tableName} (${fields.join(', ')}) VALUES (${placeholders})`;
         
@@ -147,11 +167,12 @@ class BaseRepository {
      * @returns {Object} 更新结果
      */
     update(id, data, idField = 'id') {
-        const fields = Object.keys(data);
+        const fields = this._identifiers(Object.keys(data));
+        if (fields.length === 0) throw new Error('Update data cannot be empty');
         const values = Object.values(data);
         const setClause = fields.map(field => `${field} = ?`).join(', ');
         
-        const query = `UPDATE ${this.tableName} SET ${setClause} WHERE ${idField} = ?`;
+        const query = `UPDATE ${this.tableName} SET ${setClause} WHERE ${this._identifier(idField)} = ?`;
         const stmt = this.db.prepare(query);
         
         return stmt.run(...values, id);
@@ -164,7 +185,8 @@ class BaseRepository {
      * @returns {Object} 更新结果
      */
     updateWhere(filters, data) {
-        const updateFields = Object.keys(data);
+        const updateFields = this._identifiers(Object.keys(data));
+        if (updateFields.length === 0) throw new Error('Update data cannot be empty');
         const updateValues = Object.values(data);
         const setClause = updateFields.map(field => `${field} = ?`).join(', ');
         
@@ -172,7 +194,7 @@ class BaseRepository {
         const whereValues = [];
         Object.entries(filters).forEach(([key, value]) => {
             if (value !== undefined && value !== null) {
-                whereConditions.push(`${key} = ?`);
+                whereConditions.push(`${this._identifier(key)} = ?`);
                 whereValues.push(value);
             }
         });
@@ -194,7 +216,7 @@ class BaseRepository {
      * @returns {Object} 删除结果
      */
     delete(id, idField = 'id') {
-        const stmt = this.db.prepare(`DELETE FROM ${this.tableName} WHERE ${idField} = ?`);
+        const stmt = this.db.prepare(`DELETE FROM ${this.tableName} WHERE ${this._identifier(idField)} = ?`);
         return stmt.run(id);
     }
 
@@ -208,7 +230,7 @@ class BaseRepository {
         const whereValues = [];
         Object.entries(filters).forEach(([key, value]) => {
             if (value !== undefined && value !== null) {
-                whereConditions.push(`${key} = ?`);
+                whereConditions.push(`${this._identifier(key)} = ?`);
                 whereValues.push(value);
             }
         });
@@ -235,7 +257,7 @@ class BaseRepository {
         const whereConditions = [];
         Object.entries(filters).forEach(([key, value]) => {
             if (value !== undefined && value !== null) {
-                whereConditions.push(`${key} = ?`);
+                whereConditions.push(`${this._identifier(key)} = ?`);
                 params.push(value);
             }
         });

@@ -71,8 +71,9 @@ ADMIN_PASSWORD=your_secure_password
 
 - 应用状态位于容器内路径 `/app/data`。
 - Compose 文件使用名为 `subscription-data` 的卷持久化 SQLite 数据库及相关文件。
+- 升级只需拉取新镜像并重新创建容器，切勿删除数据卷：`docker compose pull` 后执行 `docker compose up -d`。
+- 管理员密码保存在 SQLite 中，升级不会覆盖。如密码无法登录，在容器内执行 `node /app/server/scripts/rotate-admin-password.js --password 'NEW_STRONG_PASSWORD'` 可安全重置，不影响业务数据。
 
 ## 健康检查
 
 - 服务在端口 `PORT`（默认 3001）暴露 `/api/health` 健康检查端点。
-

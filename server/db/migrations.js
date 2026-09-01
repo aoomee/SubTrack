@@ -26,6 +26,7 @@ class DatabaseMigrations {
       {
         version: 4,
         name: 'add_semiannual_billing_cycle',
+        requiresForeignKeysDisabled: true,
         up: () => this.migration_004_add_semiannual_billing_cycle()
       },
       {
@@ -42,6 +43,11 @@ class DatabaseMigrations {
         version: 7,
         name: 'add_admin_users_table',
         up: () => this.migration_007_add_admin_users_table()
+      },
+      {
+        version: 8,
+        name: 'add_pending_payment_status',
+        up: () => this.migration_008_add_pending_payment_status()
       }
     ];
   }
@@ -69,7 +75,7 @@ class DatabaseMigrations {
   }
 
   // Run all pending migrations
-  async runMigrations() {
+  runMigrations() {
     console.log('🔄 Checking for database migrations...');
 
     // Set database pragmas first (outside transaction)
@@ -91,12 +97,29 @@ class DatabaseMigrations {
     console.log(`🔄 Running ${pendingMigrations.length} pending migration(s)...`);
 
     for (const migration of pendingMigrations) {
+      const originalForeignKeys = this.db.pragma('foreign_keys', { simple: true });
+      const originalLegacyAlterTable = this.db.pragma('legacy_alter_table', { simple: true });
       try {
         console.log(`⏳ Running migration ${migration.version}: ${migration.name}`);
+
+        // Renaming a parent table while foreign keys are enabled rewrites child
+        // references to the temporary name. Dropping it can then cascade-delete
+        // payment and notification history, so migration 4 uses SQLite's safe
+        // legacy rename mode with enforcement restored immediately afterwards.
+        if (migration.requiresForeignKeysDisabled) {
+          this.db.pragma('foreign_keys = OFF');
+          this.db.pragma('legacy_alter_table = ON');
+        }
 
         // Run migration in transaction
         this.db.transaction(() => {
           migration.up();
+
+          const violations = this.db.pragma('foreign_key_check');
+          if (violations.length > 0) {
+            throw new Error(`Foreign key check failed after migration ${migration.version}: ${JSON.stringify(violations)}`);
+          }
+
           this.db.prepare('INSERT INTO migrations (version, name) VALUES (?, ?)').run(migration.version, migration.name);
         })();
 
@@ -104,6 +127,9 @@ class DatabaseMigrations {
       } catch (error) {
         console.error(`❌ Migration ${migration.version} failed:`, error);
         throw error;
+      } finally {
+        this.db.pragma(`legacy_alter_table = ${originalLegacyAlterTable ? 'ON' : 'OFF'}`);
+        this.db.pragma(`foreign_keys = ${originalForeignKeys ? 'ON' : 'OFF'}`);
       }
     }
 
@@ -334,12 +360,15 @@ class DatabaseMigrations {
   migration_004_add_semiannual_billing_cycle() {
     console.log("📝 Updating subscriptions.billing_cycle to include 'semiannual'...");
 
-    // Ensure foreign keys are enforced during migration
-    this.db.pragma('foreign_keys = ON');
-
     // 1) Rename existing table
     this.db.exec(`
       ALTER TABLE subscriptions RENAME TO subscriptions_old;
+      DROP INDEX IF EXISTS idx_subscriptions_status;
+      DROP INDEX IF EXISTS idx_subscriptions_category_id;
+      DROP INDEX IF EXISTS idx_subscriptions_payment_method_id;
+      DROP INDEX IF EXISTS idx_subscriptions_next_billing_date;
+      DROP INDEX IF EXISTS idx_subscriptions_billing_cycle;
+      DROP TRIGGER IF EXISTS subscriptions_updated_at;
     `);
 
     // 2) Recreate subscriptions table with updated CHECK constraint
@@ -438,6 +467,9 @@ class DatabaseMigrations {
       // Rename old table
       this.db.exec(`
         ALTER TABLE payment_history RENAME TO payment_history_old;
+        DROP INDEX IF EXISTS idx_payment_history_subscription_id;
+        DROP INDEX IF EXISTS idx_payment_history_payment_date;
+        DROP INDEX IF EXISTS idx_payment_history_billing_period;
       `);
 
       // Create new table with correct FK
@@ -491,6 +523,9 @@ class DatabaseMigrations {
       // Rename old table
       this.db.exec(`
         ALTER TABLE notification_history RENAME TO notification_history_old;
+        DROP INDEX IF EXISTS idx_notification_history_subscription;
+        DROP INDEX IF EXISTS idx_notification_history_status;
+        DROP INDEX IF EXISTS idx_notification_history_created;
       `);
 
       // Create new table with correct FK
@@ -625,9 +660,8 @@ class DatabaseMigrations {
       console.log(`✅ Seeded default admin user \`${adminUsername}\``);
 
       if (source === 'password') {
-        console.warn('⚠️  Generated ADMIN_PASSWORD_HASH from ADMIN_PASSWORD during migration.');
-        console.warn('   Consider storing the following hash and removing ADMIN_PASSWORD for improved security:');
-        console.warn(`   ADMIN_PASSWORD_HASH=${passwordHash}`);
+        console.warn('⚠️  Generated and stored an administrator password hash from ADMIN_PASSWORD.');
+        console.warn('   Remove the plaintext ADMIN_PASSWORD after confirming the first login.');
       }
     } else {
       const updates = {};
@@ -649,6 +683,55 @@ class DatabaseMigrations {
         console.log('ℹ️  Updated existing admin timestamps');
       }
     }
+  }
+
+  // Migration 008: Keep the database constraint aligned with the payment UI/API.
+  migration_008_add_pending_payment_status() {
+    console.log("📝 Adding 'pending' payment status...");
+
+    const paymentHistoryExists = this.db.prepare(`
+      SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'payment_history'
+    `).get();
+    if (!paymentHistoryExists) {
+      console.log('ℹ️  payment_history does not exist. Skipping status migration.');
+      return;
+    }
+
+    this.db.exec(`
+      ALTER TABLE payment_history RENAME TO payment_history_old_status;
+      DROP INDEX IF EXISTS idx_payment_history_subscription_id;
+      DROP INDEX IF EXISTS idx_payment_history_payment_date;
+      DROP INDEX IF EXISTS idx_payment_history_billing_period;
+
+      CREATE TABLE payment_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        subscription_id INTEGER NOT NULL,
+        payment_date DATE NOT NULL,
+        amount_paid DECIMAL(10, 2) NOT NULL,
+        currency TEXT NOT NULL,
+        billing_period_start DATE NOT NULL,
+        billing_period_end DATE NOT NULL,
+        status TEXT NOT NULL DEFAULT 'succeeded' CHECK (status IN ('succeeded', 'failed', 'refunded', 'pending')),
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (subscription_id) REFERENCES subscriptions (id) ON DELETE CASCADE
+      );
+
+      INSERT INTO payment_history (
+        id, subscription_id, payment_date, amount_paid, currency,
+        billing_period_start, billing_period_end, status, notes, created_at
+      )
+      SELECT id, subscription_id, payment_date, amount_paid, currency,
+             billing_period_start, billing_period_end, status, notes, created_at
+      FROM payment_history_old_status;
+
+      CREATE INDEX IF NOT EXISTS idx_payment_history_subscription_id ON payment_history(subscription_id);
+      CREATE INDEX IF NOT EXISTS idx_payment_history_payment_date ON payment_history(payment_date);
+      CREATE INDEX IF NOT EXISTS idx_payment_history_billing_period ON payment_history(billing_period_start, billing_period_end);
+      DROP TABLE payment_history_old_status;
+    `);
+
+    console.log("✅ Added 'pending' payment status");
   }
 
   // Helper method to parse SQL statements properly

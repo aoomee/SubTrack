@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS payment_history (
     currency TEXT NOT NULL,
     billing_period_start DATE NOT NULL,
     billing_period_end DATE NOT NULL,
-    status TEXT NOT NULL DEFAULT 'succeeded' CHECK (status IN ('succeeded', 'failed', 'refunded')),
+    status TEXT NOT NULL DEFAULT 'succeeded' CHECK (status IN ('succeeded', 'failed', 'refunded', 'pending')),
     notes TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (subscription_id) REFERENCES subscriptions (id) ON DELETE CASCADE

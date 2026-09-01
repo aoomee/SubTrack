@@ -141,13 +141,21 @@ ports:
   - "127.0.0.1:3001:3001"
 ```
 
-仓库也提供了专用文件：[docker-compose.1panel.yml](docker-compose.1panel.yml)。在 1Panel 的环境变量中至少设置：
+仓库也提供了专用文件：[docker-compose.1panel.yml](docker-compose.1panel.yml)。全新安装时在 1Panel 的环境变量中至少设置：
 
 ```dotenv
 SESSION_SECRET=CHANGE_ME_TO_A_LONG_RANDOM_STRING
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=CHANGE_ME_TO_A_STRONG_PASSWORD
 ```
+
+已有数据库升级时必须保留原来的 `subtrack-data` 卷；管理员密码哈希保存在该卷的 SQLite 数据库中，更新镜像不会主动改密码。可以保留原环境变量，也可以在确认管理员已存在后移除 `ADMIN_PASSWORD`。如忘记密码，可在容器终端执行：
+
+```bash
+node /app/server/scripts/rotate-admin-password.js --password 'NEW_STRONG_PASSWORD'
+```
+
+然后重新登录。该脚本只更新管理员密码，不会删除订阅、支付或通知数据。
 
 ## 🏷️ 镜像标签
 

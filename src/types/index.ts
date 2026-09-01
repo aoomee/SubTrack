@@ -27,7 +27,7 @@ export interface PaymentHistory {
   currency: string;
   paymentDate: string;
   paymentMethod?: string;
-  status: 'success' | 'failed' | 'pending';
+  status: 'succeeded' | 'failed' | 'refunded' | 'pending';
   createdAt: string;
 }
 

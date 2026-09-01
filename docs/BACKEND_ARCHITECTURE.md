@@ -320,7 +320,7 @@ ADMIN_USERNAME=admin
 ADMIN_PASSWORD=your_secure_password  # 首次启动时使用
 ADMIN_PASSWORD_HASH=$2a$12$...  # 生产环境推荐使用
 
-# 首次启动时，系统会根据 ADMIN_PASSWORD 生成 bcrypt 哈希并输出日志，便于将其转存到 ADMIN_PASSWORD_HASH 后删除明文密码。
+# 首次启动时，系统会根据 ADMIN_PASSWORD 生成 bcrypt 哈希并直接存入 SQLite，不会把哈希输出到启动日志。
 ```
 
 #### 通知系统配置

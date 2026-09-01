@@ -94,6 +94,8 @@ describe('Admin authentication and migrations', () => {
             expect(admin.role).toBe('admin');
             expect(admin.password_hash).toBeDefined();
             expect(admin.password_hash).not.toEqual('super-secret');
+            const paymentHistorySchema = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='payment_history'").get();
+            expect(paymentHistorySchema.sql).toContain("'pending'");
             db.close();
         } finally {
             cleanupTempDir(dir);

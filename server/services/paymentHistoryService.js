@@ -2,11 +2,12 @@ const BaseRepository = require('../utils/BaseRepository');
 const MonthlyCategorySummaryService = require('./monthlyCategorySummaryService');
 const logger = require('../utils/logger');
 const { NotFoundError } = require('../middleware/errorHandler');
+const { getMonthDateRange } = require('../utils/dateUtils');
 
 class PaymentHistoryService extends BaseRepository {
     constructor(db) {
         super(db, 'payment_history');
-        this.monthlyCategorySummaryService = new MonthlyCategorySummaryService(db.name);
+        this.monthlyCategorySummaryService = new MonthlyCategorySummaryService(db);
     }
 
     /**
@@ -78,9 +79,11 @@ class PaymentHistoryService extends BaseRepository {
                 ph.*,
                 s.name as subscription_name,
                 s.plan as subscription_plan,
-                s.category as subscription_category
+                c.value as subscription_category,
+                c.label as subscription_category_label
             FROM payment_history ph
             LEFT JOIN subscriptions s ON ph.subscription_id = s.id
+            LEFT JOIN categories c ON s.category_id = c.id
             WHERE ph.id = ?
         `;
 
@@ -92,8 +95,7 @@ class PaymentHistoryService extends BaseRepository {
      * 获取月度支付统计
      */
     async getMonthlyStats(year, month) {
-        const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
-        const endDate = new Date(year, month, 0).toISOString().split('T')[0]; // 月末日期
+        const { startDate, endDate } = getMonthDateRange(year, month);
 
         const query = `
             SELECT
@@ -150,7 +152,7 @@ class PaymentHistoryService extends BaseRepository {
 
         const { start, end } = quarterMonths[quarter];
         const startDate = `${year}-${start}-01`;
-        const endDate = `${year}-${end}-31`;
+        const endDate = getMonthDateRange(year, Number(end)).endDate;
 
         const query = `
             SELECT
@@ -172,7 +174,7 @@ class PaymentHistoryService extends BaseRepository {
     /**
      * 创建支付记录
      */
-    async createPayment(paymentData) {
+    _createPaymentRecord(paymentData) {
         const {
             subscription_id,
             payment_date,
@@ -190,7 +192,7 @@ class PaymentHistoryService extends BaseRepository {
             throw new NotFoundError('Subscription');
         }
 
-        const result = this.create({
+        return this.create({
             subscription_id,
             payment_date,
             amount_paid,
@@ -200,18 +202,19 @@ class PaymentHistoryService extends BaseRepository {
             status,
             notes
         });
+    }
 
-        // 如果支付成功，更新月度分类汇总
-        if (status === 'succeeded') {
-            try {
+    async createPayment(paymentData) {
+        return this.db.transaction((data) => {
+            const result = this._createPaymentRecord(data);
+
+            if ((data.status || 'succeeded') === 'succeeded') {
                 this.monthlyCategorySummaryService.processNewPayment(result.lastInsertRowid);
                 logger.info(`Monthly category summary updated for new payment ${result.lastInsertRowid}`);
-            } catch (error) {
-                logger.error(`Failed to update monthly category summary for payment ${result.lastInsertRowid}:`, error.message);
             }
-        }
 
-        return result;
+            return result;
+        })(paymentData);
     }
 
     /**
@@ -224,8 +227,6 @@ class PaymentHistoryService extends BaseRepository {
             throw new NotFoundError('Payment record');
         }
 
-        const result = this.update(id, updateData);
-
         // 检查是否有影响月度汇总的字段发生变化（除了notes字段）
         const fieldsAffectingSummary = [
             'payment_date', 'amount_paid', 'currency', 'status',
@@ -236,29 +237,25 @@ class PaymentHistoryService extends BaseRepository {
             return updateData[field] !== undefined && updateData[field] !== existingPayment[field];
         });
 
-        if (hasSignificantChanges) {
-            try {
+        return this.db.transaction(() => {
+            const result = this.update(id, updateData);
+
+            if (hasSignificantChanges) {
                 // 需要更新的月份集合
                 const monthsToUpdate = new Set();
 
                 // 如果支付日期发生变化，需要更新原日期和新日期所在的月份
                 if (updateData.payment_date && updateData.payment_date !== existingPayment.payment_date) {
                     // 原日期所在月份
-                    const oldPaymentDate = new Date(existingPayment.payment_date);
-                    const oldYear = oldPaymentDate.getFullYear();
-                    const oldMonth = oldPaymentDate.getMonth() + 1;
+                    const [oldYear, oldMonth] = existingPayment.payment_date.slice(0, 7).split('-').map(Number);
                     monthsToUpdate.add(`${oldYear}-${oldMonth}`);
 
                     // 新日期所在月份
-                    const newPaymentDate = new Date(updateData.payment_date);
-                    const newYear = newPaymentDate.getFullYear();
-                    const newMonth = newPaymentDate.getMonth() + 1;
+                    const [newYear, newMonth] = updateData.payment_date.slice(0, 7).split('-').map(Number);
                     monthsToUpdate.add(`${newYear}-${newMonth}`);
                 } else {
                     // 如果支付日期没有变化，只需要更新当前月份
-                    const paymentDate = new Date(existingPayment.payment_date);
-                    const year = paymentDate.getFullYear();
-                    const month = paymentDate.getMonth() + 1;
+                    const [year, month] = existingPayment.payment_date.slice(0, 7).split('-').map(Number);
                     monthsToUpdate.add(`${year}-${month}`);
                 }
 
@@ -269,12 +266,10 @@ class PaymentHistoryService extends BaseRepository {
                 });
 
                 logger.info(`Monthly category summary updated for payment ${id} field changes. Updated months: ${Array.from(monthsToUpdate).join(', ')}`);
-            } catch (error) {
-                logger.error(`Failed to update monthly category summary for payment ${id}:`, error.message);
             }
-        }
 
-        return result;
+            return result;
+        })();
     }
 
     /**
@@ -287,39 +282,46 @@ class PaymentHistoryService extends BaseRepository {
             throw new NotFoundError('Payment record');
         }
 
-        const result = this.delete(id);
+        return this.db.transaction(() => {
+            const result = this.delete(id);
 
-        // 更新月度分类汇总
-        if (existingPayment.status === 'succeeded') {
-            try {
+            if (existingPayment.status === 'succeeded') {
                 // 获取支付记录的年月信息
-                const paymentDate = new Date(existingPayment.payment_date);
-                const year = paymentDate.getFullYear();
-                const month = paymentDate.getMonth() + 1;
+                const [year, month] = existingPayment.payment_date.slice(0, 7).split('-').map(Number);
 
                 // 重新计算该月份的汇总数据
                 this.monthlyCategorySummaryService.processPaymentDeletion(year, month);
                 logger.info(`Monthly category summary updated for deleted payment ${id}`);
-            } catch (error) {
-                logger.error(`Failed to update monthly category summary for deleted payment ${id}:`, error.message);
             }
-        }
 
-        return result;
+            return result;
+        })();
     }
 
     /**
      * 批量创建支付记录
      */
     async bulkCreatePayments(paymentsData) {
-        return this.transaction(() => {
+        return this.db.transaction((items) => {
             const results = [];
-            for (const paymentData of paymentsData) {
-                const result = this.createPayment(paymentData);
+            const monthsToUpdate = new Set();
+
+            for (const paymentData of items) {
+                const result = this._createPaymentRecord(paymentData);
                 results.push(result);
+
+                if ((paymentData.status || 'succeeded') === 'succeeded') {
+                    monthsToUpdate.add(paymentData.payment_date.slice(0, 7));
+                }
             }
+
+            for (const monthKey of monthsToUpdate) {
+                const [year, month] = monthKey.split('-').map(Number);
+                this.monthlyCategorySummaryService.updateMonthlyCategorySummary(year, month);
+            }
+
             return results;
-        });
+        })(paymentsData);
     }
 
     /**

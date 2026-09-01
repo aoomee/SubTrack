@@ -1,15 +1,17 @@
 const Database = require('better-sqlite3');
 const logger = require('../utils/logger');
 const { getBaseCurrency } = require('../config/currencies');
+const { getMonthDateRange } = require('../utils/dateUtils');
 
 /**
  * 月度分类汇总服务
  * 处理基于payment_history的月度分类汇总计算和存储
  */
 class MonthlyCategorySummaryService {
-    constructor(dbPath) {
-        this.db = new Database(dbPath);
-        this.baseCurrency = 'CNY'; // 基础货币
+    constructor(dbOrPath, options = {}) {
+        this.ownsConnection = typeof dbOrPath === 'string';
+        this.db = this.ownsConnection ? new Database(dbOrPath) : dbOrPath;
+        this.baseCurrency = options.baseCurrency || getBaseCurrency();
     }
 
     /**
@@ -67,8 +69,7 @@ class MonthlyCategorySummaryService {
             logger.info(`Updating monthly category summary for ${year}-${month.toString().padStart(2, '0')}`);
 
             // 获取该月份的所有成功支付记录，包含分类信息
-            const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
-            const endDate = new Date(year, month, 0).toISOString().split('T')[0]; // 月末日期
+            const { startDate, endDate } = getMonthDateRange(year, month);
 
             const paymentsStmt = this.db.prepare(`
                 SELECT 
@@ -307,7 +308,9 @@ class MonthlyCategorySummaryService {
     }
 
     close() {
-        this.db.close();
+        if (this.ownsConnection) {
+            this.db.close();
+        }
     }
 }
 

@@ -326,7 +326,9 @@ function validateSubscription(data) {
         .integer(data.payment_method_id, 'payment_method_id')
         .range(data.payment_method_id, 'payment_method_id', 1)
 
+        .required(data.next_billing_date, 'next_billing_date')
         .date(data.next_billing_date, 'next_billing_date')
+        .required(data.start_date, 'start_date')
         .date(data.start_date, 'start_date')
 
         .enum(data.status, 'status', ['active', 'trial', 'cancelled'])

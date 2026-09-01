@@ -8,7 +8,7 @@ const { NotFoundError } = require('../middleware/errorHandler');
 class SubscriptionService extends BaseRepository {
     constructor(db) {
         super(db, 'subscriptions');
-        this.monthlyCategorySummaryService = new MonthlyCategorySummaryService(db.name);
+        this.monthlyCategorySummaryService = new MonthlyCategorySummaryService(db);
         this.notificationService = new NotificationService(db);
     }
 
@@ -153,34 +153,20 @@ class SubscriptionService extends BaseRepository {
             billing_cycle
         );
 
-        const result = this.create({
-            name,
-            plan,
-            billing_cycle,
-            next_billing_date,
-            last_billing_date,
-            amount,
-            currency,
-            payment_method_id,
-            start_date,
-            status,
-            category_id,
-            renewal_type,
-            notes,
-            website
-        });
+        return this.db.transaction(() => {
+            const result = this.create({
+                name, plan, billing_cycle, next_billing_date, last_billing_date,
+                amount, currency, payment_method_id, start_date, status,
+                category_id, renewal_type, notes, website
+            });
 
-        // 自动生成支付历史记录
-        if (result.lastInsertRowid) {
-            try {
-                await this.generatePaymentHistory(result.lastInsertRowid, subscriptionData);
+            if (result.lastInsertRowid) {
+                this.generatePaymentHistory(result.lastInsertRowid);
                 logger.info(`Payment history generated for subscription ${result.lastInsertRowid}`);
-            } catch (error) {
-                logger.error(`Failed to generate payment history for subscription ${result.lastInsertRowid}:`, error.message);
             }
-        }
 
-        return result;
+            return result;
+        })();
     }
 
     /**
@@ -230,25 +216,17 @@ class SubscriptionService extends BaseRepository {
             };
         });
 
-        // Use synchronous bulk insert
-        const results = this.createMany(subscriptionRecords);
-        
-        // Generate payment history for each created subscription (async, outside transaction)
-        for (let i = 0; i < results.length; i++) {
-            const result = results[i];
-            const subscriptionData = subscriptionsData[i];
-            
-            if (result.lastInsertRowid) {
-                try {
-                    await this.generatePaymentHistory(result.lastInsertRowid, subscriptionData);
-                    logger.info(`Payment history generated for subscription ${result.lastInsertRowid}`);
-                } catch (error) {
-                    logger.error(`Failed to generate payment history for subscription ${result.lastInsertRowid}:`, error.message);
+        return this.db.transaction((records) => {
+            const results = [];
+            for (const record of records) {
+                const result = this.create(record);
+                results.push(result);
+                if (result.lastInsertRowid) {
+                    this.generatePaymentHistory(result.lastInsertRowid);
                 }
             }
-        }
-
-        return results;
+            return results;
+        })(subscriptionRecords);
     }
 
     /**
@@ -291,20 +269,21 @@ class SubscriptionService extends BaseRepository {
             );
         }
 
-        const result = this.update(id, updateData);
-
         // 如果更新了关键字段，重新生成支付历史
-        const keyFields = ['amount', 'billing_cycle', 'start_date', 'status'];
+        const keyFields = [
+            'amount', 'currency', 'billing_cycle', 'start_date', 'status',
+            'category_id', 'next_billing_date', 'last_billing_date'
+        ];
         const hasKeyFieldUpdate = keyFields.some(field => updateData.hasOwnProperty(field));
-        
-        if (hasKeyFieldUpdate) {
-            try {
-                await this.regeneratePaymentHistory(id);
+
+        const result = this.db.transaction(() => {
+            const updateResult = this.update(id, updateData);
+            if (hasKeyFieldUpdate) {
+                this.regeneratePaymentHistory(id);
                 logger.info(`Payment history regenerated for subscription ${id}`);
-            } catch (error) {
-                logger.error(`Failed to regenerate payment history for subscription ${id}:`, error.message);
             }
-        }
+            return updateResult;
+        })();
 
         // 发送订阅变更通知（异步触发，不阻塞请求）
         this.notificationService
@@ -347,25 +326,22 @@ class SubscriptionService extends BaseRepository {
         const paymentMonths = this.db.prepare(paymentMonthsQuery).all(id);
 
         // 删除订阅（级联删除会自动处理相关的 payment_history 和 monthly_expenses）
-        const result = this.delete(id);
+        return this.db.transaction(() => {
+            const result = this.delete(id);
 
-        // 重新计算受影响月份的月度分类汇总
-        if (paymentMonths.length > 0) {
-            logger.info(`Recalculating monthly category summaries for ${paymentMonths.length} months after subscription deletion`);
-            paymentMonths.forEach(({ year, month }) => {
-                try {
+            if (paymentMonths.length > 0) {
+                logger.info(`Recalculating monthly category summaries for ${paymentMonths.length} months after subscription deletion`);
+                paymentMonths.forEach(({ year, month }) => {
                     this.monthlyCategorySummaryService.updateMonthlyCategorySummary(
-                        parseInt(year), 
+                        parseInt(year),
                         parseInt(month)
                     );
-                } catch (error) {
-                    logger.error(`Failed to update monthly category summary for ${year}-${month}:`, error.message);
-                }
-            });
-        }
+                });
+            }
 
-        logger.info(`Subscription deleted: ${existingSubscription.name} (ID: ${id}), related data cleaned up automatically`);
-        return result;
+            logger.info(`Subscription deleted: ${existingSubscription.name} (ID: ${id}), related data cleaned up automatically`);
+            return result;
+        })();
     }
 
     /**
@@ -384,12 +360,15 @@ class SubscriptionService extends BaseRepository {
         `;
 
         const categoryQuery = `
-            SELECT 
-                category,
+            SELECT
+                c.id as category_id,
+                c.value as category,
+                c.label as category_label,
                 COUNT(*) as count,
-                SUM(CASE WHEN status = 'active' THEN amount ELSE 0 END) as total_amount
-            FROM subscriptions
-            GROUP BY category
+                SUM(CASE WHEN s.status = 'active' THEN s.amount ELSE 0 END) as total_amount
+            FROM subscriptions s
+            LEFT JOIN categories c ON s.category_id = c.id
+            GROUP BY c.id, c.value, c.label
             ORDER BY count DESC
         `;
 
@@ -453,10 +432,13 @@ class SubscriptionService extends BaseRepository {
      * 按类别获取订阅
      */
     async getSubscriptionsByCategory(category) {
-        return this.findAll({ 
-            filters: { category },
-            orderBy: 'name ASC'
-        });
+        return this.db.prepare(`
+            SELECT s.*
+            FROM subscriptions s
+            JOIN categories c ON s.category_id = c.id
+            WHERE c.value = ? OR CAST(c.id AS TEXT) = ?
+            ORDER BY s.name ASC
+        `).all(category, category);
     }
 
     /**
@@ -522,7 +504,7 @@ class SubscriptionService extends BaseRepository {
     /**
      * 生成支付历史记录
      */
-    async generatePaymentHistory(subscriptionId) {
+    generatePaymentHistory(subscriptionId) {
         logger.info(`Generating payment history for subscription ${subscriptionId}`);
 
         try {
@@ -558,13 +540,12 @@ class SubscriptionService extends BaseRepository {
 
             logger.info(`Generated ${payments.length} payment history records for subscription ${subscriptionId}`);
 
-            // 触发月度分类汇总重新计算
+            // 触发月度分类汇总重新计算（每个月只计算一次）
             if (this.monthlyCategorySummaryService && payments.length > 0) {
-                // 获取最新插入的支付记录ID并处理
-                const lastPaymentId = this.db.prepare('SELECT last_insert_rowid() as id').get().id;
-                for (let i = 0; i < payments.length; i++) {
-                    const paymentId = lastPaymentId - payments.length + 1 + i;
-                    this.monthlyCategorySummaryService.processNewPayment(paymentId);
+                const months = new Set(payments.map(payment => payment.payment_date.slice(0, 7)));
+                for (const monthKey of months) {
+                    const [year, month] = monthKey.split('-').map(Number);
+                    this.monthlyCategorySummaryService.updateMonthlyCategorySummary(year, month);
                 }
             }
         } catch (error) {
@@ -576,7 +557,7 @@ class SubscriptionService extends BaseRepository {
     /**
      * 重新生成支付历史记录
      */
-    async regeneratePaymentHistory(subscriptionId) {
+    regeneratePaymentHistory(subscriptionId) {
         logger.info(`Regenerating payment history for subscription ${subscriptionId}`);
 
         try {
@@ -586,13 +567,23 @@ class SubscriptionService extends BaseRepository {
                 throw new Error(`Subscription ${subscriptionId} not found`);
             }
 
+            const oldMonths = this.db.prepare(`
+                SELECT DISTINCT strftime('%Y-%m', payment_date) AS month
+                FROM payment_history WHERE subscription_id = ?
+            `).all(subscriptionId).map(row => row.month);
+
             // 删除现有的支付历史记录
             const deleteStmt = this.db.prepare('DELETE FROM payment_history WHERE subscription_id = ?');
             const deleteResult = deleteStmt.run(subscriptionId);
             logger.info(`Deleted ${deleteResult.changes} existing payment records for subscription ${subscriptionId}`);
 
             // 重新生成支付历史
-            await this.generatePaymentHistory(subscriptionId, subscription);
+            this.generatePaymentHistory(subscriptionId);
+
+            for (const monthKey of oldMonths) {
+                const [year, month] = monthKey.split('-').map(Number);
+                this.monthlyCategorySummaryService.updateMonthlyCategorySummary(year, month);
+            }
         } catch (error) {
             logger.error(`Failed to regenerate payment history for subscription ${subscriptionId}:`, error.message);
             throw error;

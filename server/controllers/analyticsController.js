@@ -3,6 +3,7 @@ const { asyncHandler } = require('../middleware/errorHandler');
 const { handleQueryResult, validationError } = require('../utils/responseHelper');
 const { createValidator } = require('../utils/validator');
 const { getBaseCurrency } = require('../config/currencies');
+const { getMonthDateRange } = require('../utils/dateUtils');
 
 /**
  * 分析控制器
@@ -158,9 +159,7 @@ class AnalyticsController {
         );
 
         // 获取收入数据
-        const monthStr = targetMonth.toString().padStart(2, '0');
-        const startDate = `${targetYear}-${monthStr}-01`;
-        const endDate = new Date(targetYear, targetMonth, 0).toISOString().split('T')[0];
+        const { startDate, endDate } = getMonthDateRange(targetYear, targetMonth);
         
         const revenueData = await this.analyticsService.getMonthlyRevenue({
             start_date: startDate,

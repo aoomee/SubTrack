@@ -23,7 +23,7 @@ ADMIN_PASSWORD=your_secure_password
 # SESSION_COOKIE_SAMESITE=lax
 ```
 
-服务器启动时会从 `ADMIN_PASSWORD` 派生出一个bcrypt哈希值，记录一次并将哈希保存在内存中。将生成的值复制到 `ADMIN_PASSWORD_HASH` 中，并删除 `ADMIN_PASSWORD` 以用于生产环境部署。
+首次创建管理员时，服务器会从 `ADMIN_PASSWORD` 派生 bcrypt 哈希并写入 SQLite。登录始终校验数据库中的哈希，不依赖进程内缓存。
 
 其他注意事项：
 
@@ -32,7 +32,7 @@ ADMIN_PASSWORD=your_secure_password
 - 如需让不同域名上的前端调用 API，可使用逗号分隔的 `CORS_ORIGINS` 明确列出允许的来源；同源部署无需配置。
 - 登录接口默认限制为每个客户端每15分钟10次失败，可通过 `LOGIN_RATE_LIMIT_MAX` 和 `LOGIN_RATE_LIMIT_WINDOW_MS` 调整。
 - `ADMIN_PASSWORD_HASH`（如果提供）优先于明文密码。它应是使用成本≥12生成的bcrypt哈希值。
-- 密钥轮换：更新 `ADMIN_USERNAME` 或 `ADMIN_PASSWORD_HASH` 需要重启服务器。现有会话在到期前仍然有效。
+- 密钥轮换：已有管理员不会仅因修改环境变量而被覆盖；请使用修改密码接口或 `rotate-admin-password.js` 脚本。现有会话在到期前仍然有效。
 - `TRUST_PROXY`：当后端部署在反向代理、负载均衡或 CDN（如 Nginx、Caddy、Cloudflare）之后时，需要设置代理层级（例如单层代理设为 `1`）。未设置时 `secure` Cookie 可能无法生效，从而导致浏览器丢弃 `sid`。
 - `SESSION_COOKIE_SECURE`：控制 `express-session` 的 `cookie.secure` 行为。默认 `auto`（生产环境自动开启）。当在 HTTP 内网或需要覆盖默认行为时，可显式设为 `true` 或 `false`。
 - `SESSION_COOKIE_SAMESITE`：控制 `SameSite` 策略（`lax`/`strict`/`none`）。若前端通过跨站点的 HTTPS 域名访问，需要设为 `none` 并配合 `SESSION_COOKIE_SECURE=true`。
@@ -63,11 +63,9 @@ openssl rand -base64 48
    ADMIN_PASSWORD=your_secure_password
    ```
 
-2. 启动后端服务，控制台会输出生成的 `ADMIN_PASSWORD_HASH`。
+2. 启动后端服务；系统会将生成的哈希直接存入 SQLite，不会把哈希写入日志。
 
-3. 将该哈希复制到 `.env` 的 `ADMIN_PASSWORD_HASH`，并删除明文 `ADMIN_PASSWORD`。
-
-4. 重启服务。
+3. 确认首次登录成功后，可删除明文 `ADMIN_PASSWORD` 并重启服务。
 
 #### 方式B：手动离线生成
 
@@ -106,9 +104,9 @@ openssl rand -base64 48
 1. 在 `.env` 中设置：
    - `SESSION_SECRET`
    - `ADMIN_USERNAME`
-   - `ADMIN_PASSWORD`（明文，仅在首次或轮换时临时使用）或 `ADMIN_PASSWORD_HASH`
+   - `ADMIN_PASSWORD`（明文，仅首次创建时使用）或 `ADMIN_PASSWORD_HASH`
 2. 执行 `npm run db:init` 或启动后端。迁移会创建 `users` 表并写入管理员账户。
-3. 如使用明文密码，启动日志或脚本会提示生成的哈希。将其复制到 `.env` 的 `ADMIN_PASSWORD_HASH`，并删除明文 `ADMIN_PASSWORD`。
+3. 如使用明文密码，哈希会直接写入 SQLite；确认首次登录后删除明文 `ADMIN_PASSWORD`。
 4. 重启后端后将只依赖数据库中的哈希。后续不会自动覆盖。
 
 示例：
@@ -130,13 +128,13 @@ ADMIN_PASSWORD_HASH=$2a$12$XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 # 删除 ADMIN_PASSWORD
 ```
 
-### 为什么重启时哈希会变化？
+### 为什么重启时哈希不会变化？
 
-仅配置明文 `ADMIN_PASSWORD` 时，每次引导都会重新生成 bcrypt 哈希写入数据库；盐不同导致哈希不同。将生成的哈希写入 `ADMIN_PASSWORD_HASH` 并删除明文后，后续迁移或重启都不会改变现有记录。
+环境变量仅用于首次创建管理员。管理员已经存在时，重启不会重新生成或覆盖数据库中的哈希，因此更新镜像不会改变现有密码。
 
 ### 运行时是否会再读取 `.env` 或重新生成？
 
-不会。登录流程直接查询 SQLite 数据库，不再缓存凭证到内存。只有在运行 `rotate-admin-password` 脚本、更新 `.env` 并重新执行引导时，密码才会发生变化。
+登录流程直接查询 SQLite 数据库，不缓存凭证。运行 `rotate-admin-password` 脚本或通过已登录会话修改密码后，数据库中的密码才会变化。
 
 ### 密码轮换（更改管理员密码）
 
@@ -146,7 +144,7 @@ ADMIN_PASSWORD_HASH=$2a$12$XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
   3) （如需）重启后端进程以载入新的环境变量。
 
 - 方式 B（离线生成哈希）：
-  - 使用 bcrypt 工具以成本因子 ≥ 12 生成哈希，直接写入 `ADMIN_PASSWORD_HASH`，重启后端。
+  - 使用 bcrypt 工具以成本因子 ≥ 12 生成哈希，再执行 `node server/scripts/rotate-admin-password.js --hash '<bcryptHash>'` 写入现有数据库。
 
 注意：轮换后，已建立的会话在到期前仍然有效；新登录将使用新哈希进行校验。
 
@@ -161,16 +159,16 @@ ADMIN_PASSWORD_HASH=$2a$12$XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ### 常见问题（FAQ）
 
 - 需要每次重启都修改 `.env` 吗？
-  - 不需要。只有在首次设置或更换密码时需要更新。一旦 `ADMIN_PASSWORD_HASH` 固定在 `.env` 中，后续重启不会改变。
+  - 不需要。环境密码只用于首次创建管理员；后续密码以数据库记录为准。
 
-- 为什么我每次重启都看到新的哈希被打印？
-  - 说明仍在通过明文 `ADMIN_PASSWORD` 启动。请把日志中的哈希复制到 `ADMIN_PASSWORD_HASH` 并删除明文。
+- 首次启动会把密码哈希打印到日志吗？
+  - 不会；哈希只写入 SQLite。旧版本日志中的哈希应视作敏感信息。
 
 - 同时设置了 `ADMIN_PASSWORD` 和 `ADMIN_PASSWORD_HASH` 会怎样？
   - 系统优先使用 `ADMIN_PASSWORD_HASH`，忽略明文。生产推荐仅保留哈希。
 
-- 修改 `.env` 后为什么没有生效？
-  - 需要重启后端进程。凭证在启动时读取一次并缓存到内存，运行中不会热更新。
+- 修改 `.env` 中的管理员密码后为什么没有生效？
+  - 为防止部署时意外覆盖已修改的密码，环境凭证只用于首次创建管理员。已有数据库请使用修改密码接口或轮换脚本。
 
 ## 后端流程
 
@@ -185,7 +183,7 @@ ADMIN_PASSWORD_HASH=$2a$12$XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 2. **凭证初始化（`server/config/authCredentials.js`）**
    - 读取 `ADMIN_USERNAME`、`ADMIN_PASSWORD_HASH` 和 `ADMIN_PASSWORD`。
-   - 如果两个密码变量都不存在，进程会显示明确错误并退出。
+   - 仅当数据库中还没有管理员且两个密码变量都不存在时，生产进程会显示明确错误并退出。
    - 如果仅提供 `ADMIN_PASSWORD`，会使用bcrypt对其进行哈希处理并记录指导信息以持久化哈希值。
 
 3. **认证路由（`server/routes/auth.js`）**
@@ -216,7 +214,7 @@ ADMIN_PASSWORD_HASH=$2a$12$XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 ## 故障模式与排查
 
-- **每个请求都返回401**：确保设置了 `SESSION_SECRET`、`ADMIN_USERNAME` 和 `ADMIN_PASSWORD_HASH` 或 `ADMIN_PASSWORD`；编辑 `.env` 后重启服务器。
+- **每个请求都返回401**：确认登录会话有效并保持稳定的 `SESSION_SECRET`；全新数据库还需要 `ADMIN_PASSWORD_HASH` 或 `ADMIN_PASSWORD` 创建管理员。
 - **重启后意外登出**：发生在未明确配置 `SESSION_SECRET` 的情况下。设置固定密钥以维护会话连续性。
-- **更改密码后无法登录**：确认新bcrypt哈希替换了旧哈希，然后重启服务器。如果会话仍使用过期凭证，请清除浏览器Cookie。
+- **更改密码后无法登录**：运行 `rotate-admin-password.js` 安全重置数据库密码；仅修改已有部署的环境变量不会覆盖数据库记录。
 - **前端卡在加载动画**：表明 `/api/auth/me` 请求失败。检查浏览器网络标签中的401响应以及后端日志中的配置错误。

@@ -11,6 +11,7 @@ const {
 
 class NotificationService {
     constructor(db = null) {
+        this.ownsConnection = !db;
         this.db = db || createDatabaseConnection();
         this.telegramService = new TelegramService();
         this.emailService = new EmailService();
@@ -623,7 +624,7 @@ class NotificationService {
      * 关闭数据库连接
      */
     close() {
-        if (this.db) {
+        if (this.db && this.ownsConnection) {
             this.db.close();
         }
     }

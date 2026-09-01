@@ -46,8 +46,10 @@ if (trustProxyConfig !== undefined) {
     const parsed = Number(trustProxyConfig);
     app.set('trust proxy', Number.isNaN(parsed) ? trustProxyConfig : parsed);
   }
-} else if (process.env.NODE_ENV === 'production') {
-  app.set('trust proxy', 1);
+} else {
+  // Direct deployments must not trust spoofable X-Forwarded-* headers.
+  // Reverse-proxy deployments should explicitly set TRUST_PROXY (1 in 1Panel).
+  app.set('trust proxy', false);
 }
 
 // Middleware

@@ -25,8 +25,19 @@ jest.mock('../controllers/exchangeRateController', () => {
     };
 });
 
+jest.mock('../controllers/paymentHistoryController', () => {
+    return class PaymentHistoryController {
+        getPaymentHistory = (req, res) => res.json({ handler: 'all' });
+        getPaymentById = (req, res) => res.json({ handler: 'by-id', id: req.params.id });
+        getMonthlyStats = (req, res) => res.json({ handler: 'monthly-stats' });
+        getYearlyStats = (req, res) => res.json({ handler: 'yearly-stats' });
+        getQuarterlyStats = (req, res) => res.json({ handler: 'quarterly-stats' });
+    };
+});
+
 const { createSubscriptionRoutes } = require('../routes/subscriptions');
 const { createExchangeRateRoutes } = require('../routes/exchangeRates');
+const { createPaymentHistoryRoutes } = require('../routes/paymentHistory');
 
 describe('API route ordering', () => {
     test('dispatches /subscriptions/search to the search handler', async () => {
@@ -47,5 +58,15 @@ describe('API route ordering', () => {
 
         expect(response.status).toBe(200);
         expect(response.body).toEqual({ handler: 'currency', currency: 'USD' });
+    });
+
+    test('dispatches fixed payment statistics routes before /:id', async () => {
+        const app = express();
+        app.use('/payment-history', createPaymentHistoryRoutes({}));
+
+        const response = await request(app).get('/payment-history/stats/monthly');
+
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual({ handler: 'monthly-stats' });
     });
 });

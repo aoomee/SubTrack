@@ -43,6 +43,13 @@ function errorHandler(err, req, res, next) {
         message = 'Forbidden access';
     }
 
+    // Unexpected server errors may contain SQL, paths or credentials. Keep the
+    // detailed value in logs but never return it to production clients.
+    if (status >= 500 && process.env.NODE_ENV === 'production') {
+        message = 'Internal Server Error';
+        code = undefined;
+    }
+
     // 构建错误响应
     const errorResponse = {
         error: message,

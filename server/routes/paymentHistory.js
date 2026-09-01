@@ -8,9 +8,6 @@ function createPaymentHistoryRoutes(db) {
     // GET payment history list (Public)
     router.get('/', controller.getPaymentHistory);
 
-    // GET payment record by ID (Public)
-    router.get('/:id', controller.getPaymentById);
-
     // GET monthly payment statistics (Public)
     router.get('/stats/monthly', controller.getMonthlyStats);
 
@@ -19,6 +16,9 @@ function createPaymentHistoryRoutes(db) {
 
     // GET quarterly payment statistics (Public)
     router.get('/stats/quarterly', controller.getQuarterlyStats);
+
+    // Dynamic routes must remain after fixed /stats routes.
+    router.get('/:id', controller.getPaymentById);
 
     return router;
 }

@@ -36,27 +36,6 @@ interface RenewalData {
 
 
 
-// Helper to calculate the last billing date from the next one
-const calculateLastBillingDate = (nextBillingDate: string, billingCycle: BillingCycle): string => {
-  const nextDate = new Date(nextBillingDate)
-  switch (billingCycle) {
-    case 'monthly':
-      nextDate.setMonth(nextDate.getMonth() - 1)
-      break
-    case 'yearly':
-      nextDate.setFullYear(nextDate.getFullYear() - 1)
-      break
-    case 'quarterly':
-      nextDate.setMonth(nextDate.getMonth() - 3)
-      break
-    case 'semiannual':
-      nextDate.setMonth(nextDate.getMonth() - 6)
-      break
-  }
-  return nextDate.toISOString().split('T')[0]
-}
-
-
 // Helper function to transform data from API (snake_case) to frontend (camelCase)
 const transformFromApi = (sub: SubscriptionApiData): Subscription => {
   return {
@@ -88,7 +67,7 @@ export const transformToApi = (sub: Partial<Subscription>) => {
   if (sub.plan !== undefined) result.plan = sub.plan
   if (sub.billingCycle !== undefined) result.billing_cycle = sub.billingCycle
   if (sub.nextBillingDate !== undefined) result.next_billing_date = sub.nextBillingDate
-  if (sub.lastBillingDate !== undefined) result.last_billing_date = sub.lastBillingDate
+  // lastBillingDate is derived by the server and is read-only in API responses.
   if (sub.amount !== undefined) result.amount = sub.amount
   if (sub.currency !== undefined) result.currency = sub.currency
   if (sub.paymentMethodId !== undefined) result.payment_method_id = sub.paymentMethodId
@@ -311,14 +290,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       // Add a new subscription
       addSubscription: async (subscription) => {
         try {
-          const subscriptionWithLastBilling = {
-            ...subscription,
-            lastBillingDate: calculateLastBillingDate(
-              subscription.nextBillingDate,
-              subscription.billingCycle
-            )
-          }
-          const apiSubscription = transformToApi(subscriptionWithLastBilling)
+          const apiSubscription = transformToApi(subscription)
           await apiClient.post('/protected/subscriptions', apiSubscription)
 
           // Refetch all subscriptions to get the new one with its DB-generated ID
@@ -335,16 +307,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       // Bulk add subscriptions
       bulkAddSubscriptions: async (subscriptions) => {
         try {
-          const apiSubscriptions = subscriptions.map(sub => {
-            const subWithLastBilling = {
-              ...sub,
-              lastBillingDate: calculateLastBillingDate(
-                sub.nextBillingDate,
-                sub.billingCycle
-              )
-            };
-            return transformToApi(subWithLastBilling);
-          });
+          const apiSubscriptions = subscriptions.map(transformToApi);
 
           await apiClient.post('/protected/subscriptions/bulk', apiSubscriptions);
 
@@ -361,17 +324,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       // Update an existing subscription
       updateSubscription: async (id, updatedSubscription) => {
         try {
-          const originalSubscription = get().subscriptions.find(sub => sub.id === id)
-          const subscriptionWithLastBilling = { ...updatedSubscription }
-
-          if (originalSubscription && updatedSubscription.nextBillingDate && updatedSubscription.nextBillingDate !== originalSubscription.nextBillingDate) {
-            const billingCycle = updatedSubscription.billingCycle || originalSubscription.billingCycle
-            subscriptionWithLastBilling.lastBillingDate = calculateLastBillingDate(
-              updatedSubscription.nextBillingDate,
-              billingCycle
-            )
-          }
-          const apiSubscription = transformToApi(subscriptionWithLastBilling)
+          const apiSubscription = transformToApi(updatedSubscription)
           await apiClient.put(`/protected/subscriptions/${id}`, apiSubscription)
           
           // Refetch to ensure data consistency

@@ -30,7 +30,7 @@ class SubscriptionController {
      * 创建新订阅
      */
     createSubscription = asyncHandler(async (req, res) => {
-        const subscriptionData = req.body || {};
+        const subscriptionData = this.normalizeSubscriptionData(req.body);
 
         const unknownFields = this.getUnknownSubscriptionFields(subscriptionData);
         if (unknownFields.length > 0) {
@@ -62,17 +62,20 @@ class SubscriptionController {
             if (!subscriptionsData[i] || typeof subscriptionsData[i] !== 'object' || Array.isArray(subscriptionsData[i])) {
                 return validationError(res, `Subscription ${i + 1}: record must be an object`);
             }
-            const unknownFields = this.getUnknownSubscriptionFields(subscriptionsData[i]);
+            const subscriptionData = this.normalizeSubscriptionData(subscriptionsData[i]);
+            const unknownFields = this.getUnknownSubscriptionFields(subscriptionData);
             if (unknownFields.length > 0) {
                 return validationError(res, `Subscription ${i + 1}: unknown field(s): ${unknownFields.join(', ')}`);
             }
-            const validator = validateSubscriptionWithForeignKeys(subscriptionsData[i], this.db);
+            const validator = validateSubscriptionWithForeignKeys(subscriptionData, this.db);
             if (validator.hasErrors()) {
                 return validationError(res, `Subscription ${i + 1}: ${validator.getErrors().map(e => e.message).join(', ')}`);
             }
         }
 
-        const result = await this.subscriptionService.bulkCreateSubscriptions(subscriptionsData);
+        const result = await this.subscriptionService.bulkCreateSubscriptions(
+            subscriptionsData.map(data => this.normalizeSubscriptionData(data))
+        );
         handleDbResult(res, result, 'create', 'Subscriptions');
     });
 
@@ -81,7 +84,7 @@ class SubscriptionController {
      */
     updateSubscription = asyncHandler(async (req, res) => {
         const { id } = req.params;
-        const updateData = req.body || {};
+        const updateData = this.normalizeSubscriptionData(req.body);
 
         if (Object.keys(updateData).length === 0) {
             return validationError(res, 'At least one subscription field is required');
@@ -186,6 +189,14 @@ class SubscriptionController {
         const result = await this.subscriptionService.resetAllSubscriptions();
         handleQueryResult(res, result, 'Reset result');
     });
+
+    normalizeSubscriptionData(data) {
+        // Older deployed clients send this computed field on create/import/edit.
+        // Ignore only this known legacy field; the service computes it itself.
+        const normalized = { ...data };
+        delete normalized.last_billing_date;
+        return normalized;
+    }
 
     getUnknownSubscriptionFields(data) {
         const allowedFields = new Set([

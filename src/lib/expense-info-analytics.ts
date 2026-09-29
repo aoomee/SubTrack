@@ -114,7 +114,7 @@ export function convertMonthlyExpensesToInfo(
       totalSpent: expense.amount,
       dailyAverage: expense.amount / daysInMonth,
       activeSubscriptions: expense.subscriptionCount,
-      paymentCount: expense.paymentHistoryIds?.length || 0,
+      paymentCount: expense.paymentCount ?? expense.paymentHistoryIds?.length ?? 0,
       startDate,
       endDate,
       currency
@@ -154,7 +154,7 @@ export function calculateQuarterlyExpenses(
 
     const quarterData = quarterlyMap.get(quarterKey)!
     quarterData.totalSpent += expense.amount
-    quarterData.paymentCount += expense.paymentHistoryIds?.length || 0
+    quarterData.paymentCount += expense.paymentCount ?? expense.paymentHistoryIds?.length ?? 0
 
     // Note: We can't accurately track unique subscriptions across quarters from monthly data
     // This is an approximation - in a real implementation, you'd want to query the database
@@ -210,7 +210,7 @@ export function calculateYearlyExpenses(
 
     const yearData = yearlyMap.get(year)!
     yearData.totalSpent += expense.amount
-    yearData.paymentCount += expense.paymentHistoryIds?.length || 0
+    yearData.paymentCount += expense.paymentCount ?? expense.paymentHistoryIds?.length ?? 0
 
     // Note: Same approximation issue as quarterly data
     yearData.subscriptions.add(expense.subscriptionCount)

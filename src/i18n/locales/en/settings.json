@@ -107,6 +107,7 @@
   "dailyAutomatic": "Daily (Automatic)",
   "lastSuccessfulUpdate": "Last Successful Update",
   "justNow": "Just now",
+  "neverUpdated": "Not updated yet",
   "apiKeyNotConfigured": "",
   "updateNow": "Update Now",
   "refreshRates": "Refresh Rates",

@@ -13,7 +13,7 @@ import { logger } from '@/utils/logger';
 import { CURRENCY_NAMES } from '@/config/constants';
 
 export function ExchangeRateManager() {
-  const { t } = useTranslation('settings');
+  const { t, i18n } = useTranslation('settings');
   const {
     exchangeRates,
     lastExchangeRateUpdate,
@@ -41,7 +41,7 @@ export function ExchangeRateManager() {
   };
 
   const formatLastUpdate = (dateString: string | null) => {
-    if (!dateString) return 'Never';
+    if (!dateString) return t('neverUpdated');
 
     const date = new Date(dateString);
     const now = new Date();
@@ -50,9 +50,9 @@ export function ExchangeRateManager() {
     const diffDays = Math.floor(diffHours / 24);
 
     if (diffDays > 0) {
-      return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+      return new Intl.RelativeTimeFormat(i18n.resolvedLanguage || i18n.language).format(-diffDays, 'day');
     } else if (diffHours > 0) {
-      return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+      return new Intl.RelativeTimeFormat(i18n.resolvedLanguage || i18n.language).format(-diffHours, 'hour');
     } else {
       return t('justNow');
     }
@@ -122,21 +122,21 @@ export function ExchangeRateManager() {
               {t('automaticExchangeRateUpdates')}
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col flex-1">
-            <div className="space-y-4 flex-1">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">{t('apiProvider')}</p>
-                  <p className="text-sm text-muted-foreground">tianapi.com</p>
+          <CardContent className="flex flex-1 flex-col gap-5">
+            <div className="flex-1 space-y-4">
+              <dl className="grid grid-cols-1 gap-x-6 gap-y-5 rounded-lg bg-muted/40 p-4 min-[400px]:grid-cols-2">
+                <div className="min-w-0 space-y-2">
+                  <dt className="text-xs text-muted-foreground">{t('apiProvider')}</dt>
+                  <dd className="text-sm font-medium">tianapi.com</dd>
                 </div>
 
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">{t('apiConfiguration')}</p>
-                  <div className="flex items-center gap-2">
+                <div className="min-w-0 space-y-2">
+                  <dt className="text-xs text-muted-foreground">{t('apiConfiguration')}</dt>
+                  <dd className="flex items-center gap-1.5 text-sm font-medium">
                     {exchangeRateConfigStatus?.tianApiConfigured ? (
                       <>
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="text-sm text-green-600">{t('configured')}</span>
+                        <CheckCircle className="h-4 w-4 shrink-0 text-primary" />
+                        <span className="text-primary">{t('configured')}</span>
                       </>
                     ) : (
                       <>
@@ -144,23 +144,21 @@ export function ExchangeRateManager() {
                         <span className="text-sm text-red-600">{t('notConfigured')}</span>
                       </>
                     )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">{t('updateFrequency')}</p>
-                  <p className="text-sm text-muted-foreground">{t('dailyAutomatic')}</p>
+                  </dd>
                 </div>
 
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">{t('lastSuccessfulUpdate')}</p>
-                  <p className="text-sm text-muted-foreground">
+                <div className="min-w-0 space-y-2">
+                  <dt className="text-xs text-muted-foreground">{t('updateFrequency')}</dt>
+                  <dd className="text-sm font-medium">{t('dailyAutomatic')}</dd>
+                </div>
+
+                <div className="min-w-0 space-y-2">
+                  <dt className="text-xs text-muted-foreground">{t('lastSuccessfulUpdate')}</dt>
+                  <dd className="text-sm font-medium">
                     {formatLastUpdate(lastExchangeRateUpdate)}
-                  </p>
+                  </dd>
                 </div>
-              </div>
+              </dl>
 
 
 
@@ -174,16 +172,16 @@ export function ExchangeRateManager() {
               )}
             </div>
 
-            <div className="flex gap-2 mt-4">
+            <div className="grid grid-cols-1 gap-3 border-t pt-4 min-[400px]:grid-cols-2">
               <Button
                 onClick={handleUpdateRates}
                 disabled={isUpdating || !exchangeRateConfigStatus?.tianApiConfigured}
                 size="sm"
               >
                 {isUpdating ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                  <RefreshCw className="h-4 w-4" />
                 )}
                 {t('updateNow')}
               </Button>
@@ -194,7 +192,7 @@ export function ExchangeRateManager() {
                 size="sm"
                 disabled={isUpdating}
               >
-                <RefreshCw className="h-4 w-4 mr-2" />
+                <RefreshCw className="h-4 w-4" />
                 {t('refreshRates')}
               </Button>
             </div>

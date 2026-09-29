@@ -5,6 +5,8 @@ import {
   type MonthlyCategorySummariesResponse
 } from '@/services/monthlyCategorySummaryApi';
 import { convertCurrency } from '@/utils/currency';
+import i18n from 'i18next';
+import { formatChartMonth } from '@/utils/chart-date';
 
 // 适配API的数据类型定义
 export interface MonthlyExpense {
@@ -14,6 +16,8 @@ export interface MonthlyExpense {
   amount: number;
   subscriptionCount: number;
   paymentHistoryIds?: number[];
+  subscriptionIds?: number[];
+  paymentCount?: number;
 }
 
 export interface ExpenseMetrics {
@@ -38,6 +42,18 @@ export interface CategoryExpense {
   subscriptionCount: number;
 }
 
+// Keep a continuous time axis, including months with zero cost. Month keys are
+// locale-independent; charts format them in the current language at render time.
+function getRangeMonthKeys(response: MonthlyCategorySummariesResponse): string[] {
+  if (!response.summaries.length) return [];
+  const { startYear, startMonth, endYear, endMonth } = response.summary.dateRange;
+  const keys: string[] = [];
+  for (let index = startYear * 12 + startMonth - 1; index <= endYear * 12 + endMonth - 1; index++) {
+    keys.push(`${Math.floor(index / 12)}-${String(index % 12 + 1).padStart(2, '0')}`);
+  }
+  return keys;
+}
+
 /**
  * 将月度分类汇总数据转换为分组柱状图需要的格式
  */
@@ -49,6 +65,7 @@ export function transformMonthlyCategorySummariesToGroupedData(
   const serverBaseCurrency = summariesResponse.summaries[0]?.baseCurrency || 'CNY';
   // 按月份分组数据
   const monthlyMap = new Map<string, { categories: Map<string, number>; total: number }>();
+  getRangeMonthKeys(summariesResponse).forEach(key => monthlyMap.set(key, { categories: new Map(), total: 0 }));
 
   summariesResponse.summaries.forEach(summary => {
     const monthKey = summary.monthKey;
@@ -68,16 +85,11 @@ export function transformMonthlyCategorySummariesToGroupedData(
   // 转换为图表需要的格式
   return Array.from(monthlyMap.entries())
     .map(([monthKey, data]) => {
-      const [yearStr, monthStr] = monthKey.split('-');
+      const [yearStr] = monthKey.split('-');
       const year = parseInt(yearStr);
-      const month = parseInt(monthStr);
 
       // 格式化月份显示
-      const date = new Date(year, month - 1);
-      const monthDisplay = date.toLocaleDateString('en-US', {
-        month: 'short',
-        year: 'numeric'
-      });
+      const monthDisplay = formatChartMonth(monthKey, i18n.resolvedLanguage || i18n.language || 'en', true);
 
       // 将 Map 转换为对象
       const categories: { [categoryName: string]: number } = {};
@@ -153,7 +165,7 @@ export async function getApiYearlyCategoryExpenses(
   const endYear = endDate.getFullYear();
   const endMonth = endDate.getMonth() + 1;
 
-  const response = await getMonthlyCategorySummaries(startYear, startMonth, endYear, endMonth);
+  const response = await getMonthlyCategorySummaries(startYear, startMonth, endYear, endMonth, 'amortized');
   return transformMonthlyCategorySummariesToYearlyGroupedData(response, currency);
 }
 export async function getApiMonthlyCategoryExpenses(
@@ -166,7 +178,7 @@ export async function getApiMonthlyCategoryExpenses(
   const endYear = endDate.getFullYear();
   const endMonth = endDate.getMonth() + 1;
 
-  const response = await getMonthlyCategorySummaries(startYear, startMonth, endYear, endMonth);
+  const response = await getMonthlyCategorySummaries(startYear, startMonth, endYear, endMonth, 'amortized');
   return transformMonthlyCategorySummariesToGroupedData(response, currency);
 }
 export function transformMonthlyCategorySummaries(
@@ -174,14 +186,16 @@ export function transformMonthlyCategorySummaries(
   targetCurrency: string
 ): MonthlyExpense[] {
   // 按月份分组汇总数据
-  const monthlyMap = new Map<string, { amount: number; transactionCount: number }>();
+  const monthlyMap = new Map<string, { amount: number; transactionCount: number; subscriptionIds: Set<number>; paymentIds: Set<number> }>();
+  const emptyMonth = () => ({ amount: 0, transactionCount: 0, subscriptionIds: new Set<number>(), paymentIds: new Set<number>() });
+  getRangeMonthKeys(summariesResponse).forEach(key => monthlyMap.set(key, emptyMonth()));
   const serverBaseCurrency = summariesResponse.summaries[0]?.baseCurrency || 'CNY';
 
   summariesResponse.summaries.forEach(summary => {
     const monthKey = summary.monthKey;
 
     if (!monthlyMap.has(monthKey)) {
-      monthlyMap.set(monthKey, { amount: 0, transactionCount: 0 });
+      monthlyMap.set(monthKey, emptyMonth());
     }
 
     const monthData = monthlyMap.get(monthKey)!;
@@ -189,29 +203,28 @@ export function transformMonthlyCategorySummaries(
     const convertedAmount = convertCurrency(summary.totalAmount, serverBaseCurrency, targetCurrency);
     monthData.amount += convertedAmount;
     monthData.transactionCount += summary.transactionsCount;
+    summary.subscriptionIds?.forEach(id => monthData.subscriptionIds.add(id));
+    summary.paymentIds?.forEach(id => monthData.paymentIds.add(id));
   });
 
   // 转换为 MonthlyExpense 格式
   return Array.from(monthlyMap.entries())
     .map(([monthKey, data]) => {
-      const [yearStr, monthStr] = monthKey.split('-');
+      const [yearStr] = monthKey.split('-');
       const year = parseInt(yearStr);
-      const month = parseInt(monthStr);
 
       // 格式化月份显示
-      const date = new Date(year, month - 1);
-      const monthDisplay = date.toLocaleDateString('en-US', {
-        month: 'short',
-        year: 'numeric'
-      });
+      const monthDisplay = formatChartMonth(monthKey, i18n.resolvedLanguage || i18n.language || 'en', true);
 
       return {
         monthKey,
         month: monthDisplay,
         year,
         amount: Math.round(data.amount * 100) / 100,
-        subscriptionCount: data.transactionCount,
-        paymentHistoryIds: Array.from({ length: data.transactionCount }, (_, i) => i + 1) // 生成支付ID数组用于计算支付数量
+        subscriptionCount: data.subscriptionIds.size || data.transactionCount,
+        paymentCount: data.transactionCount,
+        subscriptionIds: [...data.subscriptionIds],
+        paymentHistoryIds: [...data.paymentIds]
       };
     })
     .sort((a, b) => a.monthKey.localeCompare(b.monthKey));
@@ -223,14 +236,15 @@ export function transformMonthlyCategorySummaries(
 export async function getApiMonthlyExpenses(
   startDate: Date,
   endDate: Date,
-  currency: string // 保持兼容性，但新系统统一使用基础货币
+  currency: string,
+  basis: 'cash' | 'amortized' = 'amortized'
 ): Promise<MonthlyExpense[]> {
   const startYear = startDate.getFullYear();
   const startMonth = startDate.getMonth() + 1;
   const endYear = endDate.getFullYear();
   const endMonth = endDate.getMonth() + 1;
 
-  const response = await getMonthlyCategorySummaries(startYear, startMonth, endYear, endMonth);
+  const response = await getMonthlyCategorySummaries(startYear, startMonth, endYear, endMonth, basis);
   return transformMonthlyCategorySummaries(response, currency);
 }
 
@@ -252,16 +266,15 @@ export function calculateYearlyExpensesFromMonthly(monthlyExpenses: MonthlyExpen
     const yearData = yearlyMap.get(expense.year)!;
     yearData.amount += expense.amount;
     
-    // 添加支付历史ID到订阅集合中
-    if (expense.paymentHistoryIds) {
-      expense.paymentHistoryIds.forEach(id => yearData.subscriptions.add(id));
+    if (expense.subscriptionIds) {
+      expense.subscriptionIds.forEach(id => yearData.subscriptions.add(id));
     }
   });
 
   return Array.from(yearlyMap.entries())
     .map(([year, data]) => ({
       year,
-      amount: data.amount,
+      amount: Math.round(data.amount * 100) / 100,
       subscriptionCount: data.subscriptions.size
     }))
     .sort((a, b) => a.year - b.year);
@@ -312,7 +325,7 @@ export function calculateCategoryExpensesFromNewApi(
   summariesResponse: MonthlyCategorySummariesResponse,
   targetCurrency: string
 ): CategoryExpense[] {
-  const categoryMap = new Map<string, { amount: number; transactionCount: number }>();
+  const categoryMap = new Map<string, { amount: number; transactionCount: number; subscriptionIds: Set<number> }>();
   let totalAmount = 0;
   const serverBaseCurrency = summariesResponse.summaries[0]?.baseCurrency || 'CNY';
 
@@ -323,12 +336,13 @@ export function calculateCategoryExpensesFromNewApi(
     const convertedAmount = convertCurrency(summary.totalAmount, serverBaseCurrency, targetCurrency);
 
     if (!categoryMap.has(categoryLabel)) {
-      categoryMap.set(categoryLabel, { amount: 0, transactionCount: 0 });
+      categoryMap.set(categoryLabel, { amount: 0, transactionCount: 0, subscriptionIds: new Set() });
     }
 
     const categoryData = categoryMap.get(categoryLabel)!;
     categoryData.amount += convertedAmount;
     categoryData.transactionCount += summary.transactionsCount;
+    summary.subscriptionIds?.forEach(id => categoryData.subscriptionIds.add(id));
     totalAmount += convertedAmount;
   });
 
@@ -338,7 +352,7 @@ export function calculateCategoryExpensesFromNewApi(
       category,
       amount: Math.round(data.amount * 100) / 100,
       percentage: totalAmount > 0 ? (data.amount / totalAmount) * 100 : 0,
-      subscriptionCount: data.transactionCount
+      subscriptionCount: data.subscriptionIds.size || data.transactionCount
     }))
     .sort((a, b) => b.amount - a.amount); // 按金额降序排列
 }
@@ -356,6 +370,6 @@ export async function getApiCategoryExpenses(
   const endYear = endDate.getFullYear();
   const endMonth = endDate.getMonth() + 1;
 
-  const response = await getMonthlyCategorySummaries(startYear, startMonth, endYear, endMonth);
+  const response = await getMonthlyCategorySummaries(startYear, startMonth, endYear, endMonth, 'amortized');
   return calculateCategoryExpensesFromNewApi(response, currency);
 }

@@ -57,7 +57,7 @@ function HomePage() {
   } = useSubscriptionStore()
 
   // Projected recurring costs come directly from active subscriptions.
-  // Historical trend data continues to come from successful payment records.
+  // Historical trends allocate successful payments over their billing periods.
   const { totalMonthlySpending, totalYearlySpending, activeCount } = useSubscriptionStats()
   const [monthlyTrend, setMonthlyTrend] = useState<MonthlyExpense[]>([])
   const [isLoadingSpending, setIsLoadingSpending] = useState(true)
@@ -84,7 +84,7 @@ function HomePage() {
 
       try {
         const endDate = new Date()
-        const startDate = new Date(endDate.getFullYear(), endDate.getMonth() - 6, 1)
+        const startDate = new Date(endDate.getFullYear(), endDate.getMonth() - 11, 1)
         const trend = await getApiMonthlyExpenses(startDate, endDate, userCurrency)
         setMonthlyTrend(trend)
       } catch (error) {
@@ -130,7 +130,7 @@ function HomePage() {
       // Also refresh spending data
       if (userCurrency) {
         const endDate = new Date()
-        const startDate = new Date(endDate.getFullYear(), endDate.getMonth() - 6, 1)
+        const startDate = new Date(endDate.getFullYear(), endDate.getMonth() - 11, 1)
         const trend = await getApiMonthlyExpenses(startDate, endDate, userCurrency)
         setMonthlyTrend(trend)
       }

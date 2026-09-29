@@ -160,7 +160,8 @@ export function ExpenseReportsPage() {
         const startDate = new Date()
         startDate.setMonth(startDate.getMonth() - 12)
 
-        const allMonthlyData = await getApiMonthlyExpenses(startDate, endDate, userCurrency)
+        // Payment-detail cards retain cash totals; charts show allocated costs.
+        const allMonthlyData = await getApiMonthlyExpenses(startDate, endDate, userCurrency, 'cash')
 
         // Process API data
         if (allMonthlyData && allMonthlyData.length > 0) {

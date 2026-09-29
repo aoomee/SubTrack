@@ -57,11 +57,16 @@ class MonthlyCategorySummaryController {
         const endYear = parseInt(end_year) || currentYear;
 
         // 验证年份范围
-        if (startYear > endYear) {
+        if (startYear * 12 + Number(start_month) > endYear * 12 + Number(end_month)) {
             return validationError(res, 'start_year cannot be greater than end_year');
         }
 
-        const summaries = this.monthlyCategorySummaryService.getMonthlyCategorySummary(
+        const basis = req.query.basis || 'cash';
+        if (!['cash', 'amortized'].includes(basis)) {
+            return validationError(res, 'basis must be cash or amortized');
+        }
+        const method = basis === 'amortized' ? 'getAmortizedCategorySummary' : 'getMonthlyCategorySummary';
+        const summaries = this.monthlyCategorySummaryService[method](
             startYear,
             parseInt(start_month),
             endYear,
@@ -255,7 +260,11 @@ class MonthlyCategorySummaryController {
             totalAmount: parseFloat(summary.total_amount_in_base_currency),
             baseCurrency: summary.base_currency,
             transactionsCount: summary.transactions_count,
-            updatedAt: summary.updated_at
+            updatedAt: summary.updated_at,
+            ...(summary.subscription_ids ? {
+                subscriptionIds: summary.subscription_ids,
+                paymentIds: summary.payment_ids
+            } : {})
         }));
     }
 }

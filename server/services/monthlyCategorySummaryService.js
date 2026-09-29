@@ -15,6 +15,76 @@ class MonthlyCategorySummaryService {
     }
 
     /**
+     * Read-only monthly allocation of successful payments. Keep the existing cash
+     * summaries and ledger untouched; no migration or cache rebuild is required.
+     * A billing period contributes equal monthly shares starting in its first month.
+     */
+    getAmortizedCategorySummary(startYear, startMonth, endYear, endMonth) {
+        const firstMonth = startYear * 12 + startMonth - 1;
+        const lastMonth = endYear * 12 + endMonth - 1;
+        const { endDate } = getMonthDateRange(endYear, endMonth);
+        const payments = this.db.prepare(`
+            SELECT ph.*, s.billing_cycle,
+                COALESCE(c.id, fallback.id) AS category_id,
+                COALESCE(c.value, fallback.value) AS category_value,
+                COALESCE(c.label, fallback.label) AS category_label
+            FROM payment_history ph
+            JOIN subscriptions s ON s.id = ph.subscription_id
+            LEFT JOIN categories c ON c.id = s.category_id
+            LEFT JOIN categories fallback ON fallback.value = 'other'
+            WHERE ph.status = 'succeeded'
+              AND COALESCE(NULLIF(ph.billing_period_start, ''), ph.payment_date) <= ?
+        `).all(endDate);
+        const summaries = new Map();
+        const cycleMonths = { monthly: 1, quarterly: 3, semiannual: 6, yearly: 12 };
+
+        for (const payment of payments) {
+            const start = new Date(`${payment.billing_period_start || payment.payment_date}T00:00:00Z`);
+            if (!Number.isFinite(start.getTime())) continue;
+            const end = new Date(`${payment.billing_period_end}T00:00:00Z`);
+            const startIndex = start.getUTCFullYear() * 12 + start.getUTCMonth();
+            // Use the recorded period, not today's subscription cycle (which may
+            // have changed). Rounding supports both exclusive next-billing dates
+            // and legacy inclusive month-end dates, including Jan 31 rollovers.
+            const months = end > start
+                ? Math.max(1, Math.round((end - start) / (86400000 * (365.2425 / 12))))
+                : (cycleMonths[payment.billing_cycle] || 1);
+            const from = Math.max(0, firstMonth - startIndex);
+            const to = Math.min(months - 1, lastMonth - startIndex);
+            if (from > to) continue;
+            const cents = Math.round(Number(payment.amount_paid) * this.getExchangeRate(payment.currency, this.baseCurrency) * 100);
+
+            for (let offset = from; offset <= to; offset++) {
+                const index = startIndex + offset;
+                const key = `${index}:${payment.category_id}`;
+                if (!summaries.has(key)) {
+                    summaries.set(key, {
+                        year: Math.floor(index / 12), month: index % 12 + 1,
+                        category_id: payment.category_id,
+                        category_value: payment.category_value,
+                        category_label: payment.category_label,
+                        totalCents: 0, base_currency: this.baseCurrency,
+                        transactions_count: 0, subscriptionIds: new Set(), paymentIds: new Set(),
+                        updated_at: null
+                    });
+                }
+                const summary = summaries.get(key);
+                // Cumulative rounding conserves the exact payment total, including
+                // amounts such as 100 / 12 that cannot be represented in cents.
+                summary.totalCents += Math.round(cents * (offset + 1) / months) - Math.round(cents * offset / months);
+                summary.transactions_count++;
+                summary.subscriptionIds.add(payment.subscription_id);
+                summary.paymentIds.add(payment.id);
+            }
+        }
+        return [...summaries.values()].map(({ totalCents, subscriptionIds, paymentIds, ...summary }) => ({
+            ...summary,
+            total_amount_in_base_currency: totalCents / 100,
+            subscription_ids: [...subscriptionIds], payment_ids: [...paymentIds]
+        })).sort((a, b) => a.year - b.year || a.month - b.month || a.category_id - b.category_id);
+    }
+
+    /**
      * 获取汇率
      */
     getExchangeRate(fromCurrency, toCurrency) {

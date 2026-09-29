@@ -13,6 +13,8 @@ export interface MonthlyCategorySummaryApiResponse {
   baseCurrency: string;
   transactionsCount: number;
   updatedAt: string;
+  subscriptionIds?: number[];
+  paymentIds?: number[];
 }
 
 export interface MonthCategorySummaryResponse {
@@ -66,10 +68,12 @@ export async function getMonthlyCategorySummaries(
   startYear?: number,
   startMonth?: number,
   endYear?: number,
-  endMonth?: number
+  endMonth?: number,
+  basis: 'cash' | 'amortized' = 'cash'
 ): Promise<MonthlyCategorySummariesResponse> {
   try {
     const params = new URLSearchParams();
+    params.set('basis', basis);
     if (startYear) params.append('start_year', startYear.toString());
     if (startMonth) params.append('start_month', startMonth.toString());
     if (endYear) params.append('end_year', endYear.toString());
@@ -158,4 +162,3 @@ export async function processPayment(paymentId: number): Promise<{ message: stri
     throw error;
   }
 }
-

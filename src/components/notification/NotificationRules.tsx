@@ -53,8 +53,17 @@ export const NotificationRules: React.FC<NotificationRulesProps> = ({
             <Badge
               key={channel}
               variant={currentChannels.includes(channel) ? 'default' : 'secondary'}
-              className="cursor-pointer transition-colors"
-              onClick={() => setting.is_enabled && handleChannelToggle(setting, channel)}
+              className="cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              role="button"
+              tabIndex={setting.is_enabled && !loading ? 0 : -1}
+              aria-pressed={currentChannels.includes(channel)}
+              onClick={() => setting.is_enabled && !loading && handleChannelToggle(setting, channel)}
+              onKeyDown={(event) => {
+                if ((event.key === 'Enter' || event.key === ' ') && setting.is_enabled && !loading) {
+                  event.preventDefault();
+                  handleChannelToggle(setting, channel);
+                }
+              }}
           >
             {t(`channels.${channel}`)}
           </Badge>
@@ -149,14 +158,14 @@ export const NotificationRules: React.FC<NotificationRulesProps> = ({
     <div className="space-y-4">
       {settings && Array.isArray(settings) ? settings.map((setting) => (
         <Card key={setting.notification_type}>
-          <CardContent className="pt-6">
-            <div className="space-y-4">
+          <CardContent className="p-5 sm:p-6">
+            <div className="space-y-5">
               {/* Header */}
-              <div className="flex items-start justify-between">
-                <div className="space-y-1 flex-1">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1 space-y-2">
                   <div className="flex items-center gap-2">
                     {getNotificationIcon(setting.notification_type)}
-                    <h4 className="font-medium">
+                    <h4 className="font-medium leading-6">
                       {t(`types.${setting.notification_type}`)}
                     </h4>
                   </div>
@@ -166,6 +175,8 @@ export const NotificationRules: React.FC<NotificationRulesProps> = ({
                 </div>
                 
                 <Switch
+                  aria-label={t(`types.${setting.notification_type}`)}
+                  className="mt-0.5 shrink-0"
                   checked={setting.is_enabled}
                   onCheckedChange={(enabled) => handleToggleEnabled(setting, enabled)}
                   disabled={loading}
@@ -174,7 +185,7 @@ export const NotificationRules: React.FC<NotificationRulesProps> = ({
 
               {/* Configuration (only shown when enabled) */}
               {setting.is_enabled && (
-                <div className="space-y-4 pl-6 border-l-2 border-muted">
+                <div className="space-y-4 rounded-lg bg-muted/40 p-4">
                   {/* Advance Days */}
                   {renderAdvanceDaysInput(setting)}
 
@@ -193,7 +204,7 @@ export const NotificationRules: React.FC<NotificationRulesProps> = ({
               )}
 
               {/* Status */}
-              <div className="flex items-center justify-between pt-2 border-t">
+              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t pt-4">
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${
                     setting.is_enabled ? 'bg-green-500' : 'bg-gray-300'
@@ -205,7 +216,7 @@ export const NotificationRules: React.FC<NotificationRulesProps> = ({
                 
                 {setting.is_enabled && (
                   <div className="text-xs text-muted-foreground">
-                    {t('channelsLabel')}: {Array.isArray(setting.notification_channels) ? setting.notification_channels.join(', ') : 'telegram'}
+                    {t('channelsLabel')}: {(Array.isArray(setting.notification_channels) ? setting.notification_channels : ['telegram']).map(channel => t(`channels.${channel}`)).join(' / ')}
                   </div>
                 )}
               </div>

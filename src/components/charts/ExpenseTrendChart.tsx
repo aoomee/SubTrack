@@ -7,6 +7,7 @@ import { MonthlyExpense } from "@/lib/expense-analytics-api"
 import { LineChart as LineChartIcon, BarChart3 } from "lucide-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
+import { formatChartMonth } from '@/utils/chart-date'
 
 interface ExpenseTrendChartProps {
   data: MonthlyExpense[]
@@ -59,7 +60,8 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export function ExpenseTrendChart({ data, categoryData, currency, className }: ExpenseTrendChartProps) {
-  const { t } = useTranslation('reports')
+  const { t, i18n } = useTranslation('reports')
+  const language = i18n.resolvedLanguage || i18n.language
   const [chartType, setChartType] = useState<'line' | 'groupedBar'>('line')
   
   // 获取所有类别名称（用于分组柱状图）
@@ -88,10 +90,10 @@ export function ExpenseTrendChart({ data, categoryData, currency, className }: E
         >
           <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/70" />
           <XAxis
-            dataKey="month"
+            dataKey="monthKey"
             className="text-xs fill-muted-foreground"
             tick={{ fontSize: 10 }}
-            tickFormatter={(value) => String(value).split(' ')[0]}
+            tickFormatter={(value) => formatChartMonth(String(value), language)}
             height={28}
             minTickGap={20}
             tickMargin={10}
@@ -109,7 +111,7 @@ export function ExpenseTrendChart({ data, categoryData, currency, className }: E
                 return (
                   <div className="rounded-lg border bg-background p-3 shadow-md">
                     <div className="grid gap-2">
-                      <div className="font-medium">{label}</div>
+                      <div className="font-medium">{formatChartMonth(String(label), language, true)}</div>
                       <div className="grid gap-1 text-sm">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-muted-foreground">{t('chart.amount')}:</span>
@@ -153,10 +155,10 @@ export function ExpenseTrendChart({ data, categoryData, currency, className }: E
         >
           <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/70" />
           <XAxis
-            dataKey="month"
+            dataKey="monthKey"
             className="text-xs fill-muted-foreground"
             tick={{ fontSize: 10 }}
-            tickFormatter={(value) => String(value).split(' ')[0]}
+            tickFormatter={(value) => formatChartMonth(String(value), language)}
             height={28}
             minTickGap={20}
             tickMargin={10}
@@ -173,7 +175,7 @@ export function ExpenseTrendChart({ data, categoryData, currency, className }: E
                 return (
                   <div className="rounded-lg border bg-background p-3 shadow-md">
                     <div className="grid gap-2">
-                      <div className="font-medium">{label}</div>
+                      <div className="font-medium">{formatChartMonth(String(label), language, true)}</div>
                       <div className="grid gap-1 text-sm">
                         {payload.map((entry, index) => (
                           <div key={index} className="flex items-center justify-between gap-2">

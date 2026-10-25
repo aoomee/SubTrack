@@ -64,7 +64,7 @@ export function SettingsPage() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const [isInitializing, setIsInitializing] = useState(true)
 
-  const defaultTab = searchParams.get('tab') || 'general'
+  const defaultTab = searchParams.get('tab') || 'currency'
 
   const { setTheme: setNextTheme } = useTheme()
 
@@ -199,14 +199,14 @@ export function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.035em] sm:text-[32px]">{t('title')}</h1>
+        <h1 className="sr-only">{t('title')}</h1>
       </div>
 
-      <Tabs defaultValue={defaultTab} className="max-w-4xl">
-        <div className="overflow-x-auto sm:overflow-visible">
+      <Tabs defaultValue={defaultTab}>
+        <div className="overflow-x-auto scrollbar-hide">
           <TabsList className="min-w-max sm:min-w-0">
-            <TabsTrigger value="general">{t('general')}</TabsTrigger>
             <TabsTrigger value="currency">{t('currency')}</TabsTrigger>
+            <TabsTrigger value="general">{t('general')}</TabsTrigger>
             <TabsTrigger value="options">{t('options')}</TabsTrigger>
             <TabsTrigger value="notifications">{t('notifications')}</TabsTrigger>
             <TabsTrigger value="security">{t('security')}</TabsTrigger>

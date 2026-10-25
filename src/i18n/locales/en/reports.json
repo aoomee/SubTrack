@@ -63,5 +63,12 @@
     "noMonthlyDataAvailable": "No monthly data available",
     "noQuarterlyDataAvailable": "No quarterly data available",
     "noYearlyDataAvailable": "No yearly data available"
+  },
+  "ledger": {
+    "monthlyAverage": "Monthly average",
+    "yearAllocated": "Allocated this year",
+    "topCategory": "Largest category",
+    "yearPaid": "Paid this year",
+    "paymentHistory": "Payment history · actual payments"
   }
 }

@@ -243,10 +243,10 @@ export const NotificationHistory: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="ledger-page-heading">
         <div>
-          <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.035em] sm:text-[32px]">{t('history.title')}</h1>
-          <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+          <h1>{t('history.title')}</h1>
+          <p>
             {t('history.description')}
           </p>
         </div>

@@ -3,10 +3,18 @@
   "subscriptions": "Subscriptions",
   "reports": "Reports",
   "settings": "Settings",
-  "dashboard": "Dashboard",
+  "dashboard": "Overview",
   "expenseReports": "Expense Reports",
-  "notifications": "Notification History",
+  "notifications": "Activity",
   "logout": "Logout",
   "collapseSidebar": "Collapse sidebar",
-  "expandSidebar": "Expand sidebar"
+  "expandSidebar": "Expand sidebar",
+  "brandName": "SubTrack",
+  "brandMark": "S",
+  "add": "Add",
+  "currencyShortcut": "Change display currency",
+  "mainNavigation": "Main navigation",
+  "mobileNavigation": "Mobile navigation",
+  "skipToContent": "Skip to content",
+  "toggleTheme": "Toggle theme"
 }

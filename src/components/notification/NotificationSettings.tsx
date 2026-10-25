@@ -70,13 +70,13 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ user
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between gap-4">
+      <div className="ledger-page-heading">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Settings className="h-8 w-8" />
+          <h1 className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
             {t('notificationSettings')}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="mt-1 text-xs text-muted-foreground">
             {t('managePreferencesDesc')}
           </p>
         </div>

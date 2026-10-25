@@ -24,6 +24,7 @@ import { YearlyTrendChart } from "@/components/charts/YearlyTrendChart"
 import { CategoryPieChart } from "@/components/charts/CategoryPieChart"
 import { ExpenseInfoCards } from "@/components/charts/ExpenseInfoCards"
 import { apiClient } from '@/utils/api-client'
+import { formatCurrencyAmount } from '@/utils/currency'
 import type { PaymentRecordApi } from '@/utils/dataTransform'
 
 
@@ -384,51 +385,26 @@ export function ExpenseReportsPage() {
   return (
     <div className="space-y-7">
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="ledger-page-heading">
         <div>
-          <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.035em] sm:text-[32px]">{t('title')}</h1>
-          <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+          <h1>{t('title')}</h1>
+          <p>
             {t('description')}
           </p>
         </div>
       </div>
 
-      {/* Expense Info Cards */}
-      <div className="space-y-6">
-        <div>
-          {isLoadingExpenseInfo ? (
-            <div>
-              <ExpenseInfoCards
-                monthlyData={[]}
-                quarterlyData={[]}
-                yearlyData={[]}
-                currency={userCurrency}
-                isLoading={true}
-              />
-            </div>
-          ) : expenseInfoError ? (
-            <Card>
-              <CardContent className="flex items-center justify-center h-32">
-                <div className="text-center">
-                  <p className="text-sm text-destructive mb-2">{t('failedToLoadExpenseOverview')}</p>
-                  <p className="text-xs text-muted-foreground">{expenseInfoError}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div>
-              <ExpenseInfoCards
-                monthlyData={expenseInfoData.monthly}
-                quarterlyData={expenseInfoData.quarterly}
-                yearlyData={expenseInfoData.yearly}
-                currency={userCurrency}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-
+      <Card className="grid grid-cols-2 divide-x md:grid-cols-4">
+        {[
+          [t('ledger.monthlyAverage'), isLoadingExpenses || expenseError ? '—' : formatCurrencyAmount(monthlyExpenses.reduce((sum, item) => sum + item.amount, 0) / (monthlyExpenses.length || 1), userCurrency)],
+          [t('ledger.yearAllocated'), isLoadingYearlyExpenses || yearlyExpenseError ? '—' : formatCurrencyAmount(yearlyExpenses.find(item => item.year === new Date().getFullYear())?.amount || 0, userCurrency)],
+          [t('ledger.topCategory'), isLoadingCategoryExpenses || categoryExpenseError ? '—' : categoryExpenses[0]?.category || '—'],
+          [t('ledger.yearPaid'), isLoadingExpenseInfo || expenseInfoError ? '—' : formatCurrencyAmount(expenseInfoData.yearly.find(item => item.startDate.startsWith(String(new Date().getFullYear())))?.totalSpent || 0, userCurrency)],
+        ].map(([label, value]) => <div key={label} className="min-w-0 p-5 sm:p-6">
+          <p className="text-xs text-muted-foreground">{label}</p>
+          <p className="mt-2 break-words text-xl font-semibold tracking-tight">{value}</p>
+        </div>)}
+      </Card>
 
       {/* Loading and Error States */}
       {isLoadingExpenses && (
@@ -460,7 +436,7 @@ export function ExpenseReportsPage() {
             </TabsList>
 
             <TabsContent value="monthly" className="space-y-4">
-              <div className="grid gap-4 grid-cols-1 xl:grid-cols-2">
+              <div className="grid gap-5 grid-cols-1 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
                 <ExpenseTrendChart
                   data={monthlyExpenses}
                   categoryData={monthlyCategoryExpenses}
@@ -538,6 +514,49 @@ export function ExpenseReportsPage() {
           </Tabs>
         </div>
       )}
+      <details className="rounded-[26px] border bg-card p-5 sm:p-6">
+        <summary className="cursor-pointer text-sm font-semibold">{t('ledger.paymentHistory')}</summary>
+        <div className="mt-5">
+      {/* Expense Info Cards */}
+      <div className="space-y-6">
+        <div>
+          {isLoadingExpenseInfo ? (
+            <div>
+              <ExpenseInfoCards
+                monthlyData={[]}
+                quarterlyData={[]}
+                yearlyData={[]}
+                currency={userCurrency}
+                isLoading={true}
+              />
+            </div>
+          ) : expenseInfoError ? (
+            <Card>
+              <CardContent className="flex items-center justify-center h-32">
+                <div className="text-center">
+                  <p className="text-sm text-destructive mb-2">{t('failedToLoadExpenseOverview')}</p>
+                  <p className="text-xs text-muted-foreground">{expenseInfoError}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div>
+              <ExpenseInfoCards
+                monthlyData={expenseInfoData.monthly}
+                quarterlyData={expenseInfoData.quarterly}
+                yearlyData={expenseInfoData.yearly}
+                currency={userCurrency}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+
+
+
+        </div>
+      </details>
     </div>
   )
 }

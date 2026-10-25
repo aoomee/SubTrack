@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import { useTranslation } from 'react-i18next'
 
 interface SubTrackBrandProps {
   className?: string
@@ -15,10 +16,13 @@ export function SubTrackMark({ className }: { className?: string }) {
       aria-hidden="true"
       focusable="false"
     >
+      <circle cx="32" cy="20" r="11" fill="currentColor" />
+      <circle cx="22" cy="35" r="11" fill="currentColor" />
+      <circle cx="42" cy="35" r="11" fill="currentColor" />
       <path
-        d="M50 10H22C14 10 10 14 10 21.5S14 33 22 33H29M35 33H42C50 33 54 37 54 44.5S50 56 42 56H14"
+        d="M32 35C33 44 30 50 25 54"
         stroke="currentColor"
-        strokeWidth="10"
+        strokeWidth="4"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -27,10 +31,11 @@ export function SubTrackMark({ className }: { className?: string }) {
 }
 
 export function SubTrackBrand({ className, showWordmark = true }: SubTrackBrandProps) {
+  const { t } = useTranslation('navigation')
   return (
     <span className={cn('brand-lockup', className)} aria-hidden="true">
-      <SubTrackMark />
-      {showWordmark && <span className="brand-wordmark">SUBTRACK</span>}
+      <span className="flex h-8 w-8 items-center justify-center rounded-[11px] bg-primary text-primary-foreground"><SubTrackMark className="h-7 w-7" /></span>
+      {showWordmark && <span className="brand-wordmark">{t('brandName')}</span>}
     </span>
   )
 }

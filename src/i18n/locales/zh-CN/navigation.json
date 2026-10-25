@@ -1,12 +1,20 @@
 {
   "home": "首页",
-  "subscriptions": "订阅管理",
-  "reports": "报表",
+  "subscriptions": "订阅",
+  "reports": "统计",
   "settings": "设置",
-  "dashboard": "仪表板",
+  "dashboard": "总览",
   "expenseReports": "支出报表",
-  "notifications": "通知历史",
+  "notifications": "通知",
   "logout": "登出",
   "collapseSidebar": "收起侧边栏",
-  "expandSidebar": "展开侧边栏"
+  "expandSidebar": "展开侧边栏",
+  "brandName": "SubTrack",
+  "brandMark": "订",
+  "add": "新增",
+  "currencyShortcut": "前往设置切换货币",
+  "mainNavigation": "主导航",
+  "mobileNavigation": "移动导航",
+  "skipToContent": "跳至主要内容",
+  "toggleTheme": "切换深浅色"
 }

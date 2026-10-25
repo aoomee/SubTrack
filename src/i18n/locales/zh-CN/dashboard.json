@@ -26,5 +26,17 @@
   "paidOn": "支付于",
   "today": "今天",
   "tomorrow": "明天",
-  "days": "天"
+  "days": "天",
+  "viewDetails": "查看明细",
+  "viewAll": "查看全部",
+  "monthlyAllocation": "按月均摊折算",
+  "yearlyProjection": "含年付周期折算",
+  "serviceSummary": "共 {{total}} 项 · {{trial}} 项试用",
+  "billingCalendar": "本月扣款日历",
+  "calendarDay": "{{date}}，{{count}} 项待扣款",
+  "noScheduledPayments": "当天没有计划扣款",
+  "calendarBasis": "按订阅的下次扣款日期显示",
+  "activeServices": "生效订阅",
+  "noActiveServices": "暂无生效订阅",
+  "monthlyEquivalent": "折合 {{amount}} / 月"
 }

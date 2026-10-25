@@ -352,6 +352,7 @@ export function SubscriptionDetailDialog({
   onEdit,
   onManualRenew
 }: SubscriptionDetailDialogProps) {
+  const { t } = useTranslation('subscription')
   const isMobile = useIsMobile()
   const { categories, paymentMethods } = useSubscriptionStore()
 
@@ -365,7 +366,7 @@ export function SubscriptionDetailDialog({
             <SheetTitle className="flex flex-col gap-1.5">
               <span className="text-lg font-semibold break-words">{subscription.name}</span>
               <Badge variant={subscription.status === 'active' ? 'default' : 'secondary'} className="self-start text-xs">
-                {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
+                {t(subscription.status)}
               </Badge>
             </SheetTitle>
           </SheetHeader>
@@ -391,7 +392,7 @@ export function SubscriptionDetailDialog({
           <DialogTitle className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
             <span className="text-base sm:text-lg">{subscription.name}</span>
             <Badge variant={subscription.status === 'active' ? 'default' : 'secondary'} className="self-start sm:self-auto text-xs">
-              {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
+              {t(subscription.status)}
             </Badge>
           </DialogTitle>
         </DialogHeader>

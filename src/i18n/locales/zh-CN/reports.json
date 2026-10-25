@@ -63,5 +63,12 @@
     "noMonthlyDataAvailable": "暂无月度数据",
     "noQuarterlyDataAvailable": "暂无季度数据",
     "noYearlyDataAvailable": "暂无年度数据"
+  },
+  "ledger": {
+    "monthlyAverage": "月均分摊",
+    "yearAllocated": "本年分摊",
+    "topCategory": "最大分类",
+    "yearPaid": "本年实付",
+    "paymentHistory": "付款明细 · 按实际支付统计"
   }
 }

@@ -59,9 +59,9 @@ export function ExchangeRateManager() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="grid items-start gap-5 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
       {/* 上排：货币设置和状态卡片 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="space-y-5">
         <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>{t('currencySettings')}</CardTitle>
@@ -209,24 +209,22 @@ export function ExchangeRateManager() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="divide-y">
             {Object.entries(exchangeRates).map(([currency, rate]) => (
               <div
                 key={currency}
-                className="flex items-center justify-between p-3 border rounded-lg"
+                className="flex items-center justify-between gap-4 py-3.5"
               >
                 <div className="space-y-1">
-                  <p className="font-medium">{currency}</p>
+                  <p className="text-sm font-medium">{currency}</p>
                   <p className="text-xs text-muted-foreground">
-                    {CURRENCY_NAMES[currency as keyof typeof CURRENCY_NAMES] || currency}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {formatCurrencyAmount(rate, currency, false)}
+                    {new Intl.DisplayNames([i18n.resolvedLanguage || 'en'], { type: 'currency' }).of(currency) || CURRENCY_NAMES[currency as keyof typeof CURRENCY_NAMES] || currency}
                   </p>
                 </div>
-                {isBaseCurrency(currency) && (
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                )}
+                <div className="flex items-center gap-2 rounded-full bg-muted px-3 py-1.5 text-xs font-medium tabular-nums">
+                  {formatCurrencyAmount(rate, currency, false)}
+                  {isBaseCurrency(currency) && <CheckCircle className="h-3.5 w-3.5 text-muted-foreground" />}
+                </div>
               </div>
             ))}
           </div>

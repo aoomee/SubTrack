@@ -295,9 +295,9 @@ export function SubscriptionForm({
                   <SelectValue placeholder={t('common:selectStatus')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="trial">Trial</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="active">{t('subscription:active')}</SelectItem>
+                  <SelectItem value="trial">{t('subscription:trial')}</SelectItem>
+                  <SelectItem value="cancelled">{t('subscription:cancelled')}</SelectItem>
                 </SelectContent>
               </Select>
             </FormField>

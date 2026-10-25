@@ -28,9 +28,9 @@ import {
 
 import { SubscriptionForm } from "@/components/subscription/SubscriptionForm"
 import { StatCard } from "@/components/dashboard/StatCard"
-import { UpcomingRenewals } from "@/components/dashboard/UpcomingRenewals"
-import { RecentlyPaid } from "@/components/dashboard/RecentlyPaid"
-import { CategoryBreakdown } from "@/components/dashboard/CategoryBreakdown"
+import { SubscriptionActivity } from "@/components/dashboard/SubscriptionActivity"
+import { ActiveSubscriptionList, BillingCalendar, CategoryStrip } from "@/components/dashboard/LedgerOverview"
+import { SubscriptionDetailDialog } from '@/components/subscription/SubscriptionDetailDialog'
 import { ImportModal } from "@/components/imports/ImportModal"
 import { ExpenseTrendChart } from "@/components/charts/ExpenseTrendChart"
 import { PageLoading } from "@/components/ui/page-loading"
@@ -39,12 +39,14 @@ function HomePage() {
   const { toast } = useToast()
   const { t } = useTranslation(['dashboard', 'common'])
   const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null)
+  const [detailSubscription, setDetailSubscription] = useState<Subscription | null>(null)
   const [showImportModal, setShowImportModal] = useState(false)
   // Get the default view from settings
   const { currency: userCurrency, fetchSettings } = useSettingsStore()
   const [isInitializing, setIsInitializing] = useState(true)
   
   const {
+    subscriptions,
     bulkAddSubscriptions,
     updateSubscription,
     fetchSubscriptions,
@@ -187,8 +189,8 @@ function HomePage() {
 
   return (
     <>
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
+      <div className="mb-3 flex items-center justify-end">
+        <div className="sr-only">
           <h1 className="text-2xl font-semibold tracking-[-0.035em] sm:text-[30px]">{t('common:dashboard')}</h1>
           <p className="mt-1 text-sm text-muted-foreground sm:text-base">
             {t('common:dashboardDescription')}
@@ -199,7 +201,7 @@ function HomePage() {
           disabled={isRefreshing}
           variant="outline"
           size="sm"
-          className="self-start sm:self-auto"
+          className="h-7 border-0 bg-transparent text-muted-foreground shadow-none"
         >
           <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           {isRefreshing ? t('common:refreshing') : t('common:refresh')}
@@ -208,7 +210,7 @@ function HomePage() {
 
       {/* Dashboard Content */}
       <div className="space-y-5">
-          <Card className="overflow-hidden rounded-[18px] border-border/80 shadow-none">
+          <Card className="overflow-hidden rounded-[28px]">
             <section
               className="grid divide-y md:grid-cols-3 md:divide-y-0"
               aria-label="Subscription summary"
@@ -217,45 +219,44 @@ function HomePage() {
                 title={t('common:monthlySpending')}
                 value={formatCurrencyAmount(totalMonthlySpending, userCurrency)}
                 divider
-                align="center"
+                description={t('monthlyAllocation')}
               />
               <StatCard
                 title={t('common:yearlySpending')}
                 value={formatCurrencyAmount(totalYearlySpending, userCurrency)}
                 divider
-                align="center"
+                description={t('yearlyProjection')}
               />
               <StatCard
                 title={t('common:activeSubscriptions')}
                 value={activeCount}
-                description={t('common:totalServices')}
-                align="center"
+                description={t('serviceSummary', { total: subscriptions.length, trial: subscriptions.filter(sub => sub.status === 'trial').length })}
               />
             </section>
+            <CategoryStrip data={spendingByCategory} />
           </Card>
           
           <section
-            className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(360px,1fr)]"
+            className="grid grid-cols-1 gap-5 md:grid-cols-2"
             aria-label="Expense activity"
           >
-            <ExpenseTrendChart
-              data={monthlyTrend}
-              currency={userCurrency}
-            />
-            <UpcomingRenewals
-              subscriptions={upcomingRenewals}
-            />
+            <SubscriptionActivity subscriptions={upcomingRenewals} onSelect={setDetailSubscription} />
+            <SubscriptionActivity subscriptions={recentlyPaidSubscriptions} paid onSelect={setDetailSubscription} />
           </section>
 
-          <section className="grid grid-cols-1 gap-4 lg:grid-cols-2" aria-label="Recent subscription details">
-            <RecentlyPaid subscriptions={recentlyPaidSubscriptions} />
-            <CategoryBreakdown data={spendingByCategory} />
+          <section className="grid grid-cols-1 gap-5 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]" aria-label="Expense trend and scheduled payments">
+            <ExpenseTrendChart data={monthlyTrend} currency={userCurrency} />
+            <BillingCalendar subscriptions={subscriptions} />
           </section>
+          <ActiveSubscriptionList subscriptions={subscriptions} onSelect={setDetailSubscription} />
         </div>
 
 
 
       {/* Forms and Modals */}
+      <SubscriptionDetailDialog subscription={detailSubscription} open={detailSubscription !== null}
+        onOpenChange={open => { if (!open) setDetailSubscription(null) }}
+        onEdit={id => { setEditingSubscription(subscriptions.find(sub => sub.id === id) || null); setDetailSubscription(null) }} />
       {editingSubscription && (
         <SubscriptionForm
           open={Boolean(editingSubscription)}

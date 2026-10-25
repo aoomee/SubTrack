@@ -26,5 +26,17 @@
   "paidOn": "Paid on",
   "today": "Today",
   "tomorrow": "Tomorrow",
-  "days": "days"
+  "days": "days",
+  "viewDetails": "View breakdown",
+  "viewAll": "View all",
+  "monthlyAllocation": "Normalized monthly cost",
+  "yearlyProjection": "Including annual billing cycles",
+  "serviceSummary": "{{total}} total · {{trial}} on trial",
+  "billingCalendar": "Billing calendar",
+  "calendarDay": "{{date}}, {{count}} scheduled payments",
+  "noScheduledPayments": "No payments scheduled for this day",
+  "calendarBasis": "Based on each subscription’s next billing date",
+  "activeServices": "Active subscriptions",
+  "noActiveServices": "No active subscriptions",
+  "monthlyEquivalent": "{{amount}} / month"
 }

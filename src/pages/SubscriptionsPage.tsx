@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from "react-i18next"
 import { 
   Calendar, 
@@ -58,10 +59,12 @@ import { SubscriptionDetailDialog } from "@/components/subscription/Subscription
 import { ImportModal } from "@/components/imports/ImportModal"
 
 export function SubscriptionsPage() {
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const { toast } = useToast()
   const { t } = useTranslation(['common', 'subscription'])
   const [searchTerm, setSearchTerm] = useState("")
-  const [showAddForm, setShowAddForm] = useState(false)
+  const [showAddForm, setShowAddForm] = useState(() => searchParams.get('add') === '1')
   const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null)
   const [currentView, setCurrentView] = useState<"all" | "active" | "trial" | "cancelled">("all")
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
@@ -386,10 +389,10 @@ export function SubscriptionsPage() {
   return (
     <>
       {/* Header */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="ledger-page-heading">
         <div>
-          <h1 className="text-2xl font-semibold tracking-[-0.035em] sm:text-[30px]">{t('subscription:title')}</h1>
-          <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+          <h1>{t('subscription:title')}</h1>
+          <p>
             {t('subscription:manageAllServices')}
           </p>
         </div>
@@ -436,8 +439,8 @@ export function SubscriptionsPage() {
       </div>
 
       {/* Filters and Search */}
-      <div className="mb-5 flex flex-col items-start justify-between gap-3 rounded-xl border bg-card p-3 md:flex-row md:items-center">
-        <div className="flex w-full items-center gap-2 md:max-w-lg">
+      <div className="mb-5 flex flex-col-reverse items-start justify-between gap-4">
+        <div className="flex w-full items-center gap-2">
           <SearchInput
             placeholder={t('subscription:searchPlaceholder')}
             value={searchTerm}
@@ -595,27 +598,35 @@ export function SubscriptionsPage() {
           </TooltipProvider>
         </div>
 
-        <div className="flex w-full items-center gap-2 overflow-x-auto md:w-auto">
+        <div className="flex max-w-full items-center gap-1 overflow-x-auto rounded-full bg-secondary p-1">
           <Button
-            variant={currentView === "all" ? "default" : "outline"}
+            variant="ghost"
+            size="sm"
+            className={currentView === 'all' ? 'bg-card shadow-sm' : 'text-muted-foreground'}
             onClick={() => setCurrentView("all")}
           >
             {t('subscription:all')}
           </Button>
           <Button
-            variant={currentView === "active" ? "default" : "outline"}
+            variant="ghost"
+            size="sm"
+            className={currentView === 'active' ? 'bg-card shadow-sm' : 'text-muted-foreground'}
             onClick={() => setCurrentView("active")}
           >
             {t('subscription:active')}
           </Button>
           <Button
-            variant={currentView === "trial" ? "default" : "outline"}
+            variant="ghost"
+            size="sm"
+            className={currentView === 'trial' ? 'bg-card shadow-sm' : 'text-muted-foreground'}
             onClick={() => setCurrentView("trial")}
           >
             {t('subscription:trial')}
           </Button>
           <Button
-            variant={currentView === "cancelled" ? "default" : "outline"}
+            variant="ghost"
+            size="sm"
+            className={currentView === 'cancelled' ? 'bg-card shadow-sm' : 'text-muted-foreground'}
             onClick={() => setCurrentView("cancelled")}
           >
             {t('subscription:cancelled')}
@@ -697,7 +708,7 @@ export function SubscriptionsPage() {
 
       {/* Subscriptions Grid */}
       {isLoading ? (
-        <div className="grid gap-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           {/* Loading skeleton cards */}
           {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="rounded-xl border bg-card shadow animate-pulse">
@@ -749,7 +760,7 @@ export function SubscriptionsPage() {
           </div>
         </div>
       ) : (
-        <div className="grid gap-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           {sortedSubscriptions.map((subscription) => (
             <SubscriptionCard
               key={subscription.id}
@@ -770,6 +781,7 @@ export function SubscriptionsPage() {
           if (!open) {
             setShowAddForm(false)
             setEditingSubscription(null)
+            if (searchParams.has('add')) navigate('/subscriptions', { replace: true })
           }
         }}
         initialData={editingSubscription || undefined}

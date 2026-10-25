@@ -1,4 +1,4 @@
-import { Route, Routes, useLocation } from "react-router-dom"
+import { Route, Routes } from "react-router-dom"
 import { Suspense, lazy, useEffect } from "react"
 import { Toaster } from "./components/ui/toaster"
 import { ThemeProvider } from "./components/ThemeProvider"
@@ -15,24 +15,24 @@ const ExpenseReportsPage = lazy(() => import("./pages/ExpenseReportsPage").then(
 const NotificationHistoryPage = lazy(() => import("./pages/NotificationHistoryPage").then(module => ({ default: module.NotificationHistoryPage })))
 const LoginPage = lazy(() => import("./pages/LoginPage"))
 
-function App() {
-  const location = useLocation()
-  const { user, fetchMe, initialized } = useAuthStore()
-  useEffect(() => { fetchMe() }, [fetchMe])
-
-  const RequireAuth = ({ children }: { children: JSX.Element }) => {
+function RequireAuth({ children }: { children: JSX.Element }) {
+    const { user, initialized } = useAuthStore()
     if (!initialized) {
       return <PageLoading />
     }
     if (!user) return <Navigate to="/login" replace />
     return children
-  }
+}
+
+function App() {
+  const fetchMe = useAuthStore().fetchMe
+  useEffect(() => { fetchMe() }, [fetchMe])
 
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
       <MainLayout>
         <Suspense fallback={<PageLoading />}>
-          <Routes key={`${location.pathname}${location.search}${location.hash}`}>
+          <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/" element={<RequireAuth><HomePage /></RequireAuth>} />
             <Route path="/subscriptions" element={<RequireAuth><SubscriptionsPage /></RequireAuth>} />

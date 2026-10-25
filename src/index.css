@@ -100,14 +100,59 @@
   .ledger-page-heading h1 { @apply text-lg font-semibold tracking-tight; }
   .ledger-page-heading p { @apply mt-1 text-xs text-muted-foreground; }
   .service-avatar { @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-secondary text-sm font-semibold text-foreground; }
-  .ledger-content { animation: ledger-enter 180ms ease-out; }
+  .ledger-content > * { animation: ledger-enter 180ms ease-out; }
   .dark [data-card] { box-shadow: none; }
 }
 
-@keyframes ledger-enter { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+/* Reveal a local highlight without moving the control or surrounding layout. */
+.motion-control,
+.ledger-nav-link,
+.currency-shortcut,
+[data-card][role='button'] {
+  transition-property: background-color, color, border-color, box-shadow, transform;
+  transition-duration: 160ms;
+  transition-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+.brand-mark { transition: transform 200ms cubic-bezier(0.2, 0.7, 0.3, 1); }
+@layer components {
+  .motion-control,
+  .ledger-nav-link,
+  .currency-shortcut { position: relative; }
+}
+.motion-control::after,
+.ledger-nav-link::after,
+.currency-shortcut::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
+  opacity: 0;
+  clip-path: inset(0 48% round 999px);
+  pointer-events: none;
+  transition: clip-path 180ms cubic-bezier(0.2, 0.7, 0.3, 1), opacity 140ms ease-out;
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .motion-control:not(:disabled):not([aria-disabled='true']):hover::after,
+  .ledger-nav-link:hover::after,
+  .currency-shortcut:hover::after {
+    clip-path: inset(0 0 round 999px);
+    opacity: 0.055;
+  }
+  [data-card][role='button']:hover { border-color: hsl(var(--foreground) / 0.18); }
+  .brand-link:hover .brand-mark { transform: rotate(-4deg); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .motion-control:not(:disabled):not([aria-disabled='true']):active,
+  .ledger-nav-link:active,
+  .currency-shortcut:active { transform: scale(0.985); }
+}
+
+@keyframes ledger-enter { from { opacity: 0; } to { opacity: 1; } }
 @media (min-width: 768px) { .ledger-shell { padding-bottom: 4rem; } }
 @media (max-width: 380px) { .ledger-header { column-gap: 8px; } .brand-wordmark { font-size: 14px; } .ledger-mobile-nav .ledger-nav-link { padding-left: 10px; padding-right: 10px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; } }
+@media (prefers-reduced-motion: reduce) { .ledger-content > * { animation: none; } }
 @layer utilities {
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

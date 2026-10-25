@@ -50,9 +50,7 @@ export function ExpenseReportsPage() {
   // Fetch data when component mounts
   const initializeData = useCallback(async () => {
     try {
-      await fetchSubscriptions()
-      await fetchCategories()
-      await fetchSettings()
+      await Promise.all([fetchSubscriptions(), fetchCategories(), fetchSettings()])
     } finally {
       setIsInitializingData(false)
     }
@@ -369,16 +367,7 @@ export function ExpenseReportsPage() {
     loadYearlyGroupedCategoryExpenseData()
   }, [currentYearlyDateRange, userCurrency])
 
-  const isPageLoading = isInitializingData
-    || isLoadingExpenseInfo
-    || isLoadingExpenses
-    || isLoadingMonthlyCategoryExpenses
-    || isLoadingYearlyExpenses
-    || isLoadingCategoryExpenses
-    || isLoadingYearlyCategoryExpenses
-    || isLoadingYearlyGroupedCategoryExpenses
-
-  if (isPageLoading) {
+  if (isInitializingData) {
     return <PageLoading />
   }
 
@@ -439,7 +428,7 @@ export function ExpenseReportsPage() {
               <div className="grid gap-5 grid-cols-1 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
                 <ExpenseTrendChart
                   data={monthlyExpenses}
-                  categoryData={monthlyCategoryExpenses}
+                  categoryData={isLoadingMonthlyCategoryExpenses ? undefined : monthlyCategoryExpenses}
                   currency={userCurrency}
                 />
                 {isLoadingCategoryExpenses ? (
@@ -483,7 +472,7 @@ export function ExpenseReportsPage() {
                 <div className="grid gap-4 grid-cols-1 xl:grid-cols-2">
                   <YearlyTrendChart
                     data={yearlyExpenses}
-                    categoryData={yearlyGroupedCategoryExpenses}
+                    categoryData={isLoadingYearlyGroupedCategoryExpenses ? undefined : yearlyGroupedCategoryExpenses}
                     currency={userCurrency}
                   />
                   {isLoadingYearlyCategoryExpenses ? (

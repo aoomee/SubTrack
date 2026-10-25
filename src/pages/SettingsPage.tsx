@@ -72,7 +72,6 @@ export function SettingsPage() {
     theme,
     setTheme,
     resetSettings,
-    isLoading,
     fetchSettings,
   } = useSettingsStore()
 
@@ -192,7 +191,7 @@ export function SettingsPage() {
     onConfirm: handleResetData,
   })
 
-  if (isInitializing || isLoading) {
+  if (isInitializing) {
     return <PageLoading />
   }
 
@@ -202,7 +201,7 @@ export function SettingsPage() {
         <h1 className="sr-only">{t('title')}</h1>
       </div>
 
-      <Tabs defaultValue={defaultTab}>
+      <Tabs key={defaultTab} defaultValue={defaultTab}>
         <div className="overflow-x-auto scrollbar-hide">
           <TabsList className="min-w-max sm:min-w-0">
             <TabsTrigger value="currency">{t('currency')}</TabsTrigger>

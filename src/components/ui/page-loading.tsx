@@ -10,7 +10,7 @@ export function PageLoading({ className }: PageLoadingProps) {
   return (
     <div
       className={cn(
-        'absolute inset-0 z-20 flex min-h-full items-center justify-center bg-background',
+        'flex min-h-[240px] w-full items-center justify-center',
         className,
       )}
       aria-busy="true"

@@ -54,8 +54,7 @@ function HomePage() {
     getRecentlyPaid,
     getSpendingByCategory,
     initializeData,
-    initializeWithRenewals,
-    isLoading
+    initializeWithRenewals
   } = useSubscriptionStore()
 
   // Projected recurring costs come directly from active subscriptions.
@@ -68,8 +67,7 @@ function HomePage() {
   // Initialize subscriptions without auto-renewals
   const initialize = useCallback(async () => {
     try {
-      await fetchSettings()
-      await initializeData()
+      await Promise.all([fetchSettings(), initializeData()])
     } finally {
       setIsInitializing(false)
     }
@@ -183,7 +181,7 @@ function HomePage() {
   const recentlyPaidSubscriptions = getRecentlyPaid(7)
   const spendingByCategory = getSpendingByCategory()
 
-  if (isInitializing || isLoading || isLoadingSpending) {
+  if (isInitializing) {
     return <PageLoading />
   }
 
@@ -245,7 +243,7 @@ function HomePage() {
           </section>
 
           <section className="grid grid-cols-1 gap-5 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]" aria-label="Expense trend and scheduled payments">
-            <ExpenseTrendChart data={monthlyTrend} currency={userCurrency} />
+            {isLoadingSpending ? <PageLoading /> : <ExpenseTrendChart data={monthlyTrend} currency={userCurrency} />}
             <BillingCalendar subscriptions={subscriptions} />
           </section>
           <ActiveSubscriptionList subscriptions={subscriptions} onSelect={setDetailSubscription} />

@@ -96,8 +96,7 @@ export function SubscriptionsPage() {
   // Initialize subscriptions without auto-renewals
   const initialize = useCallback(async () => {
     try {
-      await fetchSettings()
-      await initializeData()
+      await Promise.all([fetchSettings(), initializeData()])
     } finally {
       setIsInitializing(false)
     }
@@ -106,6 +105,10 @@ export function SubscriptionsPage() {
   useEffect(() => {
     initialize()
   }, [initialize])
+
+  useEffect(() => {
+    if (searchParams.get('add') === '1') setShowAddForm(true)
+  }, [searchParams])
   
   // Get categories actually in use
   const usedCategories = getUniqueCategories()
@@ -382,7 +385,7 @@ export function SubscriptionsPage() {
     }
   }
 
-  if (isInitializing || isLoading) {
+  if (isInitializing) {
     return <PageLoading />
   }
 
@@ -707,7 +710,7 @@ export function SubscriptionsPage() {
       )}
 
       {/* Subscriptions Grid */}
-      {isLoading ? (
+      {isLoading && subscriptions.length === 0 ? (
         <div className="grid gap-4 sm:grid-cols-2">
           {/* Loading skeleton cards */}
           {Array.from({ length: 6 }).map((_, index) => (

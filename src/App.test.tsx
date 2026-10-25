@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import { cleanup, render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { Link, MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import App from './App'
 
@@ -34,7 +34,7 @@ vi.mock('./pages/HomePage', () => ({
 }))
 
 vi.mock('./pages/SubscriptionsPage', () => ({
-  SubscriptionsPage: () => <div>Subscriptions page</div>,
+  SubscriptionsPage: () => <div>Subscriptions page<input aria-label="Subscription search" /><Link to="/subscriptions?add=1">Open add</Link></div>,
 }))
 
 vi.mock('./pages/SettingsPage', () => ({
@@ -104,5 +104,16 @@ describe('application routing', () => {
     renderRoute('/')
 
     expect(screen.getByTestId('page-loading')).toBeInTheDocument()
+  })
+
+  test('preserves page state across query navigation and parent updates', async () => {
+    mockUseAuthStore.mockReturnValue({ user: { username: 'admin' }, initialized: true, fetchMe: mockFetchMe })
+    const view = renderRoute('/subscriptions')
+    const search = await screen.findByRole('textbox', { name: 'Subscription search' })
+    fireEvent.change(search, { target: { value: 'Music' } })
+    fireEvent.click(screen.getByText('Open add'))
+    expect(screen.getByRole('textbox')).toHaveValue('Music')
+    view.rerender(<MemoryRouter initialEntries={['/subscriptions']}><App /></MemoryRouter>)
+    expect(screen.getByRole('textbox')).toHaveValue('Music')
   })
 })

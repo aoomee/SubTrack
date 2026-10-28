@@ -43,7 +43,9 @@ function HomePage() {
   const [showImportModal, setShowImportModal] = useState(false)
   // Get the default view from settings
   const { currency: userCurrency, fetchSettings } = useSettingsStore()
-  const [isInitializing, setIsInitializing] = useState(true)
+  const [isInitializing, setIsInitializing] = useState(() =>
+    !useSettingsStore.getState().hasLoaded || !useSubscriptionStore.getState().hasLoaded
+  )
   
   const {
     subscriptions,
@@ -243,7 +245,7 @@ function HomePage() {
           </section>
 
           <section className="grid grid-cols-1 gap-5 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]" aria-label="Expense trend and scheduled payments">
-            {isLoadingSpending ? <PageLoading /> : <ExpenseTrendChart data={monthlyTrend} currency={userCurrency} />}
+            {isLoadingSpending ? <Card><PageLoading className="min-h-[380px]" /></Card> : <ExpenseTrendChart data={monthlyTrend} currency={userCurrency} />}
             <BillingCalendar subscriptions={subscriptions} />
           </section>
           <ActiveSubscriptionList subscriptions={subscriptions} onSelect={setDetailSubscription} />

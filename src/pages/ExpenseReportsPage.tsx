@@ -38,7 +38,9 @@ export function ExpenseReportsPage() {
   const { fetchSubscriptions, fetchCategories } = useSubscriptionStore()
   const { t } = useTranslation(['reports', 'common'])
   const { currency: userCurrency, fetchSettings } = useSettingsStore()
-  const [isInitializingData, setIsInitializingData] = useState(true)
+  const [isInitializingData, setIsInitializingData] = useState(() =>
+    !useSettingsStore.getState().hasLoaded || !useSubscriptionStore.getState().hasLoaded
+  )
   
   // Filter states
   const [selectedDateRange] = useState('Last 12 Months')
@@ -396,13 +398,6 @@ export function ExpenseReportsPage() {
       </Card>
 
       {/* Loading and Error States */}
-      {isLoadingExpenses && (
-        <Card>
-          <CardContent className="flex h-32 items-center justify-center" aria-busy="true">
-            <LoadingIndicator />
-          </CardContent>
-        </Card>
-      )}
 
       {expenseError && (
         <Card>
@@ -416,9 +411,9 @@ export function ExpenseReportsPage() {
       )}
 
       {/* Charts */}
-      {!isLoadingExpenses && !expenseError && (
+      {!expenseError && (
         <div className="space-y-4">
-          <Tabs defaultValue="monthly">
+          <Tabs keepMounted defaultValue="monthly">
             <TabsList className="grid w-full max-w-md grid-cols-2">
               <TabsTrigger value="monthly">{t('monthly')}</TabsTrigger>
               <TabsTrigger value="yearly">{t('yearly')}</TabsTrigger>
@@ -426,11 +421,11 @@ export function ExpenseReportsPage() {
 
             <TabsContent value="monthly" className="space-y-4">
               <div className="grid gap-5 grid-cols-1 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-                <ExpenseTrendChart
+                {isLoadingExpenses ? <Card><PageLoading className="min-h-[380px]" /></Card> : <ExpenseTrendChart
                   data={monthlyExpenses}
                   categoryData={isLoadingMonthlyCategoryExpenses ? undefined : monthlyCategoryExpenses}
                   currency={userCurrency}
-                />
+                />}
                 {isLoadingCategoryExpenses ? (
                   <Card>
                     <CardContent className="flex h-[400px] items-center justify-center" aria-busy="true">
@@ -458,8 +453,9 @@ export function ExpenseReportsPage() {
 
             <TabsContent value="yearly" className="space-y-4">
               {isLoadingYearlyExpenses ? (
-                <div className="flex h-32 items-center justify-center" aria-busy="true">
-                  <LoadingIndicator />
+                <div className="grid gap-4 grid-cols-1 xl:grid-cols-2" aria-busy="true">
+                  <Card><PageLoading className="min-h-[380px]" /></Card>
+                  <Card><PageLoading className="min-h-[380px]" /></Card>
                 </div>
               ) : yearlyExpenseError ? (
                 <div className="flex items-center justify-center h-32">

@@ -36,6 +36,7 @@ interface BotInfo {
 }
 
 interface ApiResponse {
+  status?: number;
   response?: { status?: number };
 }
 
@@ -67,7 +68,8 @@ export const TelegramConfig: React.FC<TelegramConfigProps> = ({ userId, onConfig
   const [config, setConfig] = useState<TelegramConfigData>({
     chat_id: channelConfigs.telegram?.chat_id || ''
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [initializing, setInitializing] = useState(true);
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [validating, setValidating] = useState(false);
@@ -94,14 +96,14 @@ export const TelegramConfig: React.FC<TelegramConfigProps> = ({ userId, onConfig
     } catch (error) {
       console.error('Failed to load Telegram config:', error);
       // 如果配置不存在（404错误），使用本地存储的数据或重置为空配置
-      if ((error as ApiResponse).response?.status === 404) {
-        const localChatId = channelConfigs.telegram?.chat_id || '';
+      if (((error as ApiResponse).status ?? (error as ApiResponse).response?.status) === 404) {
+        const localChatId = useNotificationStore.getState().channelConfigs.telegram?.chat_id || '';
         setConfig({ chat_id: localChatId });
       }
     } finally {
       setLoading(false);
     }
-  }, [setTelegramConfig, channelConfigs.telegram?.chat_id]);
+  }, [setTelegramConfig]);
 
   const loadBotInfo = useCallback(async () => {
     try {
@@ -122,8 +124,13 @@ export const TelegramConfig: React.FC<TelegramConfigProps> = ({ userId, onConfig
   }, []);
 
   useEffect(() => {
-    loadConfig();
-    loadBotInfo();
+    let active = true;
+    setInitializing(true);
+    // Reveal the entire form together, even when the bot endpoint is slower.
+    void Promise.all([loadConfig(), loadBotInfo()]).finally(() => {
+      if (active) setInitializing(false);
+    });
+    return () => { active = false; };
   }, [userId, loadConfig, loadBotInfo]);
 
   const validateChatId = async (chatId: string) => {
@@ -266,30 +273,34 @@ export const TelegramConfig: React.FC<TelegramConfigProps> = ({ userId, onConfig
           {t('telegram')}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Bot Info */}
-        {botInfo && (
-          <Alert>
+      <CardContent className="relative" aria-busy={initializing}>
+        {initializing && (
+          <div role="status" aria-label={t('loading', { ns: 'common' })} className="absolute inset-x-5 top-0 space-y-4 sm:inset-x-6" data-telegram-loading>
+            <div className="h-[104px] rounded-lg bg-muted/70" />
+            <div className="h-4 w-20 rounded bg-muted/70" />
+            <div className="h-10 rounded-full bg-muted/70" />
+            <div className="h-10 w-3/4 rounded bg-muted/70" />
+            <div className="h-10 w-40 rounded-full bg-muted/70" />
+          </div>
+        )}
+        <div className={`space-y-4${initializing ? ' invisible' : ''}`} aria-hidden={initializing || undefined}>
+          {/* Natural height and symmetric padding keep the original three rows balanced. */}
+          <Alert
+            data-bot-summary
+            className="[&>svg+div]:translate-y-0"
+            variant={botConfig && !botConfig.configured ? 'destructive' : 'default'}
+          >
             <Settings className="h-4 w-4" />
             <AlertDescription>
-              <div className="space-y-1">
-                <div><strong>{t('botName')}:</strong> {botInfo.first_name}</div>
-                <div><strong>{t('botUsername')}:</strong> @{botInfo.username}</div>
-                <div><strong>{t('botStatus')}:</strong> {getStatusBadge()}</div>
-              </div>
+              {botConfig && !botConfig.configured ? t('errors.telegramNotConfigured') : (
+                <div className="space-y-1">
+                  <div className="flex gap-1"><strong className="shrink-0">{t('botName')}:</strong><span className="truncate" title={botInfo?.first_name}>{botInfo?.first_name || '—'}</span></div>
+                  <div className="flex gap-1"><strong className="shrink-0">{t('botUsername')}:</strong><span className="truncate" title={botInfo?.username}>{botInfo?.username ? `@${botInfo.username}` : '—'}</span></div>
+                  <div><strong>{t('botStatus')}:</strong> {getStatusBadge()}</div>
+                </div>
+              )}
             </AlertDescription>
           </Alert>
-        )}
-
-        {/* Configuration Warning */}
-        {botConfig && !botConfig.configured && (
-          <Alert variant="destructive">
-            <X className="h-4 w-4" />
-            <AlertDescription>
-              {t('errors.telegramNotConfigured')}
-            </AlertDescription>
-          </Alert>
-        )}
 
         {/* Chat ID Input */}
         <div className="space-y-2">
@@ -300,22 +311,21 @@ export const TelegramConfig: React.FC<TelegramConfigProps> = ({ userId, onConfig
               value={config.chat_id}
               onChange={(e) => handleChatIdChange(e.target.value)}
               placeholder="123456789"
-              disabled={loading}
+              disabled={loading || initializing}
             />
             <Button
               variant="outline"
               onClick={() => validateChatId(config.chat_id)}
-              disabled={validating || !config.chat_id.trim()}
+              disabled={initializing || loading || validating || !config.chat_id.trim()}
+              className="relative shrink-0"
             >
-              {validating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                t('validateChatId')
-              )}
+              <span className={validating ? 'invisible' : undefined}>{t('validateChatId')}</span>
+              {validating && <Loader2 className="absolute h-4 w-4 animate-spin" />}
             </Button>
           </div>
           
           {/* Chat ID Validation Status */}
+          <div className="min-h-5" aria-live="polite">
           {chatIdValid !== null && (
             <div className="flex items-center gap-2 text-sm">
               {chatIdValid ? (
@@ -331,6 +341,7 @@ export const TelegramConfig: React.FC<TelegramConfigProps> = ({ userId, onConfig
               )}
             </div>
           )}
+          </div>
         </div>
 
         {/* Help Text */}
@@ -344,7 +355,7 @@ export const TelegramConfig: React.FC<TelegramConfigProps> = ({ userId, onConfig
         <div className="flex gap-2">
           <Button 
             onClick={handleSave} 
-            disabled={saving || loading || !config.chat_id.trim()}
+            disabled={initializing || saving || loading || !config.chat_id.trim()}
           >
             {saving ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -356,7 +367,7 @@ export const TelegramConfig: React.FC<TelegramConfigProps> = ({ userId, onConfig
           <Button 
             variant="outline" 
             onClick={handleTest} 
-            disabled={testing || loading || !config.chat_id.trim() || chatIdValid === false}
+            disabled={initializing || testing || loading || !config.chat_id.trim() || chatIdValid === false}
           >
             {testing ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -367,7 +378,7 @@ export const TelegramConfig: React.FC<TelegramConfigProps> = ({ userId, onConfig
           </Button>
         </div>
 
-
+        </div>
       </CardContent>
     </Card>
   );

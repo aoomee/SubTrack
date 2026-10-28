@@ -154,6 +154,7 @@ interface SubscriptionState {
   categories: CategoryOption[]
   paymentMethods: PaymentMethodOption[]
   subscriptionPlans: SubscriptionPlanOption[]
+  hasLoaded: boolean
   isLoading: boolean
   error: string | null
 
@@ -247,6 +248,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       categories: initialCategories,
       paymentMethods: initialPaymentMethods,
       subscriptionPlans: initialSubscriptionPlans,
+      hasLoaded: false,
       isLoading: false,
       error: null,
       
@@ -257,11 +259,11 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           const data = await apiClient.get<SubscriptionApiData[]>('/subscriptions')
 
           const transformedData = data.map(transformFromApi)
-          set({ subscriptions: transformedData, isLoading: false })
+          set({ subscriptions: transformedData, isLoading: false, hasLoaded: true })
         } catch (error: unknown) {
           console.error('Error fetching subscriptions:', error)
           const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-          set({ error: errorMessage, isLoading: false, subscriptions: [] }) // Clear subscriptions on error
+          set({ error: errorMessage, isLoading: false }) // Keep the last successful result during a failed refresh.
         }
       },
 

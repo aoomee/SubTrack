@@ -2,6 +2,8 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { authApi, type AuthUser } from '@/services/authApi'
 import { ApiError } from '@/config/api'
+import { useSettingsStore } from './settingsStore'
+import { useSubscriptionStore } from './subscriptionStore'
 
 interface AuthState {
   user: AuthUser | null
@@ -31,6 +33,9 @@ export const useAuthStore = create<AuthState>()(
         }
       },
       login: async (username, password) => {
+        // A new session must load its own data before showing cached pages.
+        useSettingsStore.setState({ hasLoaded: false })
+        useSubscriptionStore.setState({ hasLoaded: false })
         set({ isLoading: true, error: null })
         try {
           await authApi.login(username, password)
@@ -69,6 +74,8 @@ export const useAuthStore = create<AuthState>()(
         try {
           await authApi.logout()
         } finally {
+          useSettingsStore.setState({ hasLoaded: false })
+          useSubscriptionStore.setState({ hasLoaded: false })
           set({ user: null, initialized: true })
         }
       },

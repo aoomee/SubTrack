@@ -361,12 +361,11 @@ export const NotificationHistory: React.FC = () => {
             }
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          {historyLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <LoadingIndicator size="md" />
-            </div>
-          ) : filteredHistory.length === 0 ? (
+        <CardContent className="relative" aria-busy={historyLoading}>
+          {historyLoading && <div className="absolute inset-0 z-10 flex items-center justify-center rounded-b-2xl bg-card/70">
+            <LoadingIndicator size="md" />
+          </div>}
+          {filteredHistory.length === 0 ? (
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>

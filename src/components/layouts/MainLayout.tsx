@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { LogOut, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -15,10 +15,35 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const { t, i18n } = useTranslation('navigation')
   const { user, logout } = useAuthStore()
   const currency = useSettingsStore(state => state.currency)
+  const contentRef = useRef<HTMLElement>(null)
   const isLogin = location.pathname === '/login'
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
   }, [location.pathname])
+  useLayoutEffect(() => {
+    const content = contentRef.current
+    if (!content || isLogin) return
+    let lastContentHeight = content.getBoundingClientRect().height
+    const retainLoadingHeight = () => {
+      const loading = Array.from(content.children).some(child => child.classList.contains('page-loading'))
+      if (loading) {
+        content.style.minHeight = `${lastContentHeight}px`
+      } else {
+        content.style.removeProperty('min-height')
+        lastContentHeight = content.getBoundingClientRect().height
+      }
+    }
+    const resize = new ResizeObserver(retainLoadingHeight)
+    const mutations = new MutationObserver(retainLoadingHeight)
+    resize.observe(content)
+    mutations.observe(content, { childList: true })
+    retainLoadingHeight()
+    return () => {
+      resize.disconnect()
+      mutations.disconnect()
+      content.style.removeProperty('min-height')
+    }
+  }, [isLogin])
   const links = [
     ['/', 'dashboard'], ['/subscriptions', 'subscriptions'],
     ['/expense-reports', 'reports'], ['/notifications', 'notifications'], ['/settings', 'settings'],
@@ -56,7 +81,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           {isLogin && <LanguageSwitcher />}
         </div>
       </header>
-      <main id="main-content" tabIndex={-1} className={isLogin ? 'flex min-h-[65vh] items-center justify-center' : 'ledger-content'}>
+      <main ref={contentRef} id="main-content" tabIndex={-1} className={isLogin ? 'flex min-h-[65vh] items-center justify-center' : 'ledger-content'}>
         {children}
       </main>
       {!isLogin && user && (

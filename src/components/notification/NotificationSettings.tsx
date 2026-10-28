@@ -92,7 +92,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ user
         </Button>
       </div>
 
-      <Tabs defaultValue="channels" className="space-y-6">
+      <Tabs keepMounted defaultValue="channels" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="channels" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />

@@ -74,7 +74,9 @@ export function SubscriptionsPage() {
   const [showImportModal, setShowImportModal] = useState(false)
   const [detailSubscription, setDetailSubscription] = useState<Subscription | null>(null)
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
-  const [isInitializing, setIsInitializing] = useState(true)
+  const [isInitializing, setIsInitializing] = useState(() =>
+    !useSettingsStore.getState().hasLoaded || !useSubscriptionStore.getState().hasLoaded
+  )
 
   const { fetchSettings } = useSettingsStore()
   
@@ -710,7 +712,7 @@ export function SubscriptionsPage() {
       )}
 
       {/* Subscriptions Grid */}
-      {isLoading && subscriptions.length === 0 ? (
+      {isLoading && !useSubscriptionStore.getState().hasLoaded && subscriptions.length === 0 ? (
         <div className="grid gap-4 sm:grid-cols-2">
           {/* Loading skeleton cards */}
           {Array.from({ length: 6 }).map((_, index) => (

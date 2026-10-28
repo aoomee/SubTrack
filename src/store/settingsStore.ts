@@ -57,6 +57,7 @@ interface SettingsState {
   // Data management
   resetSettings: () => void
   fetchSettings: () => Promise<void>
+  hasLoaded: boolean
   isLoading: boolean
   error: string | null
 }
@@ -70,6 +71,7 @@ export const initialSettings = {
   exchangeRates: DEFAULT_EXCHANGE_RATES,
   lastExchangeRateUpdate: null,
   exchangeRateConfigStatus: null,
+  hasLoaded: false,
   isLoading: false,
   error: null
 }
@@ -91,7 +93,7 @@ export const useSettingsStore = create<SettingsState>()(
               : initialSettings.showOriginalCurrency,
           }
 
-          set({ ...settings, isLoading: false })
+          set({ ...settings, isLoading: false, hasLoaded: true })
           // Don't apply theme here - let next-themes handle it
 
           // 获取汇率数据和配置状态
@@ -103,7 +105,7 @@ export const useSettingsStore = create<SettingsState>()(
           const errorObj = error as { status?: number; message?: string }
           if (errorObj.status === 404) {
             logger.warn('Settings not found on backend. Using local/default settings.')
-            set({ isLoading: false })
+            set({ isLoading: false, hasLoaded: true })
             return
           }
           logger.error('Error fetching settings:', error)
@@ -217,11 +219,14 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: 'settings-storage',
       // Persist all settings except for loading/error states.
-      partialize: (state) => {
-        const { ...rest } = state;
-        // Functions are not persisted, so we don't need to omit them.
-        return rest;
-      }
+      partialize: (state) => ({
+        currency: state.currency,
+        theme: state.theme,
+        showOriginalCurrency: state.showOriginalCurrency,
+        exchangeRates: state.exchangeRates,
+        lastExchangeRateUpdate: state.lastExchangeRateUpdate,
+        exchangeRateConfigStatus: state.exchangeRateConfigStatus,
+      })
     }
   )
 )

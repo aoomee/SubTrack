@@ -62,9 +62,11 @@ export function SettingsPage() {
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null)
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
-  const [isInitializing, setIsInitializing] = useState(true)
+  const [isInitializing, setIsInitializing] = useState(() => !useSettingsStore.getState().hasLoaded)
 
-  const defaultTab = searchParams.get('tab') || 'currency'
+  const requestedTab = searchParams.get('tab') || 'currency'
+  const [activeTab, setActiveTab] = useState(requestedTab)
+  useEffect(() => { setActiveTab(requestedTab) }, [requestedTab])
 
   const { setTheme: setNextTheme } = useTheme()
 
@@ -201,7 +203,7 @@ export function SettingsPage() {
         <h1 className="sr-only">{t('title')}</h1>
       </div>
 
-      <Tabs key={defaultTab} defaultValue={defaultTab}>
+      <Tabs keepMounted value={activeTab} onValueChange={setActiveTab}>
         <div className="overflow-x-auto scrollbar-hide">
           <TabsList className="min-w-max sm:min-w-0">
             <TabsTrigger value="currency">{t('currency')}</TabsTrigger>

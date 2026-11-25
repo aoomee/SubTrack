@@ -28,7 +28,7 @@ export function SubscriptionActivity({ subscriptions, paid = false, className, o
               {!paid && <span className="mt-1 inline-block rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">{daysUntil(sub.nextBillingDate) === 0 ? t('today') : `${daysUntil(sub.nextBillingDate)} ${t('days')}`}</span>}
             </span>
           </button>)}
-        </div> : <p className="flex min-h-20 items-center justify-center text-center text-xs leading-relaxed text-muted-foreground">{t(paid ? 'noSubscriptionsPaidInLast7Days' : 'noUpcomingRenewalsNext7Days')}</p>}
+        </div> : <p className="flex h-full min-h-20 items-center justify-center text-center text-xs leading-relaxed text-muted-foreground">{t(paid ? 'noSubscriptionsPaidInLast7Days' : 'noUpcomingRenewalsNext7Days')}</p>}
       </div>
       <div className="mt-3 flex items-center justify-between gap-2 border-t pt-2.5 text-[11px] text-muted-foreground">
         <span>{t(paid ? 'subscriptionsPaidInLast7Days' : 'subscriptionsRenewingInNext7Days')}</span>

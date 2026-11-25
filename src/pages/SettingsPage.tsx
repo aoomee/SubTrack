@@ -220,13 +220,13 @@ export function SettingsPage() {
 
       <Tabs keepMounted value={activeTab} onValueChange={setActiveTab}>
         <div className="overflow-x-auto scrollbar-hide">
-          <TabsList className="min-w-max sm:min-w-0">
-            <TabsTrigger value="currency">{t('currency')}</TabsTrigger>
-            <TabsTrigger value="general">{t('general')}</TabsTrigger>
-            <TabsTrigger value="options">{t('options')}</TabsTrigger>
-            <TabsTrigger value="notifications">{t('notifications')}</TabsTrigger>
-            <TabsTrigger value="security">{t('security')}</TabsTrigger>
-            <TabsTrigger value="data">{t('data')}</TabsTrigger>
+          <TabsList className="grid h-9 w-full min-w-[320px] grid-cols-6 p-0.5">
+            <TabsTrigger value="currency" className="h-8 px-2 text-xs sm:px-3">{t('currency')}</TabsTrigger>
+            <TabsTrigger value="general" className="h-8 px-2 text-xs sm:px-3">{t('general')}</TabsTrigger>
+            <TabsTrigger value="options" className="h-8 px-2 text-xs sm:px-3">{t('options')}</TabsTrigger>
+            <TabsTrigger value="notifications" className="h-8 px-2 text-xs sm:px-3">{t('notifications')}</TabsTrigger>
+            <TabsTrigger value="security" className="h-8 px-2 text-xs sm:px-3">{t('security')}</TabsTrigger>
+            <TabsTrigger value="data" className="h-8 px-2 text-xs sm:px-3">{t('data')}</TabsTrigger>
           </TabsList>
         </div>
 

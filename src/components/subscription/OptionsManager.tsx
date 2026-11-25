@@ -347,11 +347,11 @@ export function OptionsManager() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Tabs defaultValue="categories" className="w-full">
-        <TabsList className="w-fit">
-          <TabsTrigger value="categories">{t('settings:categories')}</TabsTrigger>
-          <TabsTrigger value="payment-methods">{t('settings:paymentMethods')}</TabsTrigger>
+        <TabsList className="grid h-8 w-full grid-cols-2 p-0.5 sm:inline-grid sm:w-fit sm:min-w-[200px]">
+          <TabsTrigger value="categories" className="h-7 px-3 text-xs">{t('settings:categories')}</TabsTrigger>
+          <TabsTrigger value="payment-methods" className="h-7 px-3 text-xs">{t('settings:paymentMethods')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="categories">

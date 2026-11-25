@@ -172,8 +172,8 @@ function HomePage() {
 
   return (
     <>
-      <div className="mb-3.5 flex items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold tracking-tight">{t('common:dashboard')}</h1>
+      <div className="ledger-page-heading">
+        <h1>{t('common:dashboard')}</h1>
         <Button
           onClick={handleRefreshWithRenewals}
           disabled={isRefreshing}
@@ -197,17 +197,20 @@ function HomePage() {
                 title={t('common:monthlySpending')}
                 value={formatCurrencyAmount(totalMonthlySpending, userCurrency)}
                 divider
+                align="center"
                 description={t('monthlyAllocation')}
               />
               <StatCard
                 title={t('common:yearlySpending')}
                 value={formatCurrencyAmount(totalYearlySpending, userCurrency)}
                 divider
+                align="center"
                 description={t('yearlyProjection')}
               />
               <StatCard
                 title={t('common:activeSubscriptions')}
                 value={activeCount}
+                align="center"
                 description={t('serviceSummary', { total: subscriptions.length, trial: trialCount })}
               />
             </section>
@@ -224,7 +227,7 @@ function HomePage() {
 
           <section className="grid grid-cols-1 gap-5 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]" aria-label="Expense trend and scheduled payments">
             {isLoadingSpending ? (
-              <Card className="flex min-h-[340px] items-center justify-center" aria-busy="true">
+              <Card className="flex min-h-[280px] items-center justify-center" aria-busy="true">
                 <LoadingIndicator size="md" />
               </Card>
             ) : (

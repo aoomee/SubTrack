@@ -82,10 +82,10 @@ export function ExpenseTrendChart({ data, categoryData, currency, className }: E
         <LineChart
           data={data}
           margin={{
-            top: 12,
-            right: 12,
-            left: 0,
-            bottom: 8
+            top: 10,
+            right: 16,
+            left: 4,
+            bottom: 4
           }}
         >
           <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/70" />
@@ -94,15 +94,16 @@ export function ExpenseTrendChart({ data, categoryData, currency, className }: E
             className="text-xs fill-muted-foreground"
             tick={{ fontSize: 10 }}
             tickFormatter={(value) => formatChartMonth(String(value), language)}
-            height={28}
+            padding={{ left: 10, right: 10 }}
+            height={26}
             minTickGap={20}
-            tickMargin={10}
+            tickMargin={8}
           />
           <YAxis
             className="text-xs fill-muted-foreground"
             tick={{ fontSize: 10 }}
             tickFormatter={(value) => formatCurrencyAmount(value, currency)}
-            width={56}
+            width={68}
           />
           <Tooltip
             content={({ active, payload, label }) => {
@@ -147,10 +148,10 @@ export function ExpenseTrendChart({ data, categoryData, currency, className }: E
         <BarChart
           data={categoryData || []}
           margin={{
-            top: 12,
-            right: 12,
-            left: 0,
-            bottom: 8
+            top: 10,
+            right: 16,
+            left: 4,
+            bottom: 4
           }}
         >
           <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/70" />
@@ -159,15 +160,16 @@ export function ExpenseTrendChart({ data, categoryData, currency, className }: E
             className="text-xs fill-muted-foreground"
             tick={{ fontSize: 10 }}
             tickFormatter={(value) => formatChartMonth(String(value), language)}
-            height={28}
+            padding={{ left: 8, right: 8 }}
+            height={26}
             minTickGap={20}
-            tickMargin={10}
+            tickMargin={8}
           />
           <YAxis
             className="text-xs fill-muted-foreground"
             tick={{ fontSize: 10 }}
             tickFormatter={(value) => formatCurrencyAmount(value, currency)}
-            width={56}
+            width={68}
           />
           <Tooltip
             content={({ active, payload, label }) => {
@@ -225,10 +227,10 @@ export function ExpenseTrendChart({ data, categoryData, currency, className }: E
   }
   
   return (
-    <Card className={`flex min-h-[340px] flex-col ${className || ''}`}>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <div>
-          <CardTitle className="text-base">{t('chart.expenseTrends')}</CardTitle>
+    <Card className={`flex min-h-[280px] flex-col ${className || ''}`}>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+        <div className="space-y-1">
+          <CardTitle>{t('chart.expenseTrends')}</CardTitle>
           <CardDescription>
             {chartType === 'line' 
               ? t('chart.monthlySpendingOverTime')
@@ -264,9 +266,9 @@ export function ExpenseTrendChart({ data, categoryData, currency, className }: E
         </div>
         )}
       </CardHeader>
-      <CardContent className="flex flex-1 flex-col px-2 sm:px-6">
+      <CardContent className="flex flex-1 flex-col px-2 sm:px-5">
         {(chartType === 'line' ? data.length === 0 : !categoryData || categoryData.length === 0) ? (
-          <div className="flex min-h-[240px] flex-1 items-center justify-center text-xs text-muted-foreground">
+          <div className="flex min-h-[200px] flex-1 items-center justify-center text-xs text-muted-foreground">
             {chartType === 'line' 
               ? t('chart.noExpenseDataAvailable')
               : t('chart.noCategoryDataAvailable')
@@ -274,16 +276,16 @@ export function ExpenseTrendChart({ data, categoryData, currency, className }: E
           </div>
         ) : (
           <>
-            <ChartContainer config={chartConfig} className="h-[250px] sm:h-[300px] w-full overflow-hidden">
+            <ChartContainer config={chartConfig} className="aspect-auto min-h-[215px] w-full flex-1 sm:min-h-[235px]">
               {renderChart()}
             </ChartContainer>
             {/* 分组柱状图图例 */}
             {chartType === 'groupedBar' && allCategories.length > 0 && (
-              <div className="flex flex-wrap gap-4 justify-center mt-4 pt-4 border-t">
+              <div className="mt-3 flex flex-wrap justify-center gap-3 border-t pt-3">
                 {allCategories.map((category, index) => (
-                  <div key={category} className="flex items-center gap-2 text-sm">
+                  <div key={category} className="flex items-center gap-1.5 text-xs">
                     <div 
-                      className="h-3 w-3 rounded-sm" 
+                      className="h-2.5 w-2.5 rounded-sm" 
                       style={{ backgroundColor: getCategoryColor(category, index) }}
                     />
                     <span className="text-muted-foreground capitalize">{category}</span>

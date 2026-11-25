@@ -273,6 +273,68 @@ class NotificationController {
         }
     };
 
+    /**
+     * 删除单条通知历史
+     */
+    deleteNotificationHistoryItem = (req, res) => {
+        try {
+            const id = Number(req.params.id);
+            if (!Number.isInteger(id) || id <= 0) {
+                return responseHelper.badRequest(res, 'Invalid notification history ID');
+            }
+
+            const { deletedCount } = this.notificationService.deleteNotificationHistoryByIds([id]);
+            if (deletedCount === 0) {
+                return responseHelper.notFound(res, 'Notification history record not found');
+            }
+
+            responseHelper.success(res, { deletedCount });
+        } catch (error) {
+            console.error('Error deleting notification history item:', error);
+            responseHelper.error(res, 'Failed to delete notification history item', 500);
+        }
+    };
+
+    /**
+     * 批量删除通知历史（支持单选或多选）
+     */
+    batchDeleteNotificationHistory = (req, res) => {
+        try {
+            const { ids } = req.body || {};
+            if (!Array.isArray(ids) || ids.length === 0) {
+                return responseHelper.badRequest(res, 'ids must be a non-empty array');
+            }
+
+            if (ids.length > 500) {
+                return responseHelper.badRequest(res, 'Cannot delete more than 500 records at once');
+            }
+
+            const parsedIds = ids.map((id) => Number(id));
+            if (parsedIds.some((id) => !Number.isInteger(id) || id <= 0)) {
+                return responseHelper.badRequest(res, 'All ids must be positive integers');
+            }
+
+            const { deletedCount } = this.notificationService.deleteNotificationHistoryByIds(parsedIds);
+            responseHelper.success(res, { deletedCount });
+        } catch (error) {
+            console.error('Error batch deleting notification history:', error);
+            responseHelper.error(res, 'Failed to delete notification history', 500);
+        }
+    };
+
+    /**
+     * 一键清空全部通知历史
+     */
+    clearNotificationHistory = (req, res) => {
+        try {
+            const { deletedCount } = this.notificationService.clearNotificationHistory();
+            responseHelper.success(res, { deletedCount });
+        } catch (error) {
+            console.error('Error clearing notification history:', error);
+            responseHelper.error(res, 'Failed to clear notification history', 500);
+        }
+    };
+
 
 
     /**

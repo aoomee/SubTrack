@@ -1,18 +1,15 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Pagination } from '@/components/ui/pagination';
 import { SearchInput } from '@/components/ui/search-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   RefreshCw,
   Bell,
-  TrendingUp,
   Search,
-  CheckCircle,
-  XCircle,
+  Check,
   AlertCircle,
   ChevronRight,
   Calendar,
@@ -21,15 +18,18 @@ import {
   FileText,
   Lightbulb,
   Mail,
-  Clock
+  Clock,
+  Trash2
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { notificationApi, NotificationHistory as NotificationHistoryType, NotificationStats } from '@/services/notificationApi';
 import { useNotificationHistoryStore } from '@/store/notificationHistoryStore';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/utils/date';
+import { cn } from '@/lib/utils';
 import { LoadingIndicator } from '@/components/ui/loading-indicator';
 import { PageLoading } from '@/components/ui/page-loading';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 
 // Helper function to parse and format message content (supports zh-CN and en templates)
@@ -101,29 +101,34 @@ const parseMessageContent = (content: string, t: (key: string, options?: Record<
 const renderDetailIcon = (iconKey: 'date' | 'amount' | 'payment' | 'plan' | 'tip') => {
   switch (iconKey) {
     case 'date':
-      return <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />;
+      return <Calendar className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />;
     case 'amount':
-      return <Coins className="h-4 w-4 shrink-0 text-muted-foreground" />;
+      return <Coins className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />;
     case 'payment':
-      return <CreditCard className="h-4 w-4 shrink-0 text-muted-foreground" />;
+      return <CreditCard className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />;
     case 'plan':
-      return <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />;
+      return <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />;
     case 'tip':
-      return <Lightbulb className="h-4 w-4 shrink-0 text-muted-foreground" />;
+      return <Lightbulb className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />;
   }
 };
 
 export const NotificationHistory: React.FC = () => {
   const { t } = useTranslation('notification');
   const { toast } = useToast();
-  const cachedStore = useNotificationHistoryStore();
-  const hasWarmCache = cachedStore.hasLoaded;
+  const tRef = useRef(t);
+  const toastRef = useRef(toast);
+  tRef.current = t;
+  toastRef.current = toast;
+
+  const initialCacheRef = useRef(useNotificationHistoryStore.getState());
+  const hasWarmCache = initialCacheRef.current.hasLoaded;
 
   const [history, setHistory] = useState<NotificationHistoryType[]>(() =>
-    hasWarmCache ? cachedStore.history : []
+    hasWarmCache ? initialCacheRef.current.history : []
   );
   const [stats, setStats] = useState<NotificationStats | null>(() =>
-    hasWarmCache ? cachedStore.stats : null
+    hasWarmCache ? initialCacheRef.current.stats : null
   );
   const [historyLoading, setHistoryLoading] = useState(false);
   const [statsLoading, setStatsLoading] = useState(false);
@@ -135,7 +140,7 @@ export const NotificationHistory: React.FC = () => {
   const [channelFilter, setChannelFilter] = useState<string>('all');
   const [historyPagination, setHistoryPagination] = useState(() =>
     hasWarmCache
-      ? cachedStore.pagination
+      ? initialCacheRef.current.pagination
       : {
           page: 1,
           limit: 10,
@@ -144,6 +149,13 @@ export const NotificationHistory: React.FC = () => {
         }
   );
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmState, setConfirmState] = useState<{
+    open: boolean;
+    mode: 'single' | 'batch' | 'clear';
+    targetId?: number;
+  }>({ open: false, mode: 'batch' });
 
   const loadHistory = useCallback(async (page = 1, silent = false) => {
     try {
@@ -182,16 +194,16 @@ export const NotificationHistory: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to load notification history:', error);
-      toast({
-        title: t('fetchSettingsError'),
-        description: t('fetchSettingsError'),
+      toastRef.current({
+        title: tRef.current('fetchSettingsError'),
+        description: tRef.current('fetchSettingsError'),
         variant: 'destructive'
       });
       if (!silent) setHistory([]);
     } finally {
       if (!silent) setHistoryLoading(false);
     }
-  }, [historyPagination.limit, statusFilter, typeFilter, t, toast]);
+  }, [historyPagination.limit, statusFilter, typeFilter]);
 
   const loadStats = useCallback(async (silent = false) => {
     try {
@@ -219,11 +231,13 @@ export const NotificationHistory: React.FC = () => {
     }
 
     // Reload data when status or type filter changes.
+    setSelectedIds(new Set());
     setHistoryPagination(prev => ({ ...prev, page: 1 }));
     loadHistory(1, false);
   }, [statusFilter, typeFilter, loadHistory, loadStats]);
 
   const handlePageChange = (page: number) => {
+    setSelectedIds(new Set());
     loadHistory(page);
   };
 
@@ -239,16 +253,103 @@ export const NotificationHistory: React.FC = () => {
     });
   };
 
+  const toggleSelectItem = (itemId: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(itemId)) {
+        next.delete(itemId);
+      } else {
+        next.add(itemId);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAllVisible = () => {
+    if (filteredHistory.length === 0) return;
+    const allSelected = filteredHistory.every(item => selectedIds.has(item.id));
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (allSelected) {
+        filteredHistory.forEach(item => next.delete(item.id));
+      } else {
+        filteredHistory.forEach(item => next.add(item.id));
+      }
+      return next;
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      setIsDeleting(true);
+      if (confirmState.mode === 'clear') {
+        await notificationApi.clearHistory();
+        setSelectedIds(new Set());
+        setExpandedItems(new Set());
+        setHistory([]);
+        const emptyPagination = { page: 1, limit: historyPagination.limit, total: 0, totalPages: 0 };
+        setHistoryPagination(emptyPagination);
+        useNotificationHistoryStore.getState().setSnapshot({ history: [], pagination: emptyPagination });
+        await loadStats(true);
+        toast({ title: t('history.clearSuccess') });
+        return;
+      }
+
+      const idsToDelete =
+        confirmState.mode === 'single' && confirmState.targetId
+          ? [confirmState.targetId]
+          : filteredHistory.filter(item => selectedIds.has(item.id)).map(item => item.id);
+
+      if (idsToDelete.length === 0) return;
+
+      if (idsToDelete.length === 1) {
+        await notificationApi.deleteHistoryItem(idsToDelete[0]);
+      } else {
+        await notificationApi.deleteHistoryBatch(idsToDelete);
+      }
+
+      const deletedSet = new Set(idsToDelete);
+      const remainingOnPage = history.filter(item => !deletedSet.has(item.id)).length;
+      const nextPage = remainingOnPage === 0 && historyPagination.page > 1
+        ? historyPagination.page - 1
+        : historyPagination.page;
+
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        idsToDelete.forEach(id => next.delete(id));
+        return next;
+      });
+      setExpandedItems(prev => {
+        const next = new Set(prev);
+        idsToDelete.forEach(id => next.delete(id));
+        return next;
+      });
+
+      await Promise.all([loadHistory(nextPage, true), loadStats(true)]);
+      toast({
+        title: t('history.deleteSuccess', { count: idsToDelete.length }),
+      });
+    } catch (error) {
+      console.error('Failed to delete notification history:', error);
+      toast({
+        title: t('history.deleteFailed'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
 
-  const getStatusIcon = (status: string) => {
+
+  const getStatusDotClass = (status: string) => {
     switch (status) {
       case 'sent':
-        return <CheckCircle className="h-4 w-4 text-success" />;
+        return 'bg-success';
       case 'failed':
-        return <XCircle className="h-4 w-4 text-destructive" />;
+        return 'bg-destructive';
       default:
-        return <AlertCircle className="h-4 w-4 text-muted-foreground" />;
+        return 'bg-muted-foreground';
     }
   };
 
@@ -274,12 +375,16 @@ export const NotificationHistory: React.FC = () => {
     return matchesSearch && matchesChannel;
   });
 
+  const allVisibleSelected =
+    filteredHistory.length > 0 && filteredHistory.every(item => selectedIds.has(item.id));
+  const someVisibleSelected =
+    filteredHistory.some(item => selectedIds.has(item.id)) && !allVisibleSelected;
+  const selectedVisibleCount = filteredHistory.filter(item => selectedIds.has(item.id)).length;
+
   // Define all possible filter options
   const allStatuses = ['sent', 'failed'];
   const allTypes = ['renewal_reminder', 'expiration_warning', 'renewal_success', 'renewal_failure', 'subscription_change'];
   const allChannels = ['telegram', 'email'];
-  
-  // Get unique values from current data for information purposes
 
   if (isInitializing) {
     return <PageLoading />;
@@ -287,217 +392,321 @@ export const NotificationHistory: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* Page Header */}
-      <div className="ledger-page-heading">
+      {/* Page Header with Global Page Actions */}
+      <div className="ledger-page-heading mb-0">
         <h1>{t('history.title')}</h1>
-        <Button
-          onClick={() => {
-            loadHistory(historyPagination.page);
-            loadStats();
-          }}
-          disabled={historyLoading || statsLoading}
-          variant="outline"
-          size="sm"
-          className="h-8 gap-1.5 px-3 text-xs"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${historyLoading || statsLoading ? 'animate-spin' : ''}`} />
-          {t('refresh')}
-        </Button>
+        <div className="flex items-center gap-2">
+          {historyPagination.total > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isDeleting}
+              className="h-8 gap-1.5 px-3 text-xs text-muted-foreground hover:border-destructive/30 hover:bg-destructive/5 hover:text-destructive"
+              onClick={() => setConfirmState({ open: true, mode: 'clear' })}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              {t('history.clearAll')}
+            </Button>
+          )}
+          <Button
+            onClick={() => {
+              loadHistory(historyPagination.page);
+              loadStats();
+            }}
+            disabled={historyLoading || statsLoading}
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 px-3 text-xs"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${historyLoading || statsLoading ? 'animate-spin' : ''}`} />
+            {t('refresh')}
+          </Button>
+        </div>
       </div>
 
-      {/* Statistics Strip */}
+      {/* Compact Centered Statistics Strip (unified with Home & Expense Reports) */}
       {stats && (
         <Card className="grid grid-cols-2 overflow-hidden md:grid-cols-4 [&>*:nth-child(odd)]:border-r [&>*:nth-child(-n+2)]:border-b md:[&>*]:border-b-0 md:[&>*:not(:last-child)]:border-r">
           {[
-            { label: t('stats.total'), value: stats.total, icon: Bell },
-            { label: t('stats.sent'), value: stats.sent, icon: CheckCircle },
-            { label: t('stats.failed'), value: stats.failed, icon: XCircle },
-            { label: t('stats.successRate'), value: stats.total > 0 ? `${Math.round((stats.sent / stats.total) * 100)}%` : '0%', icon: TrendingUp },
-          ].map(({ label, value, icon: Icon }) => (
-            <div key={label} className="min-w-0 border-border px-5 py-4 sm:px-6 sm:py-5">
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.8} />
-                <span className="truncate">{label}</span>
-              </div>
-              <p className="mt-2 text-2xl font-semibold leading-none tracking-[-0.035em] tabular-nums">{value}</p>
+            [t('stats.total'), stats.total],
+            [t('stats.sent'), stats.sent],
+            [t('stats.failed'), stats.failed],
+            [t('stats.successRate'), stats.total > 0 ? `${Math.round((stats.sent / stats.total) * 100)}%` : '0%'],
+          ].map(([label, value]) => (
+            <div key={String(label)} className="min-w-0 border-border px-4 py-3 text-center sm:px-5 sm:py-3.5">
+              <p className="truncate text-xs font-medium text-muted-foreground">{label}</p>
+              <p className="mt-1.5 truncate text-xl font-semibold leading-none tracking-[-0.03em] tabular-nums sm:text-[22px]">{value}</p>
             </div>
           ))}
         </Card>
       )}
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4 sm:p-5">
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
-            <div className="lg:col-span-2">
-              <SearchInput
-                placeholder={t('history.searchPlaceholder')}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                icon={<Search className="h-4 w-4 text-muted-foreground" />}
-              />
-            </div>
-            
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder={t('history.statusFilter')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('history.allStatuses')}</SelectItem>
-                {allStatuses.map(status => (
-                  <SelectItem key={status} value={status}>
-                    {t(`history.statuses.${status}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder={t('history.typeFilter')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('history.allTypes')}</SelectItem>
-                {allTypes.map(type => (
-                  <SelectItem key={type} value={type}>
-                    {t(`types.${type}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Select value={channelFilter} onValueChange={setChannelFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder={t('history.channelFilter')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('history.allChannels')}</SelectItem>
-                {allChannels.map(channel => (
-                  <SelectItem key={channel} value={channel}>
-                    {t(`channels.${channel}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Single-Row Compact On-Canvas Pill Filter Bar */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="min-w-0 flex-1">
+          <SearchInput
+            placeholder={t('history.searchPlaceholder')}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="h-8 rounded-full bg-muted/50 pl-9 text-xs md:text-xs"
+            icon={<Search className="h-3.5 w-3.5 text-muted-foreground" />}
+          />
+        </div>
 
-      {/* History List */}
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle>{t('history.title')}</CardTitle>
-          <CardDescription>
-            {searchTerm || channelFilter !== 'all' 
-              ? t('history.recordsShown', { count: filteredHistory.length, total: historyPagination.total })
-              : t('history.totalRecords', { total: historyPagination.total })
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="relative" aria-busy={historyLoading}>
-          {historyLoading && <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-card/75 backdrop-blur-[1px]">
-            <LoadingIndicator size="md" />
-          </div>}
+        <div className="grid shrink-0 grid-cols-3 gap-1.5 sm:flex sm:items-center">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-8 justify-center gap-1.5 rounded-full bg-muted/50 px-3 text-xs sm:w-auto [&>svg]:h-3.5 [&>svg]:w-3.5">
+              <SelectValue placeholder={t('history.statusFilter')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all" className="text-xs">{t('history.allStatuses')}</SelectItem>
+              {allStatuses.map(status => (
+                <SelectItem key={status} value={status} className="text-xs">
+                  {t(`history.statuses.${status}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="h-8 justify-center gap-1.5 rounded-full bg-muted/50 px-3 text-xs sm:w-auto [&>svg]:h-3.5 [&>svg]:w-3.5">
+              <SelectValue placeholder={t('history.typeFilter')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all" className="text-xs">{t('history.allTypes')}</SelectItem>
+              {allTypes.map(type => (
+                <SelectItem key={type} value={type} className="text-xs">
+                  {t(`types.${type}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={channelFilter} onValueChange={setChannelFilter}>
+            <SelectTrigger className="h-8 justify-center gap-1.5 rounded-full bg-muted/50 px-3 text-xs sm:w-auto [&>svg]:h-3.5 [&>svg]:w-3.5">
+              <SelectValue placeholder={t('history.channelFilter')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all" className="text-xs">{t('history.allChannels')}</SelectItem>
+              {allChannels.map(channel => (
+                <SelectItem key={channel} value={channel} className="text-xs">
+                  {t(`channels.${channel}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Single-Layer History List Card */}
+      <Card className="overflow-hidden">
+        {/* Aligned Selection Bar — checkbox column matches row checkboxes to 0px */}
+        <div className="flex min-h-[44px] flex-wrap items-center justify-between gap-2 border-b border-border/70 px-4 py-2 sm:px-5">
+          <div className="flex items-center gap-2.5">
+            {filteredHistory.length > 0 && (
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={allVisibleSelected ? true : someVisibleSelected ? 'mixed' : false}
+                onClick={toggleSelectAllVisible}
+                disabled={isDeleting}
+                className="inline-flex items-center gap-2.5 rounded-full py-0.5 text-xs font-medium text-foreground transition-colors hover:text-foreground/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+              >
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+                  <span
+                    className={cn(
+                      'flex h-4 w-4 items-center justify-center rounded-full border transition-colors',
+                      allVisibleSelected || someVisibleSelected
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-muted-foreground/40 bg-background hover:border-foreground/55'
+                    )}
+                  >
+                    {allVisibleSelected ? (
+                      <Check className="h-2.5 w-2.5" strokeWidth={2.75} />
+                    ) : someVisibleSelected ? (
+                      <span className="h-0.5 w-1.5 rounded-full bg-current" />
+                    ) : null}
+                  </span>
+                </span>
+                <span>{t('history.selectAll')}</span>
+              </button>
+            )}
+
+            <span className="text-xs tabular-nums text-muted-foreground">
+              {selectedVisibleCount > 0
+                ? t('history.selectedCount', { count: selectedVisibleCount })
+                : searchTerm || channelFilter !== 'all'
+                  ? t('history.recordsShown', { count: filteredHistory.length, total: historyPagination.total })
+                  : t('history.totalRecords', { total: historyPagination.total })}
+            </span>
+          </div>
+
+          {selectedVisibleCount > 0 && (
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              disabled={isDeleting}
+              className="h-7 gap-1.5 rounded-full px-3 text-xs"
+              onClick={() => setConfirmState({ open: true, mode: 'batch' })}
+            >
+              <Trash2 className="h-3 w-3" />
+              {t('history.deleteSelected', { count: selectedVisibleCount })}
+            </Button>
+          )}
+        </div>
+
+        {/* Clean Divided List Body */}
+        <div className="relative" aria-busy={historyLoading}>
+          {historyLoading && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/75 backdrop-blur-[1px]">
+              <LoadingIndicator size="md" />
+            </div>
+          )}
+
           {filteredHistory.length === 0 ? (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {t('history.noHistory')}
-              </AlertDescription>
-            </Alert>
+            <div role="status" className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/70 text-muted-foreground">
+                <Bell className="h-4 w-4" strokeWidth={1.8} />
+              </span>
+              <p className="text-xs text-muted-foreground">{t('history.noHistory')}</p>
+            </div>
           ) : (
-            <div className="space-y-4">
+            <div className="divide-y divide-border/60">
               {filteredHistory.map((item) => {
                 const parsedContent = parseMessageContent(item.message_content, t);
                 const isExpanded = expandedItems.has(item.id);
+                const isSelected = selectedIds.has(item.id);
+                const itemTitle = item.subscription_name || parsedContent.summary || t('history.defaultMessage');
 
                 return (
                   <div
                     key={item.id}
-                    className="overflow-hidden rounded-2xl border bg-card transition-colors hover:border-foreground/15"
+                    className={cn(
+                      'transition-colors',
+                      isSelected
+                        ? 'bg-primary/[0.035]'
+                        : isExpanded
+                          ? 'bg-muted/20'
+                          : 'hover:bg-muted/35'
+                    )}
                   >
-                    {/* Header - always visible */}
-                    <button
-                      type="button"
-                      aria-expanded={isExpanded}
-                      className="w-full p-4 text-left transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-                      onClick={() => toggleExpanded(item.id)}
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          {getStatusIcon(item.status)}
-                          <Badge variant={getStatusVariant(item.status)} className="text-xs">
+                    {/* Compact Single-Row Header */}
+                    <div className="flex items-center gap-2.5 px-4 py-2.5 sm:px-5">
+                      <button
+                        type="button"
+                        role="checkbox"
+                        aria-checked={isSelected}
+                        aria-label={itemTitle}
+                        onClick={() => toggleSelectItem(item.id)}
+                        disabled={isDeleting}
+                        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <span
+                          className={cn(
+                            'flex h-4 w-4 items-center justify-center rounded-full border transition-colors',
+                            isSelected
+                              ? 'border-primary bg-primary text-primary-foreground'
+                              : 'border-muted-foreground/40 bg-background hover:border-foreground/55'
+                          )}
+                        >
+                          {isSelected && <Check className="h-2.5 w-2.5" strokeWidth={2.75} />}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        aria-expanded={isExpanded}
+                        className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-lg py-0.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => toggleExpanded(item.id)}
+                      >
+                        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                          <Badge
+                            variant={getStatusVariant(item.status)}
+                            className="h-5 min-w-[74px] shrink-0 justify-center gap-1.5 rounded-full px-2 text-[11px] font-medium"
+                          >
+                            <span className={cn('h-1.5 w-1.5 rounded-full', getStatusDotClass(item.status))} />
                             {t(`history.statuses.${item.status}`)}
                           </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            {t(`types.${item.notification_type}`)}
-                          </Badge>
-                          <Badge variant="secondary" className="text-xs">
-                            {t(`channels.${item.channel_type}`)}
-                          </Badge>
+
+                          <span className="min-w-0 truncate text-[13px] font-medium text-foreground">
+                            {itemTitle}
+                          </span>
+
+                          <span className="hidden shrink-0 items-center gap-1.5 text-xs text-muted-foreground sm:inline-flex">
+                            <span>{t(`types.${item.notification_type}`)}</span>
+                            <span aria-hidden="true" className="opacity-40">·</span>
+                            <span>{t(`channels.${item.channel_type}`)}</span>
+                          </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <div className="text-xs tabular-nums text-muted-foreground">
-                            {formatDate(item.scheduled_at)}
-                          </div>
+
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          <span className="text-xs tabular-nums text-muted-foreground">
+                            {formatDate(item.sent_at || item.created_at || item.scheduled_at)}
+                          </span>
                           <ChevronRight
-                            className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
-                              isExpanded ? 'rotate-90' : ''
-                            }`}
+                            className={cn(
+                              'h-3.5 w-3.5 text-muted-foreground/65 transition-transform duration-200',
+                              isExpanded && 'rotate-90'
+                            )}
                           />
                         </div>
-                      </div>
+                      </button>
 
-                      {/* Summary - always visible */}
-                      <div className="mt-2 text-sm font-medium text-foreground">
-                        {item.subscription_name ? `${t('history.subscription')}: ${item.subscription_name}` : (parsedContent.summary || t('history.defaultMessage'))}
-                      </div>
-                    </button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        disabled={isDeleting}
+                        aria-label={t('history.deleteItem')}
+                        onClick={() => setConfirmState({ open: true, mode: 'single', targetId: item.id })}
+                        className="h-7 w-7 shrink-0 rounded-full text-muted-foreground/55 hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
 
-                    {/* Expanded content with smooth height transition */}
+                    {/* Seamless Indented Detail Area (no extra nested box border) */}
                     <div className="collapsible-grid" data-open={isExpanded}>
                       <div>
-                        <div className="border-t bg-muted/20 px-4 pb-4">
-                          <div className="space-y-2.5 pt-3">
-                            {/* Details in vertical layout */}
-                            {parsedContent.details.length > 0 && (
-                              <div className="space-y-2">
-                                {parsedContent.details.map((detail, index) => (
-                                  <div key={index} className="flex items-center gap-2.5 text-sm">
-                                    {renderDetailIcon(detail.iconKey)}
-                                    <span className="min-w-[80px] text-muted-foreground">{detail.label}:</span>
-                                    <span className="font-medium">{detail.value}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                        <div className="pb-3 pl-[46px] pr-4 pt-0.5 sm:pl-[50px] sm:pr-5">
+                          <div className="mb-1.5 flex items-center gap-1.5 text-xs text-muted-foreground sm:hidden">
+                            <span>{t(`types.${item.notification_type}`)}</span>
+                            <span aria-hidden="true" className="opacity-40">·</span>
+                            <span>{t(`channels.${item.channel_type}`)}</span>
+                          </div>
 
-                            {/* Recipient info */}
-                            <div className="flex items-center gap-2.5 text-sm">
-                              <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
-                              <span className="min-w-[80px] text-muted-foreground">{t('history.recipientLabel')}</span>
-                              <span className="rounded-lg bg-muted px-2 py-0.5 font-mono text-xs">{item.recipient}</span>
+                          <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs">
+                            {parsedContent.details.map((detail, index) => (
+                              <div key={index} className="inline-flex items-center gap-1.5">
+                                {renderDetailIcon(detail.iconKey)}
+                                <span className="text-muted-foreground">{detail.label}:</span>
+                                <span className="font-medium text-foreground">{detail.value}</span>
+                              </div>
+                            ))}
+
+                            <div className="inline-flex items-center gap-1.5">
+                              <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                              <span className="text-muted-foreground">{t('history.recipientLabel')}</span>
+                              <span className="font-mono text-[11px] font-medium text-foreground">{item.recipient}</span>
                             </div>
 
-                            {/* Timing info */}
                             {item.sent_at && (
-                              <div className="flex items-center gap-2.5 text-sm">
-                                <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                <span className="min-w-[80px] text-muted-foreground">{t('history.sentTimeLabel')}</span>
-                                <span className="font-medium tabular-nums">{formatDate(item.sent_at)}</span>
+                              <div className="inline-flex items-center gap-1.5">
+                                <Clock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                <span className="text-muted-foreground">{t('history.sentTimeLabel')}</span>
+                                <span className="font-medium tabular-nums text-foreground">{formatDate(item.sent_at)}</span>
                               </div>
                             )}
-
-                            {/* Error message if any */}
-                            {item.error_message && (
-                              <Alert className="border-destructive/20 bg-destructive/5">
-                                <AlertCircle className="h-4 w-4 text-destructive" />
-                                <AlertDescription className="text-sm text-destructive">
-                                  {item.error_message}
-                                </AlertDescription>
-                              </Alert>
-                            )}
                           </div>
+
+                          {item.error_message && (
+                            <div className="mt-2 inline-flex max-w-full items-center gap-2 rounded-xl bg-destructive/[0.06] px-3 py-1.5 text-xs text-destructive">
+                              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                              <span className="min-w-0 break-words">{item.error_message}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -506,7 +715,7 @@ export const NotificationHistory: React.FC = () => {
               })}
             </div>
           )}
-        </CardContent>
+        </div>
       </Card>
 
       {/* Pagination */}
@@ -519,6 +728,31 @@ export const NotificationHistory: React.FC = () => {
           />
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmState.open}
+        onOpenChange={(open) => setConfirmState(prev => ({ ...prev, open }))}
+        title={
+          confirmState.mode === 'clear'
+            ? t('history.confirmClearTitle')
+            : t('history.confirmDeleteTitle')
+        }
+        description={
+          confirmState.mode === 'clear'
+            ? t('history.confirmClearDesc', { total: historyPagination.total })
+            : confirmState.mode === 'single'
+              ? t('history.confirmDeleteSingle')
+              : t('history.confirmDeleteBatch', { count: selectedVisibleCount })
+        }
+        confirmText={
+          confirmState.mode === 'clear'
+            ? t('history.clearAll')
+            : t('delete', { ns: 'common' })
+        }
+        cancelText={t('cancel', { ns: 'common' })}
+        isDestructive
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 };

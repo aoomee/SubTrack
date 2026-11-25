@@ -134,6 +134,18 @@ export const notificationApi = {
   getStats: () =>
     apiClient.get<NotificationStats>(`/notifications/stats`),
 
+  // 删除单条通知历史
+  deleteHistoryItem: (id: number) =>
+    apiClient.delete<{ deletedCount: number }>(`/protected/notifications/history/${id}`),
+
+  // 批量删除通知历史（支持单选 / 多选）
+  deleteHistoryBatch: (ids: number[]) =>
+    apiClient.post<{ deletedCount: number }>(`/protected/notifications/history/delete`, { ids }),
+
+  // 一键清空全部通知历史
+  clearHistory: () =>
+    apiClient.delete<{ deletedCount: number }>(`/protected/notifications/history`),
+
   // 验证Telegram Chat ID
   validateChatId: (chatId: string) =>
     apiClient.post(`/protected/notifications/validate-chat-id`, { chat_id: chatId }),

@@ -120,7 +120,7 @@ export function BillingCalendar({ subscriptions }: { subscriptions: Subscription
         </button>
       </div>
     </CardHeader>
-    <CardContent className="flex flex-1 flex-col">
+    <CardContent className="flex flex-1 flex-col gap-4">
       <div className="grid grid-cols-7 gap-1 text-center text-xs" data-calendar-grid>
         {Array.from({ length: 7 }, (_, index) => <span key={`weekday-${index}`} className="flex h-6 items-center justify-center text-[10px] text-muted-foreground">{new Intl.DateTimeFormat(locale, { weekday: 'narrow' }).format(new Date(2026, 0, 5 + index))}</span>)}
         {Array.from({ length: leading }, (_, index) => <span key={`blank-start-${index}`} className="h-8 w-8" aria-hidden="true" />)}
@@ -139,7 +139,7 @@ export function BillingCalendar({ subscriptions }: { subscriptions: Subscription
         })}
         {Array.from({ length: trailing }, (_, index) => <span key={`blank-end-${index}`} className="h-8 w-8" aria-hidden="true" />)}
       </div>
-      <div className="mt-4 border-t pt-3 text-[11px] text-muted-foreground" aria-live="polite">
+      <div className="mt-auto border-t pt-3 text-[11px] text-muted-foreground" aria-live="polite">
         {selected.length ? selected.map(sub => <div key={sub.id} className="flex justify-between gap-2 py-0.5"><span className="truncate text-foreground/90">{sub.name}</span><span className="shrink-0 font-medium tabular-nums text-foreground">{formatWithUserCurrency(sub.amount, sub.currency)}</span></div>) : <p>{t('noScheduledPayments')}</p>}
         <p className="mt-1.5 text-[10px]">{t('calendarBasis')}</p>
       </div>

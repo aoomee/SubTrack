@@ -621,6 +621,43 @@ class NotificationService {
     }
 
     /**
+     * 按 ID 列表删除通知历史（支持单条与批量）
+     * @param {Array<number|string>} ids - 记录 ID 数组
+     * @returns {{ deletedCount: number }}
+     */
+    deleteNotificationHistoryByIds(ids) {
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return { deletedCount: 0 };
+        }
+
+        const uniqueIds = [...new Set(
+            ids
+                .map((id) => Number(id))
+                .filter((id) => Number.isInteger(id) && id > 0)
+        )];
+
+        if (uniqueIds.length === 0) {
+            return { deletedCount: 0 };
+        }
+
+        const placeholders = uniqueIds.map(() => '?').join(', ');
+        const result = this.db
+            .prepare(`DELETE FROM notification_history WHERE id IN (${placeholders})`)
+            .run(...uniqueIds);
+
+        return { deletedCount: result.changes };
+    }
+
+    /**
+     * 清空全部通知历史
+     * @returns {{ deletedCount: number }}
+     */
+    clearNotificationHistory() {
+        const result = this.db.prepare('DELETE FROM notification_history').run();
+        return { deletedCount: result.changes };
+    }
+
+    /**
      * 关闭数据库连接
      */
     close() {

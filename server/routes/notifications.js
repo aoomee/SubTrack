@@ -32,6 +32,9 @@ function createProtectedNotificationRoutes(db) {
 
     // 历史记录路由
     router.get('/history', notificationController.getNotificationHistory);
+    router.post('/history/delete', notificationController.batchDeleteNotificationHistory);
+    router.delete('/history/:id', notificationController.deleteNotificationHistoryItem);
+    router.delete('/history', notificationController.clearNotificationHistory);
 
     // 统计路由
     router.get('/stats', notificationController.getNotificationStats);

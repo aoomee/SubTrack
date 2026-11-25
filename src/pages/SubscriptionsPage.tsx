@@ -400,7 +400,7 @@ export function SubscriptionsPage() {
         <div className="flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="outline" onClick={() => setShowImportModal(true)} size="sm" className="h-9 gap-1.5 px-3.5" aria-label={t('common:import')}>
+              <Button variant="outline" onClick={() => setShowImportModal(true)} size="sm" className="h-8 gap-1.5 px-3 text-xs" aria-label={t('common:import')}>
                 <Upload className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">{t('common:import')}</span>
               </Button>
@@ -412,7 +412,7 @@ export function SubscriptionsPage() {
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="outline" onClick={handleExportSubscriptions} size="sm" className="h-9 gap-1.5 px-3.5" aria-label={t('common:export')}>
+              <Button variant="outline" onClick={handleExportSubscriptions} size="sm" className="h-8 gap-1.5 px-3 text-xs" aria-label={t('common:export')}>
                 <Download className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">{t('common:export')}</span>
               </Button>
@@ -588,7 +588,7 @@ export function SubscriptionsPage() {
         <div
           role="tablist"
           aria-label={t('subscription:status')}
-          className="glass-tabs-list inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-full p-1 text-muted-foreground"
+          className="glass-tabs-list grid w-full grid-cols-4 items-center gap-0.5 rounded-full p-0.5 text-muted-foreground sm:inline-flex sm:w-fit sm:gap-1"
         >
           {(["all", "active", "trial", "cancelled"] as const).map((view) => (
             <button
@@ -597,7 +597,7 @@ export function SubscriptionsPage() {
               role="tab"
               aria-selected={currentView === view}
               data-state={currentView === view ? "active" : "inactive"}
-              className="glass-tabs-trigger inline-flex h-8 items-center justify-center whitespace-nowrap rounded-full px-3.5 text-xs font-medium transition-[background-color,color,box-shadow] duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="glass-tabs-trigger inline-flex h-7 items-center justify-center whitespace-nowrap rounded-full px-2.5 text-xs font-medium transition-[background-color,color,box-shadow] duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-3.5"
               onClick={() => setCurrentView(view)}
             >
               {t(`subscription:${view}`)}

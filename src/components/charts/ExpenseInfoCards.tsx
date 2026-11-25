@@ -59,44 +59,44 @@ export function ExpenseInfoCards({
         className="group cursor-pointer transition-[background-color,border-color,transform] duration-200 hover:border-primary/20 hover:bg-accent/25 active:translate-y-px"
         onClick={() => handleViewDetails(data)}
       >
-        <CardContent className="p-5 sm:p-5">
-          <div className="flex items-center justify-between gap-3">
+        <CardContent className="p-4 sm:p-4">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Calendar className="h-4 w-4" strokeWidth={1.8} />
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Calendar className="h-3.5 w-3.5" strokeWidth={1.8} />
               </span>
               <p className="truncate text-sm font-semibold">
                 {formatExpensePeriodLabel(data, i18n.resolvedLanguage)}
               </p>
             </div>
             <span
-              className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground opacity-60 transition-opacity group-hover:opacity-100"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground opacity-60 transition-opacity group-hover:opacity-100"
               aria-hidden="true"
             >
-              <Eye className="h-4 w-4" />
+              <Eye className="h-3.5 w-3.5" />
             </span>
           </div>
 
-          <div className="mt-5 text-center">
-            <p className="text-xs text-muted-foreground">{t('infoCards.total')}</p>
-            <p className="mt-2 text-2xl font-semibold leading-none tracking-[-0.035em] tabular-nums">
+          <div className="mt-3 text-center">
+            <p className="text-[11px] text-muted-foreground">{t('infoCards.total')}</p>
+            <p className="mt-1 text-xl font-semibold leading-none tracking-[-0.03em] tabular-nums">
               {formatCurrencyAmount(data.totalSpent, currency)}
             </p>
           </div>
 
-          <div className="mt-5 divide-y border-y text-sm">
-            <div className="grid grid-cols-[1fr_auto] items-center gap-4 py-3">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <TrendingUp className="h-4 w-4" strokeWidth={1.8} />
+          <div className="mt-3 divide-y border-y text-xs">
+            <div className="grid grid-cols-[1fr_auto] items-center gap-3 py-2">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <TrendingUp className="h-3.5 w-3.5" strokeWidth={1.8} />
                 <span>{t('infoCards.dailyAvg')}</span>
               </div>
               <span className="font-medium tabular-nums">
                 {formatCurrencyAmount(data.dailyAverage, currency)}
               </span>
             </div>
-            <div className="grid grid-cols-[1fr_auto] items-center gap-4 py-3">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Calendar className="h-4 w-4" strokeWidth={1.8} />
+            <div className="grid grid-cols-[1fr_auto] items-center gap-3 py-2">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Calendar className="h-3.5 w-3.5" strokeWidth={1.8} />
                 <span>{t('infoCards.payments')}</span>
               </div>
               <span className="font-medium tabular-nums">{data.paymentCount}</span>
@@ -106,7 +106,7 @@ export function ExpenseInfoCards({
           <Button
             variant="ghost"
             size="sm"
-            className="mt-3 w-full text-muted-foreground group-hover:text-foreground"
+            className="mt-2 h-8 w-full text-xs text-muted-foreground group-hover:text-foreground"
             onClick={(e) => {
               e.stopPropagation()
               handleViewDetails(data)
@@ -139,60 +139,54 @@ export function ExpenseInfoCards({
   }
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-4 ${className || ''}`}>
       {/* Monthly Data */}
       <div>
-        <h3 className="mb-3 flex items-center gap-2 text-base font-semibold">
+        <h3 className="mb-2.5 flex items-center gap-2 text-sm font-semibold">
           <Calendar className="h-4 w-4 text-primary" strokeWidth={1.8} />
           {t('infoCards.monthlyExpenses')}
         </h3>
         {monthlyData.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {monthlyData.slice(-4).map((data, index) => renderExpenseCard(data, index))}
           </div>
         ) : (
-          <Card>
-            <CardContent className="flex items-center justify-center h-32">
-              <p className="text-muted-foreground">{t('infoCards.noMonthlyDataAvailable')}</p>
-            </CardContent>
+          <Card className="flex h-20 items-center justify-center">
+            <p className="text-xs text-muted-foreground">{t('infoCards.noMonthlyDataAvailable')}</p>
           </Card>
         )}
       </div>
 
       {/* Quarterly Data */}
       <div>
-        <h3 className="mb-3 flex items-center gap-2 text-base font-semibold">
+        <h3 className="mb-2.5 flex items-center gap-2 text-sm font-semibold">
           <Calendar className="h-4 w-4 text-primary" strokeWidth={1.8} />
           {t('infoCards.quarterlyExpenses')}
         </h3>
         {quarterlyData.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {quarterlyData.slice(0, 3).map((data, index) => renderExpenseCard(data, index))}
           </div>
         ) : (
-          <Card>
-            <CardContent className="flex items-center justify-center h-32">
-              <p className="text-muted-foreground">{t('infoCards.noQuarterlyDataAvailable')}</p>
-            </CardContent>
+          <Card className="flex h-20 items-center justify-center">
+            <p className="text-xs text-muted-foreground">{t('infoCards.noQuarterlyDataAvailable')}</p>
           </Card>
         )}
       </div>
 
       {/* Yearly Data */}
       <div>
-        <h3 className="mb-3 flex items-center gap-2 text-base font-semibold">
+        <h3 className="mb-2.5 flex items-center gap-2 text-sm font-semibold">
           <Calendar className="h-4 w-4 text-primary" strokeWidth={1.8} />
           {t('infoCards.yearlyExpenses')}
         </h3>
         {yearlyData.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {yearlyData.slice(0, 3).map((data, index) => renderExpenseCard(data, index))}
           </div>
         ) : (
-          <Card>
-            <CardContent className="flex items-center justify-center h-32">
-              <p className="text-muted-foreground">{t('infoCards.noYearlyDataAvailable')}</p>
-            </CardContent>
+          <Card className="flex h-20 items-center justify-center">
+            <p className="text-xs text-muted-foreground">{t('infoCards.noYearlyDataAvailable')}</p>
           </Card>
         )}
       </div>

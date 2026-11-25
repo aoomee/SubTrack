@@ -304,10 +304,16 @@ export function ExpenseReportsPage() {
   }
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="ledger-page-heading">
+    <Tabs keepMounted defaultValue="monthly" className="space-y-4">
+      {/* Header + Monthly/Yearly Switch */}
+      <div className="ledger-page-heading mb-0">
         <h1>{t('title')}</h1>
+        {!expenseError && (
+          <TabsList className="grid h-8 w-fit min-w-[136px] grid-cols-2 p-0.5">
+            <TabsTrigger value="monthly" className="h-7 px-3 text-xs">{t('monthly')}</TabsTrigger>
+            <TabsTrigger value="yearly" className="h-7 px-3 text-xs">{t('yearly')}</TabsTrigger>
+          </TabsList>
+        )}
       </div>
 
       <Card className="grid grid-cols-2 overflow-hidden md:grid-cols-4 [&>*:nth-child(odd)]:border-r [&>*:nth-child(-n+2)]:border-b md:[&>*]:border-b-0 md:[&>*:not(:last-child)]:border-r">
@@ -316,16 +322,16 @@ export function ExpenseReportsPage() {
           [t('ledger.yearAllocated'), isLoadingYearlyExpenses || yearlyExpenseError ? '—' : formatCurrencyAmount(yearlyExpenses.find(item => item.year === new Date().getFullYear())?.amount || 0, userCurrency)],
           [t('ledger.topCategory'), isLoadingCategoryExpenses || categoryExpenseError ? '—' : categoryExpenses[0]?.category || '—'],
           [t('ledger.yearPaid'), isLoadingExpenseInfo || expenseInfoError ? '—' : formatCurrencyAmount(expenseInfoData.yearly.find(item => item.startDate.startsWith(String(new Date().getFullYear())))?.totalSpent || 0, userCurrency)],
-        ].map(([label, value]) => <div key={label} className="min-w-0 border-border px-5 py-4 sm:px-6 sm:py-5">
-          <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="mt-1.5 break-words text-xl font-semibold tracking-tight tabular-nums">{value}</p>
+        ].map(([label, value]) => <div key={label} className="min-w-0 border-border px-4 py-3 text-center sm:px-5 sm:py-3.5">
+          <p className="truncate text-xs font-medium text-muted-foreground">{label}</p>
+          <p className="mt-1.5 truncate text-xl font-semibold leading-none tracking-[-0.03em] tabular-nums sm:text-[22px]">{value}</p>
         </div>)}
       </Card>
 
       {expenseError && (
-        <Card className="flex h-32 items-center justify-center p-6">
+        <Card className="flex h-28 items-center justify-center p-5">
           <div className="text-center">
-            <p className="mb-2 text-sm text-destructive">{t('failedToLoadExpenseData')}</p>
+            <p className="mb-1.5 text-sm text-destructive">{t('failedToLoadExpenseData')}</p>
             <p className="text-xs text-muted-foreground">{expenseError}</p>
           </div>
         </Card>
@@ -333,94 +339,87 @@ export function ExpenseReportsPage() {
 
       {/* Charts */}
       {!expenseError && (
-        <div className="space-y-4">
-          <Tabs keepMounted defaultValue="monthly">
-            <TabsList className="grid w-fit min-w-[200px] grid-cols-2">
-              <TabsTrigger value="monthly">{t('monthly')}</TabsTrigger>
-              <TabsTrigger value="yearly">{t('yearly')}</TabsTrigger>
-            </TabsList>
+        <>
+          <TabsContent value="monthly" className="mt-0">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+              {isLoadingExpenses ? (
+                <Card className="flex min-h-[280px] items-center justify-center" aria-busy="true">
+                  <LoadingIndicator size="md" />
+                </Card>
+              ) : (
+                <ExpenseTrendChart
+                  data={monthlyExpenses}
+                  categoryData={isLoadingMonthlyCategoryExpenses ? undefined : monthlyCategoryExpenses}
+                  currency={userCurrency}
+                />
+              )}
+              {isLoadingCategoryExpenses ? (
+                <Card className="flex min-h-[280px] items-center justify-center" aria-busy="true">
+                  <LoadingIndicator size="md" />
+                </Card>
+              ) : categoryExpenseError ? (
+                <Card className="flex min-h-[280px] items-center justify-center p-5">
+                  <div className="text-center text-destructive">
+                    <p className="font-medium">{t('failedToLoadCategoryData')}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{categoryExpenseError}</p>
+                  </div>
+                </Card>
+              ) : (
+                <CategoryPieChart
+                  data={categoryExpenses}
+                  currency={userCurrency}
+                  descriptionKey="chart.breakdownByCategory"
+                />
+              )}
+            </div>
+          </TabsContent>
 
-            <TabsContent value="monthly" className="space-y-4">
-              <div className="grid grid-cols-1 gap-5 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-                {isLoadingExpenses ? (
-                  <Card className="flex min-h-[340px] items-center justify-center" aria-busy="true">
+          <TabsContent value="yearly" className="mt-0">
+            {isLoadingYearlyExpenses ? (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]" aria-busy="true">
+                <Card className="flex min-h-[280px] items-center justify-center">
+                  <LoadingIndicator size="md" />
+                </Card>
+                <Card className="flex min-h-[280px] items-center justify-center">
+                  <LoadingIndicator size="md" />
+                </Card>
+              </div>
+            ) : yearlyExpenseError ? (
+              <div className="flex h-28 items-center justify-center">
+                <div className="text-center">
+                  <p className="mb-1.5 text-sm text-destructive">{t('failedToLoadYearlyData')}</p>
+                  <p className="text-xs text-muted-foreground">{yearlyExpenseError}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+                <YearlyTrendChart
+                  data={yearlyExpenses}
+                  categoryData={isLoadingYearlyGroupedCategoryExpenses ? undefined : yearlyGroupedCategoryExpenses}
+                  currency={userCurrency}
+                />
+                {isLoadingYearlyCategoryExpenses ? (
+                  <Card className="flex min-h-[280px] items-center justify-center" aria-busy="true">
                     <LoadingIndicator size="md" />
                   </Card>
-                ) : (
-                  <ExpenseTrendChart
-                    data={monthlyExpenses}
-                    categoryData={isLoadingMonthlyCategoryExpenses ? undefined : monthlyCategoryExpenses}
-                    currency={userCurrency}
-                  />
-                )}
-                {isLoadingCategoryExpenses ? (
-                  <Card className="flex min-h-[340px] items-center justify-center" aria-busy="true">
-                    <LoadingIndicator size="md" />
-                  </Card>
-                ) : categoryExpenseError ? (
-                  <Card className="flex min-h-[340px] items-center justify-center p-6">
+                ) : yearlyCategoryExpenseError ? (
+                  <Card className="flex min-h-[280px] items-center justify-center p-5">
                     <div className="text-center text-destructive">
-                      <p className="font-medium">{t('failedToLoadCategoryData')}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">{categoryExpenseError}</p>
+                      <p className="font-medium">{t('failedToLoadYearlyCategoryData')}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{yearlyCategoryExpenseError}</p>
                     </div>
                   </Card>
                 ) : (
                   <CategoryPieChart
-                    data={categoryExpenses}
+                    data={yearlyCategoryExpenses}
                     currency={userCurrency}
-                    descriptionKey="chart.breakdownByCategory"
+                    descriptionKey="chart.breakdownByCategoryYearly"
                   />
                 )}
               </div>
-            </TabsContent>
-
-            <TabsContent value="yearly" className="space-y-4">
-              {isLoadingYearlyExpenses ? (
-                <div className="grid grid-cols-1 gap-5 xl:grid-cols-2" aria-busy="true">
-                  <Card className="flex min-h-[340px] items-center justify-center">
-                    <LoadingIndicator size="md" />
-                  </Card>
-                  <Card className="flex min-h-[340px] items-center justify-center">
-                    <LoadingIndicator size="md" />
-                  </Card>
-                </div>
-              ) : yearlyExpenseError ? (
-                <div className="flex h-32 items-center justify-center">
-                  <div className="text-center">
-                    <p className="mb-2 text-sm text-destructive">{t('failedToLoadYearlyData')}</p>
-                    <p className="text-xs text-muted-foreground">{yearlyExpenseError}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-                  <YearlyTrendChart
-                    data={yearlyExpenses}
-                    categoryData={isLoadingYearlyGroupedCategoryExpenses ? undefined : yearlyGroupedCategoryExpenses}
-                    currency={userCurrency}
-                  />
-                  {isLoadingYearlyCategoryExpenses ? (
-                    <Card className="flex min-h-[340px] items-center justify-center" aria-busy="true">
-                      <LoadingIndicator size="md" />
-                    </Card>
-                  ) : yearlyCategoryExpenseError ? (
-                    <Card className="flex min-h-[340px] items-center justify-center p-6">
-                      <div className="text-center text-destructive">
-                        <p className="font-medium">{t('failedToLoadYearlyCategoryData')}</p>
-                        <p className="mt-1 text-sm text-muted-foreground">{yearlyCategoryExpenseError}</p>
-                      </div>
-                    </Card>
-                  ) : (
-                    <CategoryPieChart
-                      data={yearlyCategoryExpenses}
-                      currency={userCurrency}
-                      descriptionKey="chart.breakdownByCategoryYearly"
-                    />
-                  )}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
+            )}
+          </TabsContent>
+        </>
       )}
 
       <Card className="overflow-hidden">
@@ -428,7 +427,7 @@ export function ExpenseReportsPage() {
           type="button"
           onClick={() => setIsPaymentHistoryOpen((prev) => !prev)}
           aria-expanded={isPaymentHistoryOpen}
-          className="flex w-full items-center justify-between gap-3 p-5 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:p-6"
+          className="flex w-full items-center justify-between gap-3 px-5 py-3.5 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-6 sm:py-4"
         >
           <span className="text-sm font-semibold">{t('ledger.paymentHistory')}</span>
           <ChevronDown
@@ -439,7 +438,7 @@ export function ExpenseReportsPage() {
         </button>
         <div className="collapsible-grid" data-open={isPaymentHistoryOpen}>
           <div>
-            <div className="border-t px-5 pb-6 pt-5 sm:px-6">
+            <div className="border-t px-4 pb-5 pt-4 sm:px-5">
               {isLoadingExpenseInfo ? (
                 <ExpenseInfoCards
                   monthlyData={[]}
@@ -449,9 +448,9 @@ export function ExpenseReportsPage() {
                   isLoading={true}
                 />
               ) : expenseInfoError ? (
-                <div className="flex h-32 items-center justify-center">
+                <div className="flex h-24 items-center justify-center">
                   <div className="text-center">
-                    <p className="mb-2 text-sm text-destructive">{t('failedToLoadExpenseOverview')}</p>
+                    <p className="mb-1.5 text-sm text-destructive">{t('failedToLoadExpenseOverview')}</p>
                     <p className="text-xs text-muted-foreground">{expenseInfoError}</p>
                   </div>
                 </div>
@@ -467,6 +466,6 @@ export function ExpenseReportsPage() {
           </div>
         </div>
       </Card>
-    </div>
+    </Tabs>
   )
 }

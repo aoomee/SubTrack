@@ -108,7 +108,7 @@
   .ledger-mobile-nav .ledger-nav-link[aria-current='page'] { @apply bg-primary text-primary-foreground shadow-none; }
   .currency-shortcut { @apply inline-flex h-8 items-center gap-1.5 rounded-full bg-secondary px-3 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring; }
   .skip-link { @apply sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground; }
-  .ledger-page-heading { @apply mb-4 flex flex-wrap items-center justify-between gap-3; }
+  .ledger-page-heading { @apply mb-4 flex min-h-8 flex-wrap items-center justify-between gap-3; }
   .ledger-page-heading h1 { @apply text-lg font-semibold tracking-tight; }
   .ledger-page-heading p { @apply mt-1 text-xs text-muted-foreground; }
   .service-avatar { @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-secondary text-sm font-semibold text-foreground; }

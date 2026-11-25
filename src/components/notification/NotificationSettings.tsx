@@ -86,20 +86,20 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ user
   return (
     <div className="space-y-4">
       <Tabs keepMounted defaultValue="channels" className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="overflow-x-auto scrollbar-hide">
-            <TabsList className="w-fit min-w-max sm:min-w-0">
-              <TabsTrigger value="channels" className="flex items-center gap-1.5">
-                <Radio className="h-3.5 w-3.5" />
-                {t('channelConfig')}
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="w-full overflow-x-auto scrollbar-hide sm:w-auto">
+            <TabsList className="grid h-8 w-full grid-cols-3 p-0.5 sm:inline-flex sm:w-fit">
+              <TabsTrigger value="channels" className="flex h-7 items-center justify-center gap-1.5 px-2.5 text-xs sm:px-3">
+                <Radio className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{t('channelConfig')}</span>
               </TabsTrigger>
-              <TabsTrigger value="rules" className="flex items-center gap-1.5">
-                <Bell className="h-3.5 w-3.5" />
-                {t('notificationRules')}
+              <TabsTrigger value="rules" className="flex h-7 items-center justify-center gap-1.5 px-2.5 text-xs sm:px-3">
+                <Bell className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{t('notificationRules')}</span>
               </TabsTrigger>
-              <TabsTrigger value="scheduler" className="flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5" />
-                {t('scheduler.title')}
+              <TabsTrigger value="scheduler" className="flex h-7 items-center justify-center gap-1.5 px-2.5 text-xs sm:px-3">
+                <Clock className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{t('scheduler.title')}</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -108,7 +108,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ user
             disabled={loading}
             variant="outline"
             size="sm"
-            className="h-8 gap-1.5 px-3 text-xs"
+            className="h-8 shrink-0 gap-1.5 self-end px-3 text-xs sm:self-auto"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
             {t('refresh')}

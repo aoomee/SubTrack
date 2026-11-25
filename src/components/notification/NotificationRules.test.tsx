@@ -10,12 +10,11 @@ const rule: NotificationSetting = {
   notification_channels: ['telegram'], repeat_notification: false, created_at: '', updated_at: '',
 };
 
-describe('notification card layout and controls', () => {
-  test('overrides the headerless CardContent padding at both responsive sizes', () => {
-    render(<NotificationRules settings={[rule]} onUpdate={vi.fn()} />);
-    const content = screen.getByRole('heading').closest('[data-card]')?.firstElementChild;
-    expect(content).toHaveClass('p-5', 'sm:p-6');
-    expect(content).not.toHaveClass('pt-0', 'sm:pt-0');
+describe('notification rules layout and controls', () => {
+  test('renders rules in a compact divided list without nested cards', () => {
+    const { container } = render(<NotificationRules settings={[rule]} onUpdate={vi.fn()} />);
+    expect(container.firstElementChild).toHaveClass('divide-y');
+    expect(screen.getByRole('heading').closest('[data-card]')).toBeNull();
   });
   test('keeps the enable switch and channel selection working', () => {
     const update = vi.fn();
@@ -24,6 +23,6 @@ describe('notification card layout and controls', () => {
     expect(update).toHaveBeenLastCalledWith({ ...rule, is_enabled: false });
     fireEvent.keyDown(screen.getByRole('button', { name: 'channels.email' }), { key: 'Enter' });
     expect(update).toHaveBeenLastCalledWith({ ...rule, notification_channels: ['telegram', 'email'] });
-    expect(screen.getByText('channelsLabel: channels.telegram')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'channels.telegram' })).toHaveAttribute('aria-pressed', 'true');
   });
 });

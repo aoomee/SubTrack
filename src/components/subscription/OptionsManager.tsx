@@ -158,14 +158,14 @@ interface OptionItemProps {
 
 function OptionItem({ value, label, onEdit, onDelete, canDelete = true }: OptionItemProps) {
   return (
-    <div className="group relative rounded-2xl border bg-card p-3.5 transition-[border-color,background-color] duration-200 hover:border-foreground/20 hover:bg-accent/35">
-      <div className="space-y-1 pr-12">
-        <p className="truncate text-sm font-medium">{label}</p>
-        <p className="truncate text-xs text-muted-foreground">
+    <div className="group relative rounded-2xl border bg-card px-3.5 py-3 transition-[border-color,background-color] duration-200 hover:border-foreground/20 hover:bg-accent/35">
+      <div className="space-y-0.5 pr-14">
+        <p className="truncate text-sm font-medium leading-5">{label}</p>
+        <p className="truncate font-mono text-[11px] text-muted-foreground">
           {value}
         </p>
       </div>
-      <div className="absolute right-2 top-2.5 flex items-center gap-0.5 opacity-100 transition-opacity duration-150 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+      <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-0.5 opacity-100 transition-opacity duration-150 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
         <Button
           variant="ghost"
           size="icon"
@@ -357,21 +357,21 @@ export function OptionsManager() {
         <TabsContent value="categories">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <CardTitle>{t('settings:categories')}</CardTitle>
                   <CardDescription>
                     {t('settings:manageCategoriesDesc')}
                   </CardDescription>
                 </div>
-                <Button onClick={() => handleAdd('category')}>
+                <Button size="sm" onClick={() => handleAdd('category')}>
                   <Plus className="h-4 w-4" />
                   {t('settings:addCategory')}
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
                 {categories.map((category) => (
                   <OptionItem
                     key={category.value}
@@ -389,21 +389,21 @@ export function OptionsManager() {
         <TabsContent value="payment-methods">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <CardTitle>{t('settings:paymentMethods')}</CardTitle>
                   <CardDescription>
                     {t('settings:managePaymentMethodsDesc')}
                   </CardDescription>
                 </div>
-                <Button onClick={() => handleAdd('payment')}>
+                <Button size="sm" onClick={() => handleAdd('payment')}>
                   <Plus className="h-4 w-4" />
                   {t('settings:addPaymentMethod')}
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
                 {paymentMethods.map((method) => (
                   <OptionItem
                     key={method.value}

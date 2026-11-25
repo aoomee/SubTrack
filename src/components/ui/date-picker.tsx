@@ -98,33 +98,36 @@ export function DatePicker({
   }
 
   const renderCalendarDays = () => {
+    const viewYear = viewDate.getFullYear()
+    const viewMonth = viewDate.getMonth()
     const daysInMonth = getDaysInMonth(viewDate)
-    const firstDay = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay()
+    const firstDay = new Date(viewYear, viewMonth, 1).getDay()
     const leadingBlanks = (firstDay - weekStart + 7) % 7
+    const trailingBlanks = 42 - leadingBlanks - daysInMonth
     const days = []
 
     // Empty cells for days before the first day of the month
     for (let i = 0; i < leadingBlanks; i++) {
-      days.push(<div key={`empty-${i}`} className="h-8 w-8" />)
+      days.push(<div key={`empty-start-${i}`} className="mx-auto h-8 w-8" aria-hidden="true" />)
     }
 
     // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const isSelected = selectedDate && 
         selectedDate.getDate() === day &&
-        selectedDate.getMonth() === viewDate.getMonth() &&
-        selectedDate.getFullYear() === viewDate.getFullYear()
+        selectedDate.getMonth() === viewMonth &&
+        selectedDate.getFullYear() === viewYear
       
       const isToday = new Date().toDateString() === 
-        new Date(viewDate.getFullYear(), viewDate.getMonth(), day).toDateString()
+        new Date(viewYear, viewMonth, day).toDateString()
 
       days.push(
         <Button
-          key={day}
+          key={`${viewYear}-${viewMonth}-${day}`}
           variant={isSelected ? "default" : "ghost"}
           size="sm"
           className={cn(
-            "h-8 w-8 p-0 font-normal",
+            "mx-auto h-8 w-8 p-0 font-normal leading-none tabular-nums",
             isToday && !isSelected && "bg-accent text-accent-foreground",
             isSelected && "bg-primary text-primary-foreground"
           )}
@@ -133,6 +136,10 @@ export function DatePicker({
           {day}
         </Button>
       )
+    }
+
+    for (let i = 0; i < trailingBlanks; i++) {
+      days.push(<div key={`empty-end-${i}`} className="mx-auto h-8 w-8" aria-hidden="true" />)
     }
 
     return days
@@ -215,7 +222,7 @@ export function DatePicker({
             </Select>
 
             <Select value={viewDate.getFullYear().toString()} onValueChange={handleYearChange}>
-              <SelectTrigger className="w-20 h-8 text-sm">
+              <SelectTrigger className="w-24 h-8 text-sm">
                 <SelectValue>
                   {viewDate.getFullYear()}
                 </SelectValue>
@@ -235,7 +242,7 @@ export function DatePicker({
             {/* Day headers */}
             <div className="grid grid-cols-7 gap-1">
               {weekDays.map((day, index) => (
-                <div key={`${day}-${index}`} className="h-8 w-8 text-center text-sm font-medium text-muted-foreground flex items-center justify-center">
+                <div key={`${day}-${index}`} className="mx-auto flex h-8 w-8 items-center justify-center text-center text-sm font-medium text-muted-foreground">
                   {day}
                 </div>
               ))}

@@ -46,6 +46,7 @@ import { OptionsManager } from "@/components/subscription/OptionsManager"
 import { NotificationSettings } from "@/components/notification/NotificationSettings"
 import { useTheme } from "next-themes"
 import { useAuthStore } from "@/store/authStore"
+import { prefetchNotificationCenter } from "@/store/notificationStore"
 
 export function SettingsPage() {
   const { t } = useTranslation(['settings', 'common', 'subscription'])
@@ -89,6 +90,7 @@ export function SettingsPage() {
 
   useEffect(() => {
     initializeSettings()
+    void prefetchNotificationCenter()
   }, [initializeSettings])
 
   const getPasswordErrorMessage = (code?: string, fallback?: string) => {
@@ -213,10 +215,8 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="sr-only">{t('title')}</h1>
-      </div>
+    <>
+      <h1 className="sr-only">{t('title')}</h1>
 
       <Tabs keepMounted value={activeTab} onValueChange={setActiveTab}>
         <div className="overflow-x-auto scrollbar-hide">
@@ -232,13 +232,11 @@ export function SettingsPage() {
 
         <TabsContent value="general" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>{t('generalSettings')}</CardTitle>
-              <CardDescription>{t('customizeGeneralPreferences')}</CardDescription>
+            <CardHeader className="pb-4">
+              <CardTitle>{t('themeMode')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="max-w-md space-y-2">
-                <Label htmlFor="theme">{t('themeMode')}</Label>
+              <div className="max-w-sm space-y-2">
                 <Select
                   value={theme}
                   onValueChange={async (value: ThemeType) => {
@@ -247,7 +245,7 @@ export function SettingsPage() {
                     setNextTheme(value)
                   }}
                 >
-                  <SelectTrigger id="theme">
+                  <SelectTrigger id="theme" aria-label={t('themeMode')}>
                     <SelectValue placeholder={t('selectTheme')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -256,7 +254,7 @@ export function SettingsPage() {
                     <SelectItem value="system">{t('system')}</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-sm leading-5 text-muted-foreground">
+                <p className="text-xs leading-relaxed text-muted-foreground">
                   {t('chooseBetweenThemes')}
                 </p>
               </div>
@@ -279,7 +277,7 @@ export function SettingsPage() {
         <TabsContent value="security" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">{t('changePassword')}</CardTitle>
+              <CardTitle>{t('changePassword')}</CardTitle>
               <CardDescription>{t('changePasswordDesc')}</CardDescription>
             </CardHeader>
             <form onSubmit={handleChangePassword}>
@@ -339,39 +337,41 @@ export function SettingsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="data" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('dataManagement')}</CardTitle>
-              <CardDescription>
-                {t('exportImportDesc')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-3">
-              <Button variant="outline" onClick={handleExportData}>
-                <Download className="h-4 w-4" />
-                {t('exportData')}
-              </Button>
-              <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
-                <Upload className="h-4 w-4" />
-                {t('importData')}
-              </Button>
-            </CardContent>
-          </Card>
+        <TabsContent value="data">
+          <div className="grid gap-5 md:grid-cols-2">
+            <Card className="flex flex-col">
+              <CardHeader>
+                <CardTitle>{t('dataManagement')}</CardTitle>
+                <CardDescription>
+                  {t('exportImportDesc')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="mt-auto flex flex-wrap gap-2.5">
+                <Button variant="outline" size="sm" onClick={handleExportData}>
+                  <Download className="h-4 w-4" />
+                  {t('exportData')}
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setIsImportModalOpen(true)}>
+                  <Upload className="h-4 w-4" />
+                  {t('importData')}
+                </Button>
+              </CardContent>
+            </Card>
 
-          <Card className="mt-4 border-destructive/25 bg-destructive/[0.02]">
-            <CardHeader>
-              <CardTitle>{t('resetData')}</CardTitle>
-              <CardDescription>
-                {t('resetDataDesc')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="destructive" onClick={resetConfirmation.openDialog}>
-                {t('resetAllData')}
-              </Button>
-            </CardContent>
-          </Card>
+            <Card className="flex flex-col border-destructive/25 bg-destructive/[0.02]">
+              <CardHeader>
+                <CardTitle>{t('resetData')}</CardTitle>
+                <CardDescription>
+                  {t('resetDataDesc')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="mt-auto">
+                <Button variant="destructive" size="sm" onClick={resetConfirmation.openDialog}>
+                  {t('resetAllData')}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
       </Tabs>
@@ -384,6 +384,6 @@ export function SettingsPage() {
       
       {/* Reset Confirmation Dialog */}
       <ConfirmDialog {...resetConfirmation.dialogProps} />
-    </div>
+    </>
   )
 }

@@ -55,9 +55,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     <div className="ledger-shell">
       <a className="skip-link" href="#main-content">{t('skipToContent')}</a>
       <header className="ledger-header">
-        <Link to="/" className="brand-link" aria-label={t('brandName')} onMouseEnter={() => prefetchRoute('/')}><SubTrackBrand /></Link>
+        <Link to="/" className="brand-link md:justify-self-start" aria-label={t('brandName')} onMouseEnter={() => prefetchRoute('/')}><SubTrackBrand /></Link>
         {!isLogin && user && navigation()}
-        <div className="ml-auto flex items-center gap-2 md:ml-0">
+        <div className="ml-auto flex items-center gap-2 md:col-start-3 md:ml-0 md:justify-self-end">
           {!isLogin && user && (
             <Link to="/settings?tab=currency" className="currency-shortcut" title={t('currencyShortcut')} onMouseEnter={() => prefetchRoute('/settings')}>
               <span>{CURRENCY_SYMBOLS[currency] || currency}</span>

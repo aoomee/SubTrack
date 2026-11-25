@@ -7,21 +7,33 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Play, Settings, AlertCircle } from 'lucide-react';
+import { Clock, Play, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { schedulerApi, SchedulerSettings as SchedulerSettingsType, SchedulerStatus } from '@/services/schedulerApi';
+import { useNotificationStore } from '@/store/notificationStore';
 import { LoadingIndicator } from '@/components/ui/loading-indicator';
 
 export function SchedulerSettings() {
   const { t } = useTranslation('notification');
   const { toast } = useToast();
-  const [settings, setSettings] = useState<SchedulerSettingsType>({
-    notification_check_time: '09:00',
-    timezone: 'Asia/Shanghai',
-    is_enabled: true
-  });
-  const [status, setStatus] = useState<SchedulerStatus | null>(null);
-  const [loading, setLoading] = useState(false);
+  const cachedSettings = useNotificationStore((state) => state.schedulerSettings);
+  const cachedStatus = useNotificationStore((state) => state.schedulerStatus);
+  const schedulerLoaded = useNotificationStore((state) => state.schedulerLoaded);
+  const setSchedulerRuntime = useNotificationStore((state) => state.setSchedulerRuntime);
+
+  const [settings, setSettings] = useState<SchedulerSettingsType>(() =>
+    schedulerLoaded && cachedSettings
+      ? cachedSettings
+      : {
+          notification_check_time: '09:00',
+          timezone: 'Asia/Shanghai',
+          is_enabled: true
+        }
+  );
+  const [status, setStatus] = useState<SchedulerStatus | null>(() =>
+    schedulerLoaded ? cachedStatus : null
+  );
+  const [loading, setLoading] = useState(() => !schedulerLoaded);
   const [saving, setSaving] = useState(false);
 
   const timezones = [
@@ -36,8 +48,8 @@ export function SchedulerSettings() {
     { value: 'UTC', label: t('scheduler.timezones.UTC') }
   ];
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
+  const loadData = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const [settingsData, statusData] = await Promise.all([
         schedulerApi.getSettings(),
@@ -45,6 +57,7 @@ export function SchedulerSettings() {
       ]);
       setSettings(settingsData);
       setStatus(statusData);
+      setSchedulerRuntime({ settings: settingsData, status: statusData });
     } catch (error) {
       console.error('Failed to load scheduler data:', error);
       toast({
@@ -52,12 +65,19 @@ export function SchedulerSettings() {
         variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  }, [t, toast]);
+  }, [setSchedulerRuntime, t, toast]);
 
   useEffect(() => {
-    loadData();
+    const warm = useNotificationStore.getState().schedulerLoaded;
+    if (warm) {
+      const state = useNotificationStore.getState();
+      if (state.schedulerSettings) setSettings(state.schedulerSettings);
+      setStatus(state.schedulerStatus);
+      setLoading(false);
+    }
+    loadData(warm);
   }, [loadData]);
 
   const handleSave = async () => {
@@ -67,8 +87,8 @@ export function SchedulerSettings() {
       toast({
         title: t('scheduler.messages.updateSuccess'),
       });
-      // 重新加载状态
-      await loadData();
+      // 静默刷新最新状态，避免保存时整个表单闪成加载圈
+      await loadData(true);
     } catch (error) {
       console.error('Failed to update scheduler settings:', error);
       toast({
@@ -119,37 +139,31 @@ export function SchedulerSettings() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Settings className="h-5 w-5" />
-          {t('scheduler.settings')}
-        </CardTitle>
-        <CardDescription>
-          {t('scheduler.description')}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* 状态显示 */}
-        <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-          <div className="flex items-center gap-2">
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0">
+        <div className="space-y-1">
+          <CardTitle className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">{t('scheduler.currentStatus')}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            {getStatusBadge()}
-            {status?.currentSchedule && (
-              <span className="text-sm text-muted-foreground">
-                {status.currentSchedule.time} ({status.currentSchedule.timezone})
-              </span>
-            )}
-          </div>
+            {t('scheduler.settings')}
+          </CardTitle>
+          <CardDescription>
+            {t('scheduler.description')}
+          </CardDescription>
         </div>
-
+        <div className="flex items-center gap-2">
+          {status?.currentSchedule && (
+            <span className="font-mono text-xs text-muted-foreground">
+              {status.currentSchedule.time} · {status.currentSchedule.timezone}
+            </span>
+          )}
+          {getStatusBadge()}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
         {/* 启用/禁用开关 */}
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <Label>{t('scheduler.enableScheduler')}</Label>
-            <p className="text-sm text-muted-foreground">
+        <div className="flex items-center justify-between gap-4 rounded-2xl border border-border/60 bg-muted/40 px-4 py-3">
+          <div className="min-w-0 space-y-0.5">
+            <Label className="text-sm font-medium">{t('scheduler.enableScheduler')}</Label>
+            <p className="text-xs leading-relaxed text-muted-foreground">
               {t('scheduler.enableDescription')}
             </p>
           </div>
@@ -157,61 +171,43 @@ export function SchedulerSettings() {
             checked={settings.is_enabled}
             onCheckedChange={(checked) => setSettings({ ...settings, is_enabled: checked })}
             disabled={saving}
+            className="shrink-0"
           />
         </div>
 
-        {/* 时间设置 */}
-        <div className="space-y-2">
-          <Label htmlFor="check-time">{t('scheduler.checkTime')}</Label>
-          <Input
-            id="check-time"
-            type="time"
-            value={settings.notification_check_time}
-            onChange={(e) => setSettings({ ...settings, notification_check_time: e.target.value })}
-            disabled={saving || !settings.is_enabled}
-            className="w-32"
-          />
-          <p className="text-sm text-muted-foreground">
-            {t('scheduler.checkTimeDescription')}
-          </p>
-        </div>
+        {/* 时间与时区并排 */}
+        <div className="grid gap-4 sm:grid-cols-[180px_minmax(0,1fr)]">
+          <div className="space-y-2">
+            <Label htmlFor="check-time">{t('scheduler.checkTime')}</Label>
+            <Input
+              id="check-time"
+              type="time"
+              value={settings.notification_check_time}
+              onChange={(e) => setSettings({ ...settings, notification_check_time: e.target.value })}
+              disabled={saving || !settings.is_enabled}
+              className="w-full"
+            />
+          </div>
 
-        {/* 时区设置 */}
-        <div className="space-y-2">
-          <Label>{t('scheduler.timezone')}</Label>
-          <Select
-            value={settings.timezone}
-            onValueChange={(value) => setSettings({ ...settings, timezone: value })}
-            disabled={saving || !settings.is_enabled}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {timezones.map((tz) => (
-                <SelectItem key={tz.value} value={tz.value}>
-                  {tz.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* 操作按钮 */}
-        <div className="flex items-center gap-3 pt-4">
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? t('scheduler.saving') : t('scheduler.saveSettings')}
-          </Button>
-
-          <Button
-            variant="outline"
-            onClick={handleTriggerCheck}
-            disabled={!settings.is_enabled}
-            className="flex items-center gap-2"
-          >
-            <Play className="h-4 w-4" />
-            {t('scheduler.manualTrigger')}
-          </Button>
+          <div className="min-w-0 space-y-2">
+            <Label>{t('scheduler.timezone')}</Label>
+            <Select
+              value={settings.timezone}
+              onValueChange={(value) => setSettings({ ...settings, timezone: value })}
+              disabled={saving || !settings.is_enabled}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {timezones.map((tz) => (
+                  <SelectItem key={tz.value} value={tz.value}>
+                    {tz.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* 提示信息 */}
@@ -224,6 +220,22 @@ export function SchedulerSettings() {
             </div>
           </div>
         )}
+
+        {/* 操作按钮 */}
+        <div className="flex flex-wrap items-center gap-2 border-t pt-4">
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? t('scheduler.saving') : t('scheduler.saveSettings')}
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={handleTriggerCheck}
+            disabled={!settings.is_enabled}
+          >
+            <Play className="h-4 w-4" />
+            {t('scheduler.manualTrigger')}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

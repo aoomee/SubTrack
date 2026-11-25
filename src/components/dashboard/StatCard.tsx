@@ -17,13 +17,13 @@ export function StatCard({
 
   return (
     <article
-      className={`relative min-w-0 px-6 py-5 sm:px-8 md:py-7 ${
+      className={`relative min-w-0 px-5 py-4 sm:px-7 md:py-5 ${
         divider
-          ? "md:after:absolute md:after:inset-y-6 md:after:right-0 md:after:w-px md:after:bg-border/80 md:after:content-['']"
+          ? "md:after:absolute md:after:inset-y-5 md:after:right-0 md:after:w-px md:after:bg-border/80 md:after:content-['']"
           : ""
       }`}
     >
-      <div className="grid grid-rows-[20px_34px_16px] gap-y-1 md:gap-y-2.5">
+      <div className="grid grid-rows-[18px_32px_16px] gap-y-1 md:gap-y-2">
         <p className={`flex min-w-0 items-center truncate text-[13px] font-medium leading-none text-muted-foreground ${rowAlignment}`}>
           {title}
         </p>

@@ -33,12 +33,12 @@
     "noCategoryDataAvailable": "No category data available",
     "noYearlyDataAvailable": "No yearly data available",
     "noYearlyCategoryDataAvailable": "No yearly category data available",
-    "monthlySpendingOverTime": "Last 12 months · Costs spread across billing periods; annual payments divided by 12",
-    "monthlySpendingByCategory": "Last 12 months · Monthly allocated costs by category",
-    "annualSpendingOverTime": "Annual totals of monthly allocated costs",
-    "annualSpendingByCategory": "Annual allocated costs by category",
-    "breakdownByCategory": "Allocated costs by category (Last 12 months)",
-    "breakdownByCategoryYearly": "Allocated costs by category (Last 3 years)",
+    "monthlySpendingOverTime": "Last 12 months · Monthly allocated",
+    "monthlySpendingByCategory": "Last 12 months · By category",
+    "annualSpendingOverTime": "Annual allocated total",
+    "annualSpendingByCategory": "Annual by category",
+    "breakdownByCategory": "Last 12 months",
+    "breakdownByCategoryYearly": "Last 3 years",
     "paymentDetails": "Payment Details",
     "viewPaymentRecords": "View all payment records for this period",
     "dailyAvg": "Daily Avg",
@@ -69,6 +69,6 @@
     "yearAllocated": "Allocated this year",
     "topCategory": "Largest category",
     "yearPaid": "Paid this year",
-    "paymentHistory": "Payment history · actual payments"
+    "paymentHistory": "Payment history (actual)"
   }
 }

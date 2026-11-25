@@ -42,3 +42,20 @@ test('unblocks the form when bot lookup fails instead of leaving a permanent loa
   expect(screen.getByText('errors.telegramNotConfigured')).toBeInTheDocument()
   log.mockRestore()
 })
+test('renders immediately without skeleton when runtime cache is already warm', async () => {
+  useNotificationStore.getState().setTelegramConfig({ chat_id: '8389205721', validated: true })
+  useNotificationStore.getState().setTelegramRuntime({
+    botStatus: { configured: true, hasToken: true, isPlaceholder: false },
+    botInfo: { id: 1, first_name: 'Soro Bot', username: 'Soro233Bot', can_join_groups: false, can_read_all_group_messages: false, supports_inline_queries: false },
+    loaded: true,
+  })
+  vi.mocked(notificationApi.getBotInfo).mockReturnValue(new Promise(() => {}))
+
+  render(<TelegramConfig userId={1} />)
+
+  expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  expect(screen.getByText('Soro Bot')).toBeInTheDocument()
+  expect(screen.getByText('@Soro233Bot')).toBeInTheDocument()
+  expect(screen.getByRole('textbox')).toBeEnabled()
+  expect(screen.getByRole('textbox')).toHaveValue('8389205721')
+})

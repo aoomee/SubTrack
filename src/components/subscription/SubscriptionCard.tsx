@@ -35,7 +35,7 @@ export function SubscriptionCard({ subscription, onEdit, onDelete, onStatusChang
           onViewDetails?.(subscription)
         }
       }}>
-      <CardContent className="p-5 sm:p-5">
+      <CardContent className="p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <span className="service-avatar h-11 w-11 rounded-[15px]" aria-hidden="true">{name.slice(0, 1)}</span>
@@ -67,7 +67,7 @@ export function SubscriptionCard({ subscription, onEdit, onDelete, onStatusChang
             </DropdownMenu>
           </div>
         </div>
-        <div className="mt-5 flex flex-wrap items-end justify-between gap-3 border-t pt-4">
+        <div className="mt-4 flex flex-wrap items-end justify-between gap-3 border-t pt-3.5">
           <div className="text-[11px] leading-relaxed text-muted-foreground">
             <p className={overdue ? 'text-destructive' : ''}>{t('subscription:nextPayment')} {formatDate(nextBillingDate)}</p>
             <p>{t(renewalType === 'auto' ? 'subscription:automaticRenewal' : 'subscription:manualRenewal')} · {t(`common:${billingCycle}`)}</p>

@@ -172,13 +172,8 @@ function HomePage() {
 
   return (
     <>
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold tracking-tight">{t('common:dashboard')}</h1>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {t('common:dashboardDescription')}
-          </p>
-        </div>
+      <div className="mb-3.5 flex items-center justify-between gap-3">
+        <h1 className="text-lg font-semibold tracking-tight">{t('common:dashboard')}</h1>
         <Button
           onClick={handleRefreshWithRenewals}
           disabled={isRefreshing}
@@ -192,7 +187,7 @@ function HomePage() {
       </div>
 
       {/* Dashboard Content */}
-      <div className="space-y-5">
+      <div className="space-y-4">
           <Card className="overflow-hidden rounded-[28px]">
             <section
               className="grid divide-y md:grid-cols-3 md:divide-y-0"

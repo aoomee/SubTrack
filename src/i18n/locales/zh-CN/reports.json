@@ -33,12 +33,12 @@
     "noCategoryDataAvailable": "暂无分类数据",
     "noYearlyDataAvailable": "暂无年度数据",
     "noYearlyCategoryDataAvailable": "暂无年度分类数据",
-    "monthlySpendingOverTime": "过去12个月 · 按计费周期分摊，年付按12个月均摊",
-    "monthlySpendingByCategory": "过去12个月 · 按类别汇总每月分摊费用",
-    "annualSpendingOverTime": "按每月分摊费用汇总年度支出",
-    "annualSpendingByCategory": "按类别汇总年度分摊费用",
-    "breakdownByCategory": "按类别汇总分摊费用（过去12个月）",
-    "breakdownByCategoryYearly": "按类别汇总分摊费用（过去3年）",
+    "monthlySpendingOverTime": "近 12 个月 · 按月均摊",
+    "monthlySpendingByCategory": "近 12 个月 · 按分类均摊",
+    "annualSpendingOverTime": "年度均摊汇总",
+    "annualSpendingByCategory": "年度分类均摊",
+    "breakdownByCategory": "近 12 个月占比",
+    "breakdownByCategoryYearly": "近 3 年占比",
     "paymentDetails": "支付详情",
     "viewPaymentRecords": "查看此期间的所有支付记录",
     "dailyAvg": "日均",
@@ -69,6 +69,6 @@
     "yearAllocated": "本年分摊",
     "topCategory": "最大分类",
     "yearPaid": "本年实付",
-    "paymentHistory": "付款明细 · 按实际支付统计"
+    "paymentHistory": "付款明细（按实付）"
   }
 }

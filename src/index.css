@@ -94,13 +94,13 @@
 }
 
 @layer components {
-  .ledger-shell { @apply mx-auto flex min-h-[100dvh] w-full max-w-[960px] flex-col px-4 pt-6 sm:px-6 sm:pt-10; padding-bottom: calc(7rem + env(safe-area-inset-bottom)); }
-  .ledger-header { @apply mb-8 flex flex-wrap items-center justify-between gap-4 md:mb-10; }
+  .ledger-shell { @apply mx-auto flex min-h-[100dvh] w-full max-w-[960px] flex-col px-4 pt-5 sm:px-6 sm:pt-7; padding-bottom: calc(6.5rem + env(safe-area-inset-bottom)); }
+  .ledger-header { @apply mb-6 flex flex-wrap items-center justify-between gap-3 md:mb-7 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]; }
   .brand-link { @apply inline-flex shrink-0 items-center text-foreground transition-opacity hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring; }
   .brand-lockup { @apply inline-flex items-center gap-2.5; }
   .brand-mark { @apply h-8 w-8 shrink-0; }
   .brand-wordmark { @apply text-base font-semibold tracking-tight; }
-  .ledger-nav { @apply hidden items-center rounded-full bg-secondary p-1 md:flex md:w-fit md:justify-center; }
+  .ledger-nav { @apply hidden items-center rounded-full bg-secondary p-1 md:col-start-2 md:flex md:w-fit md:justify-center md:justify-self-center; }
   .ledger-nav-link { @apply flex min-h-8 items-center justify-center whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring; }
   .ledger-nav-link[aria-current='page'] { @apply bg-card text-foreground shadow-sm; }
   .ledger-mobile-nav { @apply fixed bottom-5 left-1/2 z-40 flex w-max max-w-[calc(100%-2rem)] -translate-x-1/2 items-center rounded-full border bg-card/95 p-1.5 shadow-lg backdrop-blur-md md:hidden; bottom: calc(1.25rem + env(safe-area-inset-bottom)); }
@@ -108,7 +108,7 @@
   .ledger-mobile-nav .ledger-nav-link[aria-current='page'] { @apply bg-primary text-primary-foreground shadow-none; }
   .currency-shortcut { @apply inline-flex h-8 items-center gap-1.5 rounded-full bg-secondary px-3 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring; }
   .skip-link { @apply sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground; }
-  .ledger-page-heading { @apply mb-5 flex flex-wrap items-center justify-between gap-3; }
+  .ledger-page-heading { @apply mb-4 flex flex-wrap items-center justify-between gap-3; }
   .ledger-page-heading h1 { @apply text-lg font-semibold tracking-tight; }
   .ledger-page-heading p { @apply mt-1 text-xs text-muted-foreground; }
   .service-avatar { @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-secondary text-sm font-semibold text-foreground; }

@@ -304,13 +304,10 @@ export function ExpenseReportsPage() {
   }
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-5">
       {/* Header */}
       <div className="ledger-page-heading">
-        <div>
-          <h1>{t('title')}</h1>
-          <p>{t('description')}</p>
-        </div>
+        <h1>{t('title')}</h1>
       </div>
 
       <Card className="grid grid-cols-2 overflow-hidden md:grid-cols-4 [&>*:nth-child(odd)]:border-r [&>*:nth-child(-n+2)]:border-b md:[&>*]:border-b-0 md:[&>*:not(:last-child)]:border-r">
@@ -319,9 +316,9 @@ export function ExpenseReportsPage() {
           [t('ledger.yearAllocated'), isLoadingYearlyExpenses || yearlyExpenseError ? '—' : formatCurrencyAmount(yearlyExpenses.find(item => item.year === new Date().getFullYear())?.amount || 0, userCurrency)],
           [t('ledger.topCategory'), isLoadingCategoryExpenses || categoryExpenseError ? '—' : categoryExpenses[0]?.category || '—'],
           [t('ledger.yearPaid'), isLoadingExpenseInfo || expenseInfoError ? '—' : formatCurrencyAmount(expenseInfoData.yearly.find(item => item.startDate.startsWith(String(new Date().getFullYear())))?.totalSpent || 0, userCurrency)],
-        ].map(([label, value]) => <div key={label} className="min-w-0 border-border p-5 sm:p-6">
+        ].map(([label, value]) => <div key={label} className="min-w-0 border-border px-5 py-4 sm:px-6 sm:py-5">
           <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="mt-2 break-words text-xl font-semibold tracking-tight tabular-nums">{value}</p>
+          <p className="mt-1.5 break-words text-xl font-semibold tracking-tight tabular-nums">{value}</p>
         </div>)}
       </Card>
 

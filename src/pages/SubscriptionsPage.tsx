@@ -396,12 +396,7 @@ export function SubscriptionsPage() {
       {/* Header */}
       <TooltipProvider delayDuration={200}>
       <div className="ledger-page-heading">
-        <div>
-          <h1>{t('subscription:title')}</h1>
-          <p>
-            {t('subscription:manageAllServices')}
-          </p>
-        </div>
+        <h1>{t('subscription:title')}</h1>
         <div className="flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -430,7 +425,7 @@ export function SubscriptionsPage() {
       </div>
 
       {/* Filters and Search */}
-      <div className="mb-5 flex flex-col-reverse items-start justify-between gap-4">
+      <div className="mb-4 flex flex-col-reverse items-start justify-between gap-3">
         <div className="flex w-full items-center gap-2">
           <SearchInput
             placeholder={t('subscription:searchPlaceholder')}

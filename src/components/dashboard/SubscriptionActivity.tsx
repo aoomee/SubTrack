@@ -11,8 +11,8 @@ export function SubscriptionActivity({ subscriptions, paid = false, className, o
   subscriptions: Subscription[]; paid?: boolean; className?: string; onSelect?: (subscription: Subscription) => void
 }) {
   const { t } = useTranslation('dashboard')
-  return <Card className={cn('flex min-h-[240px] flex-col', className)}>
-    <CardHeader className="flex-row items-center justify-between space-y-0 pb-4">
+  return <Card className={cn('flex min-h-[196px] flex-col', className)}>
+    <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
       <CardTitle>{t(paid ? 'recentlyPaid' : 'upcomingRenewals')}</CardTitle>
       <Badge variant="secondary">{subscriptions.length}</Badge>
     </CardHeader>
@@ -28,9 +28,9 @@ export function SubscriptionActivity({ subscriptions, paid = false, className, o
               {!paid && <span className="mt-1 inline-block rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">{daysUntil(sub.nextBillingDate) === 0 ? t('today') : `${daysUntil(sub.nextBillingDate)} ${t('days')}`}</span>}
             </span>
           </button>)}
-        </div> : <p className="flex min-h-24 items-center justify-center text-center text-xs leading-relaxed text-muted-foreground">{t(paid ? 'noSubscriptionsPaidInLast7Days' : 'noUpcomingRenewalsNext7Days')}</p>}
+        </div> : <p className="flex min-h-20 items-center justify-center text-center text-xs leading-relaxed text-muted-foreground">{t(paid ? 'noSubscriptionsPaidInLast7Days' : 'noUpcomingRenewalsNext7Days')}</p>}
       </div>
-      <div className="mt-4 flex items-center justify-between gap-2 border-t pt-3 text-[11px] text-muted-foreground">
+      <div className="mt-3 flex items-center justify-between gap-2 border-t pt-2.5 text-[11px] text-muted-foreground">
         <span>{t(paid ? 'subscriptionsPaidInLast7Days' : 'subscriptionsRenewingInNext7Days')}</span>
         <Link to="/subscriptions" className="group inline-flex shrink-0 items-center gap-1 transition-colors hover:text-foreground">
           <span>{t('viewAll')}</span>

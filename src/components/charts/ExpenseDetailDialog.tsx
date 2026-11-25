@@ -41,10 +41,12 @@ interface ExpenseDetailDialogProps {
 export function ExpenseDetailDialog({ isOpen, onClose, periodData }: ExpenseDetailDialogProps) {
   const { t, i18n } = useTranslation(['reports', 'common'])
   const [payments, setPayments] = useState<PaymentRecord[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(() => Boolean(isOpen && periodData))
+  const [loadedPeriodKey, setLoadedPeriodKey] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const periodKey = `${periodData.startDate}_${periodData.endDate}`
 
 
   const pageSize = 10
@@ -63,9 +65,10 @@ export function ExpenseDetailDialog({ isOpen, onClose, periodData }: ExpenseDeta
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load payment data')
     } finally {
+      setLoadedPeriodKey(periodKey)
       setIsLoading(false)
     }
-  }, [periodData])
+  }, [periodData, periodKey])
 
   // Fetch payment data when dialog opens
   useEffect(() => {
@@ -182,7 +185,7 @@ export function ExpenseDetailDialog({ isOpen, onClose, periodData }: ExpenseDeta
         {/* Payment List */}
         <div className="max-h-[400px] min-h-0 w-full overflow-y-auto rounded-[18px] border border-border/80 bg-muted/10 p-2">
           <div className="space-y-2">
-            {isLoading ? (
+            {isLoading || loadedPeriodKey !== periodKey ? (
               <div className="flex h-32 items-center justify-center" aria-busy="true">
                 <LoadingIndicator />
               </div>

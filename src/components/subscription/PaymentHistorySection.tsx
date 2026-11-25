@@ -34,7 +34,8 @@ interface PaymentHistorySectionProps {
 export function PaymentHistorySection({ subscriptionId, subscriptionName }: PaymentHistorySectionProps) {
   const { t } = useTranslation(['common', 'subscription'])
   const [payments, setPayments] = useState<PaymentRecord[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [loadedSubscriptionId, setLoadedSubscriptionId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
@@ -61,6 +62,7 @@ export function PaymentHistorySection({ subscriptionId, subscriptionName }: Paym
         variant: "destructive",
       })
     } finally {
+      setLoadedSubscriptionId(subscriptionId)
       setIsLoading(false)
     }
   }, [subscriptionId, toast, t])
@@ -91,6 +93,8 @@ export function PaymentHistorySection({ subscriptionId, subscriptionName }: Paym
     setEditingPayment(null)
   }
 
+  const showLoading = isLoading || loadedSubscriptionId !== subscriptionId
+
   // Filter payments based on search term
   const filteredPayments = payments.filter(payment =>
     payment.paymentDate.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -111,14 +115,14 @@ export function PaymentHistorySection({ subscriptionId, subscriptionName }: Paym
       {/* Payment List */}
       <div className="space-y-2">
         <PaymentListState
-          isLoading={isLoading}
+          isLoading={showLoading}
           error={error}
           isEmpty={filteredPayments.length === 0}
           searchTerm={searchTerm}
           onRetry={fetchPaymentHistory}
         />
         
-        {!isLoading && !error && filteredPayments.map((payment) => (
+        {!showLoading && !error && filteredPayments.map((payment) => (
           <PaymentListItem
             key={payment.id}
             payment={payment}

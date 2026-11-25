@@ -63,13 +63,10 @@ export function ExchangeRateManager() {
       {/* 上排：货币设置和状态卡片 */}
       <div className="space-y-5">
         <Card className="flex flex-col">
-          <CardHeader>
+          <CardHeader className="pb-4">
             <CardTitle>{t('currencySettings')}</CardTitle>
-            <CardDescription>
-              {t('setPreferredCurrency')}
-            </CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 space-y-6">
+          <CardContent className="flex-1 space-y-5">
             <div className="space-y-2">
               <Label htmlFor="currency">{t('defaultCurrency')}</Label>
               <Select
@@ -91,13 +88,10 @@ export function ExchangeRateManager() {
                   <SelectItem value="HKD">HKD - {t('hongKongDollar')}</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                {t('preferredCurrencyDesc')}
-              </p>
             </div>
 
-            <div className="flex items-center justify-between gap-4">
-              <div className="min-w-0 space-y-1">
+            <div className="flex items-center justify-between gap-4 border-t pt-4">
+              <div className="min-w-0 space-y-0.5">
                 <Label htmlFor="show-original" className="text-sm font-medium">{t('showInOriginalCurrency')}</Label>
                 <p className="text-xs leading-relaxed text-muted-foreground">
                   {t('showOriginalCurrencyDesc')}
@@ -115,16 +109,16 @@ export function ExchangeRateManager() {
         <Card className="flex flex-col">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
+              <Clock className="h-4 w-4 text-muted-foreground" />
               {t('exchangeRateStatus')}
             </CardTitle>
             <CardDescription>
               {t('automaticExchangeRateUpdates')}
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-1 flex-col gap-5">
-            <div className="flex-1 space-y-4">
-              <dl className="grid grid-cols-1 gap-x-6 gap-y-5 rounded-lg bg-muted/40 p-4 min-[400px]:grid-cols-2">
+          <CardContent className="flex flex-1 flex-col gap-4">
+            <div className="flex-1 space-y-3.5">
+              <dl className="grid grid-cols-1 gap-x-5 gap-y-4 rounded-2xl border border-border/60 bg-muted/40 p-4 min-[400px]:grid-cols-2">
                 <div className="min-w-0 space-y-2">
                   <dt className="text-xs text-muted-foreground">{t('apiProvider')}</dt>
                   <dd className="text-sm font-medium">tianapi.com</dd>
@@ -213,7 +207,7 @@ export function ExchangeRateManager() {
             {Object.entries(exchangeRates).map(([currency, rate]) => (
               <div
                 key={currency}
-                className="flex items-center justify-between gap-4 py-3.5"
+                className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
               >
                 <div className="space-y-1">
                   <p className="text-sm font-medium">{currency}</p>

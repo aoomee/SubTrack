@@ -6,6 +6,7 @@ const path = require('path');
 const ExchangeRateScheduler = require('./services/exchangeRateScheduler');
 const SubscriptionRenewalScheduler = require('./services/subscriptionRenewalScheduler');
 const NotificationScheduler = require('./services/notificationScheduler');
+const TelegramService = require('./services/telegramService');
 
 // Load environment variables from root .env file (unified configuration)
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
@@ -180,4 +181,12 @@ app.listen(port, () => {
   console.log(`🚀 Subscription Management Server is running on http://localhost:${port}`);
   console.log(`📂 Frontend available at: http://localhost:${port}`);
   console.log(`🔧 API available at: http://localhost:${port}/api`);
+
+  // Pre-warm Telegram Bot info in background so opening channel settings is instant.
+  if (process.env.NODE_ENV !== 'test') {
+    const telegramService = new TelegramService();
+    if (telegramService.isConfigured()) {
+      telegramService.getBotInfo().catch(() => {});
+    }
+  }
 });

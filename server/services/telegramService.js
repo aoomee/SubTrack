@@ -1,5 +1,8 @@
 const axios = require('axios');
-const config = require('../config');
+
+const BOT_INFO_CACHE_TTL_MS = 10 * 60 * 1000;
+let botInfoCache = null;
+let botInfoInFlight = null;
 
 class TelegramService {
     constructor() {
@@ -74,23 +77,60 @@ class TelegramService {
     }
 
     /**
-     * 获取Bot信息
+     * 获取Bot信息（带内存缓存与并发去重，避免每次打开设置都阻塞等待 Telegram API）
+     * @param {Object} [options]
+     * @param {boolean} [options.forceRefresh=false]
      * @returns {Promise<Object>} Bot信息
      */
-    async getBotInfo() {
-        try {
-            if (!this.botToken) {
-                return { success: false, error: 'Telegram Bot Token not configured' };
-            }
-
-            const response = await this.client.get(`${this.apiBaseUrl}/getMe`);
-            return { success: true, botInfo: response.data.result };
-        } catch (error) {
-            return {
-                success: false,
-                error: error.response?.data?.description || error.message || 'Failed to get bot info'
-            };
+    async getBotInfo({ forceRefresh = false } = {}) {
+        if (!this.isConfigured()) {
+            return { success: false, error: 'Telegram Bot Token not configured' };
         }
+
+        const now = Date.now();
+        if (
+            !forceRefresh &&
+            botInfoCache &&
+            botInfoCache.token === this.botToken &&
+            now < botInfoCache.expiresAt
+        ) {
+            return botInfoCache.data;
+        }
+
+        if (!forceRefresh && botInfoInFlight && botInfoInFlight.token === this.botToken) {
+            return botInfoInFlight.promise;
+        }
+
+        const token = this.botToken;
+        const requestPromise = (async () => {
+            try {
+                const response = await this.client.get(`${this.apiBaseUrl}/getMe`);
+                const result = { success: true, botInfo: response.data.result };
+                botInfoCache = {
+                    token,
+                    data: result,
+                    expiresAt: Date.now() + BOT_INFO_CACHE_TTL_MS
+                };
+                return result;
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error.response?.data?.description || error.message || 'Failed to get bot info'
+                };
+            } finally {
+                if (botInfoInFlight && botInfoInFlight.promise === requestPromise) {
+                    botInfoInFlight = null;
+                }
+            }
+        })();
+
+        botInfoInFlight = { token, promise: requestPromise };
+        return requestPromise;
+    }
+
+    static clearBotInfoCache() {
+        botInfoCache = null;
+        botInfoInFlight = null;
     }
 
     /**

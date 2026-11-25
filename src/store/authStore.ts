@@ -6,6 +6,7 @@ import { useSettingsStore } from './settingsStore'
 import { useSubscriptionStore } from './subscriptionStore'
 import { useExpenseReportsStore } from './expenseReportsStore'
 import { useNotificationHistoryStore } from './notificationHistoryStore'
+import { useNotificationStore } from './notificationStore'
 
 interface AuthState {
   user: AuthUser | null
@@ -40,6 +41,7 @@ export const useAuthStore = create<AuthState>()(
         useSubscriptionStore.setState({ hasLoaded: false })
         useExpenseReportsStore.getState().reset()
         useNotificationHistoryStore.getState().reset()
+        useNotificationStore.getState().resetRuntimeCache()
         set({ isLoading: true, error: null })
         try {
           await authApi.login(username, password)

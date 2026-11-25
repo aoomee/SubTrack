@@ -286,15 +286,10 @@ export const NotificationHistory: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Page Header */}
       <div className="ledger-page-heading">
-        <div>
-          <h1>{t('history.title')}</h1>
-          <p>
-            {t('history.description')}
-          </p>
-        </div>
+        <h1>{t('history.title')}</h1>
         <Button
           onClick={() => {
             loadHistory(historyPagination.page);
@@ -302,9 +297,10 @@ export const NotificationHistory: React.FC = () => {
           }}
           disabled={historyLoading || statsLoading}
           variant="outline"
-          className="flex items-center gap-2"
+          size="sm"
+          className="h-8 gap-1.5 px-3 text-xs"
         >
-          <RefreshCw className={`h-4 w-4 ${historyLoading || statsLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-3.5 w-3.5 ${historyLoading || statsLoading ? 'animate-spin' : ''}`} />
           {t('refresh')}
         </Button>
       </div>
@@ -318,12 +314,12 @@ export const NotificationHistory: React.FC = () => {
             { label: t('stats.failed'), value: stats.failed, icon: XCircle },
             { label: t('stats.successRate'), value: stats.total > 0 ? `${Math.round((stats.sent / stats.total) * 100)}%` : '0%', icon: TrendingUp },
           ].map(({ label, value, icon: Icon }) => (
-            <div key={label} className="min-w-0 border-border p-5 sm:p-6">
+            <div key={label} className="min-w-0 border-border px-5 py-4 sm:px-6 sm:py-5">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.8} />
                 <span className="truncate">{label}</span>
               </div>
-              <p className="mt-2.5 text-2xl font-semibold leading-none tracking-[-0.035em] tabular-nums">{value}</p>
+              <p className="mt-2 text-2xl font-semibold leading-none tracking-[-0.035em] tabular-nums">{value}</p>
             </div>
           ))}
         </Card>
@@ -331,11 +327,8 @@ export const NotificationHistory: React.FC = () => {
 
       {/* Filters */}
       <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="text-base">{t('history.filterAndSearch')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <CardContent className="p-4 sm:p-5">
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
             <div className="lg:col-span-2">
               <SearchInput
                 placeholder={t('history.searchPlaceholder')}
@@ -392,8 +385,8 @@ export const NotificationHistory: React.FC = () => {
 
       {/* History List */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">{t('history.title')}</CardTitle>
+        <CardHeader className="pb-4">
+          <CardTitle>{t('history.title')}</CardTitle>
           <CardDescription>
             {searchTerm || channelFilter !== 'all' 
               ? t('history.recordsShown', { count: filteredHistory.length, total: historyPagination.total })

@@ -16,7 +16,7 @@ export function CategoryStrip({ data }: { data: Record<string, number> }) {
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null)
   const entries = Object.entries(data).filter(([, amount]) => amount > 0).sort((a, b) => b[1] - a[1])
   const total = entries.reduce((sum, [, amount]) => sum + amount, 0)
-  return <div className="mx-6 mb-6 border-t pt-5 sm:mx-8 sm:mb-7">
+  return <div className="mx-5 mb-5 border-t pt-4 sm:mx-7 sm:mb-5">
     <div className="mb-3 flex items-center justify-between text-xs">
       <span className="text-muted-foreground">{t('categoryBreakdown')}</span>
       <Link to="/expense-reports" className="group inline-flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground">
@@ -79,8 +79,12 @@ export function BillingCalendar({ subscriptions }: { subscriptions: Subscription
   const days = new Date(year, month + 1, 0).getDate()
   const clampedSelectedDay = Math.min(selectedDay, days)
   const leading = (new Date(year, month, 1).getDay() + 6) % 7
+  const trailing = 42 - leading - days
   const selected = getCalendarSubscriptions(subscriptions, year, month, clampedSelectedDay)
   const locale = i18n.resolvedLanguage || 'en'
+  const monthLabel = locale.toLowerCase().startsWith('zh')
+    ? `${year}年${month + 1}月`
+    : new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short' }).format(viewDate)
 
   const shiftMonth = (delta: number) => {
     setMonthOffset(prev => {
@@ -103,14 +107,9 @@ export function BillingCalendar({ subscriptions }: { subscriptions: Subscription
         >
           <ChevronLeft className="h-3.5 w-3.5" />
         </button>
-        <button
-          type="button"
-          onClick={() => { setMonthOffset(0); setSelectedDay(now.getDate()) }}
-          disabled={isCurrentMonth}
-          className="min-w-[4.5rem] rounded-full px-1.5 py-0.5 text-center text-xs font-medium text-muted-foreground transition-colors enabled:hover:bg-secondary enabled:hover:text-foreground"
-        >
-          {new Intl.DateTimeFormat(locale, { month: 'long', ...(year !== now.getFullYear() ? { year: 'numeric' } : {}) }).format(viewDate)}
-        </button>
+        <span className="w-[5.25rem] select-none whitespace-nowrap text-center text-xs font-medium tabular-nums text-muted-foreground">
+          {monthLabel}
+        </span>
         <button
           type="button"
           onClick={() => shiftMonth(1)}
@@ -122,21 +121,23 @@ export function BillingCalendar({ subscriptions }: { subscriptions: Subscription
       </div>
     </CardHeader>
     <CardContent className="flex flex-1 flex-col">
-      <div className="grid grid-cols-7 gap-1 text-center text-xs">
-        {Array.from({ length: 7 }, (_, index) => <span key={`weekday-${index}`} className="pb-2 text-[10px] text-muted-foreground">{new Intl.DateTimeFormat(locale, { weekday: 'narrow' }).format(new Date(2026, 0, 5 + index))}</span>)}
-        {Array.from({ length: leading }, (_, index) => <span key={`blank-${index}`} />)}
+      <div className="grid grid-cols-7 gap-1 text-center text-xs" data-calendar-grid>
+        {Array.from({ length: 7 }, (_, index) => <span key={`weekday-${index}`} className="flex h-6 items-center justify-center text-[10px] text-muted-foreground">{new Intl.DateTimeFormat(locale, { weekday: 'narrow' }).format(new Date(2026, 0, 5 + index))}</span>)}
+        {Array.from({ length: leading }, (_, index) => <span key={`blank-start-${index}`} className="h-8 w-8" aria-hidden="true" />)}
         {Array.from({ length: days }, (_, index) => {
           const day = index + 1
           const entries = getCalendarSubscriptions(subscriptions, year, month, day)
           const isSelected = clampedSelectedDay === day
           const isToday = isCurrentMonth && day === now.getDate()
-          return <button key={day} type="button" aria-pressed={isSelected}
+          return <button key={`${year}-${month}-${day}`} type="button" aria-pressed={isSelected}
             aria-label={t('calendarDay', { date: new Intl.DateTimeFormat(locale, { month: 'long', day: 'numeric' }).format(new Date(year, month, day)), count: entries.length })}
             onClick={() => setSelectedDay(day)}
-            className={`relative mx-auto flex h-8 w-8 items-center justify-center rounded-full pb-0.5 transition-[background-color,color,transform] duration-150 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${isSelected ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-secondary'} ${isToday && !isSelected ? 'ring-1 ring-foreground/25 font-medium' : ''}`}>
-            {day}{entries.length > 0 && <span className="absolute bottom-1 h-1 w-1 rounded-full bg-current" />}
+            className={`relative mx-auto flex h-8 w-8 items-center justify-center rounded-full leading-none tabular-nums transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${isSelected ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-secondary'} ${isToday && !isSelected ? 'ring-1 ring-foreground/25 font-medium' : ''}`}>
+            <span className="leading-none">{day}</span>
+            {entries.length > 0 && <span className="pointer-events-none absolute bottom-[3px] left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-current" />}
           </button>
         })}
+        {Array.from({ length: trailing }, (_, index) => <span key={`blank-end-${index}`} className="h-8 w-8" aria-hidden="true" />)}
       </div>
       <div className="mt-4 border-t pt-3 text-[11px] text-muted-foreground" aria-live="polite">
         {selected.length ? selected.map(sub => <div key={sub.id} className="flex justify-between gap-2 py-0.5"><span className="truncate text-foreground/90">{sub.name}</span><span className="shrink-0 font-medium tabular-nums text-foreground">{formatWithUserCurrency(sub.amount, sub.currency)}</span></div>) : <p>{t('noScheduledPayments')}</p>}

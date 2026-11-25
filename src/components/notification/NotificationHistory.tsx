@@ -8,13 +8,20 @@ import { SearchInput } from '@/components/ui/search-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   RefreshCw,
-  BarChart3,
+  Bell,
+  TrendingUp,
   Search,
   CheckCircle,
   XCircle,
   AlertCircle,
-  ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Calendar,
+  Coins,
+  CreditCard,
+  FileText,
+  Lightbulb,
+  Mail,
+  Clock
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { notificationApi, NotificationHistory as NotificationHistoryType, NotificationStats } from '@/services/notificationApi';
@@ -75,19 +82,34 @@ const parseMessageContent = (content: string, t: (key: string, options?: Record<
   const summary = subscriptionName && !subscriptionName.includes('_reminder_') ? subscriptionName : title;
 
   // Create details array
-  const details: Array<{ label: string; value: string; icon: string }> = [];
-  if (date) details.push({ label: t('history.expiryDate'), value: date, icon: '📅' });
-  if (amount) details.push({ label: t('history.amount'), value: amount, icon: '💰' });
-  if (paymentMethod) details.push({ label: t('history.paymentMethod'), value: paymentMethod, icon: '💳' });
-  if (plan) details.push({ label: t('history.plan'), value: plan, icon: '📋' });
+  const details: Array<{ label: string; value: string; iconKey: 'date' | 'amount' | 'payment' | 'plan' | 'tip' }> = [];
+  if (date) details.push({ label: t('history.expiryDate'), value: date, iconKey: 'date' });
+  if (amount) details.push({ label: t('history.amount'), value: amount, iconKey: 'amount' });
+  if (paymentMethod) details.push({ label: t('history.paymentMethod'), value: paymentMethod, iconKey: 'payment' });
+  if (plan) details.push({ label: t('history.plan'), value: plan, iconKey: 'plan' });
 
   // Action/tip
   const actionMatch = text.match(/(请及时续订以避免服务中断|请检查您的支付方式并手动续订|变更已生效|Please renew in time to avoid service interruption|Please check your payment method|The change has taken effect)/i);
   if (actionMatch) {
-    details.push({ label: t('history.tip'), value: actionMatch[1], icon: '💡' });
+    details.push({ label: t('history.tip'), value: actionMatch[1], iconKey: 'tip' });
   }
 
   return { summary, details, fullText: text };
+};
+
+const renderDetailIcon = (iconKey: 'date' | 'amount' | 'payment' | 'plan' | 'tip') => {
+  switch (iconKey) {
+    case 'date':
+      return <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />;
+    case 'amount':
+      return <Coins className="h-4 w-4 shrink-0 text-muted-foreground" />;
+    case 'payment':
+      return <CreditCard className="h-4 w-4 shrink-0 text-muted-foreground" />;
+    case 'plan':
+      return <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />;
+    case 'tip':
+      return <Lightbulb className="h-4 w-4 shrink-0 text-muted-foreground" />;
+  }
 };
 
 export const NotificationHistory: React.FC = () => {
@@ -199,18 +221,18 @@ export const NotificationHistory: React.FC = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'sent':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle className="h-4 w-4 text-success" />;
       case 'failed':
-        return <XCircle className="h-4 w-4 text-red-500" />;
+        return <XCircle className="h-4 w-4 text-destructive" />;
       default:
-        return <AlertCircle className="h-4 w-4 text-gray-500" />;
+        return <AlertCircle className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
-  const getStatusVariant = (status: string) => {
+  const getStatusVariant = (status: string): 'success' | 'destructive' | 'outline' => {
     switch (status) {
       case 'sent':
-        return 'default';
+        return 'success';
       case 'failed':
         return 'destructive';
       default:
@@ -264,29 +286,24 @@ export const NotificationHistory: React.FC = () => {
         </Button>
       </div>
 
-      {/* Statistics Cards */}
+      {/* Statistics Strip */}
       {stats && (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Card className="grid grid-cols-2 overflow-hidden md:grid-cols-4 [&>*:nth-child(odd)]:border-r [&>*:nth-child(-n+2)]:border-b md:[&>*]:border-b-0 md:[&>*:not(:last-child)]:border-r">
           {[
-            { label: t('stats.total'), value: stats.total, icon: BarChart3 },
+            { label: t('stats.total'), value: stats.total, icon: Bell },
             { label: t('stats.sent'), value: stats.sent, icon: CheckCircle },
             { label: t('stats.failed'), value: stats.failed, icon: XCircle },
-            { label: t('stats.successRate'), value: stats.total > 0 ? `${Math.round((stats.sent / stats.total) * 100)}%` : '0%', icon: BarChart3 },
+            { label: t('stats.successRate'), value: stats.total > 0 ? `${Math.round((stats.sent / stats.total) * 100)}%` : '0%', icon: TrendingUp },
           ].map(({ label, value, icon: Icon }) => (
-            <Card key={label} className="min-h-[132px]">
-              <CardContent className="flex h-full flex-col items-center justify-center p-5 text-center sm:p-5">
-                <div className="grid w-fit grid-cols-[1.25rem_auto_1.25rem] items-center gap-x-2">
-                  <span className="flex h-5 w-5 items-center justify-center text-primary">
-                    <Icon className="h-4 w-4" strokeWidth={1.8} />
-                  </span>
-                  <p className="text-sm font-medium leading-5 text-muted-foreground">{label}</p>
-                  <span className="h-5 w-5" aria-hidden="true" />
-                </div>
-                <p className="mt-3 text-2xl font-semibold leading-none tracking-[-0.035em] tabular-nums">{value}</p>
-              </CardContent>
-            </Card>
+            <div key={label} className="min-w-0 border-border p-5 sm:p-6">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.8} />
+                <span className="truncate">{label}</span>
+              </div>
+              <p className="mt-2.5 text-2xl font-semibold leading-none tracking-[-0.035em] tabular-nums">{value}</p>
+            </div>
           ))}
-        </div>
+        </Card>
       )}
 
       {/* Filters */}
@@ -381,15 +398,17 @@ export const NotificationHistory: React.FC = () => {
                 return (
                   <div
                     key={item.id}
-                    className="border rounded-lg hover:bg-muted/30 transition-colors bg-card"
+                    className="overflow-hidden rounded-2xl border bg-card transition-colors hover:border-foreground/15"
                   >
                     {/* Header - always visible */}
-                    <div
-                      className="p-4 cursor-pointer"
+                    <button
+                      type="button"
+                      aria-expanded={isExpanded}
+                      className="w-full p-4 text-left transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                       onClick={() => toggleExpanded(item.id)}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           {getStatusIcon(item.status)}
                           <Badge variant={getStatusVariant(item.status)} className="text-xs">
                             {t(`history.statuses.${item.status}`)}
@@ -402,14 +421,14 @@ export const NotificationHistory: React.FC = () => {
                           </Badge>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs tabular-nums text-muted-foreground">
                             {formatDate(item.scheduled_at)}
                           </div>
-                          {isExpanded ? (
-                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                          )}
+                          <ChevronRight
+                            className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+                              isExpanded ? 'rotate-90' : ''
+                            }`}
+                          />
                         </div>
                       </div>
 
@@ -417,53 +436,55 @@ export const NotificationHistory: React.FC = () => {
                       <div className="mt-2 text-sm font-medium text-foreground">
                         {item.subscription_name ? `${t('history.subscription')}: ${item.subscription_name}` : (parsedContent.summary || t('history.defaultMessage'))}
                       </div>
-                    </div>
+                    </button>
 
-                    {/* Expanded content */}
-                    {isExpanded && (
-                      <div className="px-4 pb-4 border-t bg-muted/20">
-                        <div className="pt-3 space-y-3">
-                          {/* Details in vertical layout */}
-                          {parsedContent.details.length > 0 && (
-                            <div className="space-y-2">
-                              {parsedContent.details.map((detail, index) => (
-                                <div key={index} className="flex items-center gap-3 text-sm">
-                                  <span className="text-lg">{detail.icon}</span>
-                                  <span className="text-muted-foreground min-w-[80px]">{detail.label}:</span>
-                                  <span className="font-medium">{detail.value}</span>
-                                </div>
-                              ))}
+                    {/* Expanded content with smooth height transition */}
+                    <div className="collapsible-grid" data-open={isExpanded}>
+                      <div>
+                        <div className="border-t bg-muted/20 px-4 pb-4">
+                          <div className="space-y-2.5 pt-3">
+                            {/* Details in vertical layout */}
+                            {parsedContent.details.length > 0 && (
+                              <div className="space-y-2">
+                                {parsedContent.details.map((detail, index) => (
+                                  <div key={index} className="flex items-center gap-2.5 text-sm">
+                                    {renderDetailIcon(detail.iconKey)}
+                                    <span className="min-w-[80px] text-muted-foreground">{detail.label}:</span>
+                                    <span className="font-medium">{detail.value}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Recipient info */}
+                            <div className="flex items-center gap-2.5 text-sm">
+                              <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
+                              <span className="min-w-[80px] text-muted-foreground">{t('history.recipientLabel')}</span>
+                              <span className="rounded-lg bg-muted px-2 py-0.5 font-mono text-xs">{item.recipient}</span>
                             </div>
-                          )}
 
-                          {/* Recipient info */}
-                          <div className="flex items-center gap-3 text-sm">
-                            <span className="text-lg">📧</span>
-                            <span className="text-muted-foreground min-w-[80px]">{t('history.recipientLabel')}</span>
-                            <span className="font-mono text-xs bg-muted px-2 py-1 rounded">{item.recipient}</span>
+                            {/* Timing info */}
+                            {item.sent_at && (
+                              <div className="flex items-center gap-2.5 text-sm">
+                                <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                <span className="min-w-[80px] text-muted-foreground">{t('history.sentTimeLabel')}</span>
+                                <span className="font-medium tabular-nums">{formatDate(item.sent_at)}</span>
+                              </div>
+                            )}
+
+                            {/* Error message if any */}
+                            {item.error_message && (
+                              <Alert className="border-destructive/20 bg-destructive/5">
+                                <AlertCircle className="h-4 w-4 text-destructive" />
+                                <AlertDescription className="text-sm text-destructive">
+                                  {item.error_message}
+                                </AlertDescription>
+                              </Alert>
+                            )}
                           </div>
-
-                          {/* Timing info */}
-                          {item.sent_at && (
-                            <div className="flex items-center gap-3 text-sm">
-                              <span className="text-lg">🕐</span>
-                              <span className="text-muted-foreground min-w-[80px]">{t('history.sentTimeLabel')}</span>
-                              <span className="font-medium">{formatDate(item.sent_at)}</span>
-                            </div>
-                          )}
-
-                          {/* Error message if any */}
-                          {item.error_message && (
-                            <Alert className="border-destructive/20 bg-destructive/5">
-                              <AlertCircle className="h-4 w-4 text-destructive" />
-                              <AlertDescription className="text-sm text-destructive">
-                                {item.error_message}
-                              </AlertDescription>
-                            </Alert>
-                          )}
                         </div>
                       </div>
-                    )}
+                    </div>
                   </div>
                 );
               })}

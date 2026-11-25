@@ -27,4 +27,25 @@ describe('subscription card interaction', () => {
     fireEvent.keyDown(options, { key: ' ' })
     expect(view).toHaveBeenCalledTimes(3)
   })
+
+  test('highlights overdue active subscriptions with destructive styling', () => {
+    const overdueSub: Subscription = {
+      ...subscription,
+      id: 43,
+      name: 'Overdue service',
+      nextBillingDate: '2020-01-01',
+      status: 'active',
+    }
+    render(
+      <SubscriptionCard
+        subscription={overdueSub}
+        onViewDetails={vi.fn()}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onStatusChange={vi.fn()}
+      />
+    )
+    const statusBadge = screen.getByText('subscription:active')
+    expect(statusBadge.className).toContain('text-destructive')
+  })
 })

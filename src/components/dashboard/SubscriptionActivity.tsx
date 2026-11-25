@@ -19,12 +19,12 @@ export function SubscriptionActivity({ subscriptions, paid = false, className, o
     <CardContent className="flex flex-1 flex-col">
       <div className="flex-1">
         {subscriptions.length ? <div className="max-h-64 divide-y overflow-y-auto">
-          {subscriptions.map(sub => <button key={sub.id} onClick={() => onSelect?.(sub)} className="flex w-full items-center justify-between gap-3 rounded-lg py-3 text-left first:pt-0 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
+          {subscriptions.map(sub => <button key={sub.id} type="button" onClick={() => onSelect?.(sub)} className="flex w-full items-center justify-between gap-3 rounded-xl px-2 py-3 text-left transition-colors duration-150 first:pt-2 hover:bg-muted/50 active:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
             <span className="flex min-w-0 items-center gap-3">
               <span className="service-avatar h-9 w-9 rounded-[13px] text-xs" aria-hidden="true">{sub.name.slice(0, 1)}</span>
               <span className="min-w-0"><span className="block truncate text-xs font-semibold">{sub.name}</span><span className="mt-1 block truncate text-[11px] text-muted-foreground">{formatDate(paid ? sub.lastBillingDate! : sub.nextBillingDate)} · {sub.plan}</span></span>
             </span>
-            <span className="shrink-0 text-right"><span className="block text-xs font-semibold">{formatWithUserCurrency(sub.amount, sub.currency)}</span>
+            <span className="shrink-0 text-right"><span className="block text-xs font-semibold tabular-nums">{formatWithUserCurrency(sub.amount, sub.currency)}</span>
               {!paid && <span className="mt-1 inline-block rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">{daysUntil(sub.nextBillingDate) === 0 ? t('today') : `${daysUntil(sub.nextBillingDate)} ${t('days')}`}</span>}
             </span>
           </button>)}
@@ -32,7 +32,10 @@ export function SubscriptionActivity({ subscriptions, paid = false, className, o
       </div>
       <div className="mt-4 flex items-center justify-between gap-2 border-t pt-3 text-[11px] text-muted-foreground">
         <span>{t(paid ? 'subscriptionsPaidInLast7Days' : 'subscriptionsRenewingInNext7Days')}</span>
-        <Link to="/subscriptions" className="shrink-0 hover:text-foreground">{t('viewAll')} →</Link>
+        <Link to="/subscriptions" className="group inline-flex shrink-0 items-center gap-1 transition-colors hover:text-foreground">
+          <span>{t('viewAll')}</span>
+          <span className="inline-block transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true">→</span>
+        </Link>
       </div>
     </CardContent>
   </Card>

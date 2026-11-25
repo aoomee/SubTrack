@@ -1,18 +1,9 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { useTranslation } from "react-i18next"
-
-// Helper function to safely extract error message
-const getErrorMessage = (error: unknown): string => {
-  if (error && typeof error === 'object' && 'message' in error) {
-    return String(error.message)
-  }
-  return String(error)
-}
-
 
 import {
   useSubscriptionStore,
@@ -31,27 +22,29 @@ import { StatCard } from "@/components/dashboard/StatCard"
 import { SubscriptionActivity } from "@/components/dashboard/SubscriptionActivity"
 import { ActiveSubscriptionList, BillingCalendar, CategoryStrip } from "@/components/dashboard/LedgerOverview"
 import { SubscriptionDetailDialog } from '@/components/subscription/SubscriptionDetailDialog'
-import { ImportModal } from "@/components/imports/ImportModal"
 import { ExpenseTrendChart } from "@/components/charts/ExpenseTrendChart"
 import { PageLoading } from "@/components/ui/page-loading"
 
+const getErrorMessage = (error: unknown): string => {
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String(error.message)
+  }
+  return String(error)
+}
+
 function HomePage() {
   const { toast } = useToast()
-  const { t } = useTranslation(['dashboard', 'common'])
+  const { t } = useTranslation(['dashboard', 'common', 'subscription'])
   const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null)
   const [detailSubscription, setDetailSubscription] = useState<Subscription | null>(null)
-  const [showImportModal, setShowImportModal] = useState(false)
-  // Get the default view from settings
   const { currency: userCurrency, fetchSettings } = useSettingsStore()
   const [isInitializing, setIsInitializing] = useState(() =>
     !useSettingsStore.getState().hasLoaded || !useSubscriptionStore.getState().hasLoaded
   )
-  
+
   const {
     subscriptions,
-    bulkAddSubscriptions,
     updateSubscription,
-    fetchSubscriptions,
     getUpcomingRenewals,
     getRecentlyPaid,
     getSpendingByCategory,
@@ -118,8 +111,8 @@ function HomePage() {
 
     setEditingSubscription(null)
     toast({
-      title: t('subscription.updated') || "Subscription updated",
-      description: `${data.name} ${t('subscription.updateSuccess') || "has been updated successfully."}`
+      title: t('subscription:updated') || "Subscription updated",
+      description: `${data.name} ${t('subscription:updateSuccess') || "has been updated successfully."}`
     })
   }
 
@@ -138,8 +131,8 @@ function HomePage() {
       }
 
       toast({
-        title: t('dataRefreshed') || "Data refreshed",
-        description: t('dataRefreshedDesc') || "Subscription data and renewals have been processed."
+        title: t('common:dataRefreshed') || "Data refreshed",
+        description: t('common:dataRefreshedDesc') || "Subscription data and renewals have been processed."
       })
     } catch (error) {
       console.error('Error refreshing data:', error)
@@ -153,35 +146,11 @@ function HomePage() {
     }
   }
 
-
-
-  // Handler for importing subscriptions
-  const handleImportSubscriptions = async (newSubscriptions: Omit<Subscription, "id">[]) => {
-    const { error } = await bulkAddSubscriptions(newSubscriptions);
-
-    if (error) {
-      toast({
-        title: t('subscription:importFailed') || "Import failed",
-        description: getErrorMessage(error) ||  "Failed to import subscriptions",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: t('subscription:importSuccess') || "Import successful",
-        description: `${newSubscriptions.length} ${t('common:subscriptions')} ${t('common:importSuccess') || "have been imported."}`,
-      });
-    }
-
-    // Final fetch to ensure UI is up-to-date
-    fetchSubscriptions();
-  };
-
-
-
-  // Get data for dashboard (non-API data)
+  // Derived dashboard datasets
   const upcomingRenewals = getUpcomingRenewals(7)
   const recentlyPaidSubscriptions = getRecentlyPaid(7)
   const spendingByCategory = getSpendingByCategory()
+  const trialCount = useMemo(() => subscriptions.filter(sub => sub.status === 'trial').length, [subscriptions])
 
   if (isInitializing) {
     return <PageLoading />
@@ -189,10 +158,10 @@ function HomePage() {
 
   return (
     <>
-      <div className="mb-3 flex items-center justify-end">
-        <div className="sr-only">
-          <h1 className="text-2xl font-semibold tracking-[-0.035em] sm:text-[30px]">{t('common:dashboard')}</h1>
-          <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-lg font-semibold tracking-tight">{t('common:dashboard')}</h1>
+          <p className="mt-0.5 text-xs text-muted-foreground">
             {t('common:dashboardDescription')}
           </p>
         </div>
@@ -201,9 +170,9 @@ function HomePage() {
           disabled={isRefreshing}
           variant="outline"
           size="sm"
-          className="h-7 border-0 bg-transparent text-muted-foreground shadow-none"
+          className="h-8 gap-1.5 px-3 text-xs"
         >
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
           {isRefreshing ? t('common:refreshing') : t('common:refresh')}
         </Button>
       </div>
@@ -230,12 +199,12 @@ function HomePage() {
               <StatCard
                 title={t('common:activeSubscriptions')}
                 value={activeCount}
-                description={t('serviceSummary', { total: subscriptions.length, trial: subscriptions.filter(sub => sub.status === 'trial').length })}
+                description={t('serviceSummary', { total: subscriptions.length, trial: trialCount })}
               />
             </section>
             <CategoryStrip data={spendingByCategory} />
           </Card>
-          
+
           <section
             className="grid grid-cols-1 gap-5 md:grid-cols-2"
             aria-label="Expense activity"
@@ -251,8 +220,6 @@ function HomePage() {
           <ActiveSubscriptionList subscriptions={subscriptions} onSelect={setDetailSubscription} />
         </div>
 
-
-
       {/* Forms and Modals */}
       <SubscriptionDetailDialog subscription={detailSubscription} open={detailSubscription !== null}
         onOpenChange={open => { if (!open) setDetailSubscription(null) }}
@@ -265,12 +232,6 @@ function HomePage() {
           onSubmit={(data) => handleUpdateSubscription(editingSubscription.id, data)}
         />
       )}
-      
-      <ImportModal
-        open={showImportModal}
-        onOpenChange={setShowImportModal}
-        onImport={handleImportSubscriptions}
-      />
     </>
   )
 }

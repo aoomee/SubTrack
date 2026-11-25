@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, BarChart3, Settings } from 'lucide-react';
+import { RefreshCw, Bell, Clock, Radio } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { notificationApi, NotificationSetting } from '@/services/notificationApi';
 import { useToast } from '@/hooks/use-toast';
@@ -70,12 +70,11 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ user
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="ledger-page-heading">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
+          <h2 className="text-base font-semibold tracking-tight">
             {t('notificationSettings')}
-          </h1>
+          </h2>
           <p className="mt-1 text-xs text-muted-foreground">
             {t('managePreferencesDesc')}
           </p>
@@ -87,26 +86,28 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ user
           size="sm"
           className="flex items-center gap-2"
         >
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
           {t('refresh')}
         </Button>
       </div>
 
       <Tabs keepMounted defaultValue="channels" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="channels" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            {t('channelConfig')}
-          </TabsTrigger>
-          <TabsTrigger value="rules" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            {t('notificationRules')}
-          </TabsTrigger>
-          <TabsTrigger value="scheduler" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            {t('scheduler.title')}
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto scrollbar-hide">
+          <TabsList className="w-fit min-w-max sm:min-w-0">
+            <TabsTrigger value="channels" className="flex items-center gap-1.5">
+              <Radio className="h-3.5 w-3.5" />
+              {t('channelConfig')}
+            </TabsTrigger>
+            <TabsTrigger value="rules" className="flex items-center gap-1.5">
+              <Bell className="h-3.5 w-3.5" />
+              {t('notificationRules')}
+            </TabsTrigger>
+            <TabsTrigger value="scheduler" className="flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5" />
+              {t('scheduler.title')}
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="channels" className="space-y-6">
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">

@@ -8,12 +8,13 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Play, Settings, AlertCircle } from 'lucide-react';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import { schedulerApi, SchedulerSettings as SchedulerSettingsType, SchedulerStatus } from '@/services/schedulerApi';
 import { LoadingIndicator } from '@/components/ui/loading-indicator';
 
 export function SchedulerSettings() {
   const { t } = useTranslation('notification');
+  const { toast } = useToast();
   const [settings, setSettings] = useState<SchedulerSettingsType>({
     notification_check_time: '09:00',
     timezone: 'Asia/Shanghai',
@@ -46,11 +47,14 @@ export function SchedulerSettings() {
       setStatus(statusData);
     } catch (error) {
       console.error('Failed to load scheduler data:', error);
-      toast.error(t('scheduler.messages.loadFailed'));
+      toast({
+        title: t('scheduler.messages.loadFailed'),
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [t, toast]);
 
   useEffect(() => {
     loadData();
@@ -60,12 +64,17 @@ export function SchedulerSettings() {
     setSaving(true);
     try {
       await schedulerApi.updateSettings(settings);
-      toast.success(t('scheduler.messages.updateSuccess'));
+      toast({
+        title: t('scheduler.messages.updateSuccess'),
+      });
       // 重新加载状态
       await loadData();
     } catch (error) {
       console.error('Failed to update scheduler settings:', error);
-      toast.error(t('scheduler.messages.updateFailed'));
+      toast({
+        title: t('scheduler.messages.updateFailed'),
+        variant: 'destructive',
+      });
     } finally {
       setSaving(false);
     }
@@ -74,10 +83,15 @@ export function SchedulerSettings() {
   const handleTriggerCheck = async () => {
     try {
       await schedulerApi.triggerCheck();
-      toast.success(t('scheduler.messages.triggerSuccess'));
+      toast({
+        title: t('scheduler.messages.triggerSuccess'),
+      });
     } catch (error) {
       console.error('Failed to trigger notification check:', error);
-      toast.error(t('scheduler.messages.triggerFailed'));
+      toast({
+        title: t('scheduler.messages.triggerFailed'),
+        variant: 'destructive',
+      });
     }
   };
 
@@ -206,11 +220,11 @@ export function SchedulerSettings() {
 
         {/* 提示信息 */}
         {!settings.is_enabled && (
-          <div className="flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
-            <div className="text-sm text-yellow-800">
+          <div className="flex items-start gap-2.5 rounded-2xl border border-warning/25 bg-warning/10 p-3.5 text-warning">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="text-xs leading-relaxed">
               <p className="font-medium">{t('scheduler.disabledWarning')}</p>
-              <p>{t('scheduler.disabledWarningDescription')}</p>
+              <p className="mt-0.5 opacity-90">{t('scheduler.disabledWarningDescription')}</p>
             </div>
           </div>
         )}

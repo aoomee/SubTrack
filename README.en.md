@@ -1,74 +1,74 @@
-# SubTrack
+<p align="center">
+  <img src="public/subtrack-mark.svg" alt="SubTrack" width="56" height="56" />
+</p>
+
+<h1 align="center">SubTrack</h1>
 
 <p align="center">
-  <strong>A clean, modern, local-first subscription and expense tracker.</strong>
+  A minimalist, modern, local-first personal subscription &amp; expense ledger.
 </p>
 
 <p align="center">
-  Manage recurring subscriptions, renewals, payment history, expense reports, and notifications with data stored in your own SQLite database.
+  <a href="https://github.com/aoomee/SubTrack/releases/tag/v1.0.0"><img alt="Release" src="https://img.shields.io/badge/release-v1.0.0-18181b?style=flat-square"></a>
+  <a href="https://github.com/aoomee/SubTrack/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/aoomee/SubTrack/ci.yml?label=CI&style=flat-square"></a>
+  <a href="https://github.com/aoomee/SubTrack/pkgs/container/subtrack"><img alt="GHCR" src="https://img.shields.io/badge/GHCR-v1.0.0-18181b?style=flat-square&logo=docker&logoColor=white"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-18181b?style=flat-square"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/aoomee/SubTrack/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/aoomee/SubTrack/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="https://github.com/aoomee/SubTrack/actions/workflows/docker-build.yml"><img alt="Docker" src="https://github.com/aoomee/SubTrack/actions/workflows/docker-build.yml/badge.svg"></a>
-  <a href="https://github.com/aoomee/SubTrack/pkgs/container/subtrack"><img alt="GHCR" src="https://img.shields.io/badge/GHCR-latest-2f6b4f?logo=docker&logoColor=white"></a>
-  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-1f2328"></a>
+  <a href="#highlights">Highlights</a> ·
+  <a href="#quick-start">Quick Start</a> ·
+  <a href="#local-development">Development</a> ·
+  <a href="README.md">简体中文</a>
 </p>
 
-<p align="center"><a href="README.md">简体中文</a></p>
+<br />
 
-![SubTrack dashboard](docs/images/dashboard.png)
+![SubTrack Dashboard](docs/images/dashboard.png)
 
 ## Highlights
 
-- Subscription lifecycle and payment history management
-- Monthly, quarterly, and yearly expense reports
-- Nine currencies with optional automatic exchange-rate updates
-- Telegram and email notifications
-- CSV and JSON import/export
-- Chinese and English interfaces with light and dark themes
-- Local SQLite storage and multi-architecture Docker images
+- **Subscription Ledger** — Monthly, quarterly, semiannual, and yearly cycles with auto/manual renewals and full payment history
+- **Expense Analytics** — Allocated monthly & yearly spending trends, category breakdowns, and an interactive billing calendar
+- **Multi-Currency** — 9 built-in currencies with optional automatic exchange-rate sync and original-currency hints
+- **Smart Reminders** — Telegram and email notifications with configurable lead times and schedules
+- **Local-First & Portable** — Stored in your own SQLite database with JSON & CSV import/export
+- **Minimalist Design** — Monochrome light/dark themes, Chinese & English UI, responsive across desktop and mobile
 
-## One-command VPS installation
+## Quick Start
 
-Run as `root` on a Linux VPS:
+### One-command Linux VPS install
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/aoomee/SubTrack/main/scripts/install-vps.sh | bash
 ```
 
-The installer pulls `ghcr.io/aoomee/subtrack:latest`, creates persistent storage, and prints the administrator credentials when it finishes. Open `http://YOUR_SERVER_IP:3001` after deployment.
+Pulls `ghcr.io/aoomee/subtrack:latest`, initializes persistent storage, and prints your initial admin credentials. Open `http://YOUR_SERVER_IP:3001` once ready.
 
-## Docker Compose
+### Docker Compose
 
-Copy the complete, annotated Compose example from the [Chinese project homepage](README.md#-docker-compose), replace the required `CHANGE_ME` placeholders, then run:
+Copy the Compose configuration from the [Chinese homepage](README.md#docker-compose) (or use [docker-compose.1panel.yml](docker-compose.1panel.yml) behind a reverse proxy), replace `CHANGE_ME` values, then run:
 
 ```bash
-docker compose pull
-docker compose up -d
+docker compose pull && docker compose up -d
 ```
 
-For 1Panel or another reverse proxy, use [docker-compose.1panel.yml](docker-compose.1panel.yml) and bind the service to `127.0.0.1`.
+Multi-arch images (`linux/amd64`, `linux/arm64`) are published to [`ghcr.io/aoomee/subtrack`](https://github.com/aoomee/SubTrack/pkgs/container/subtrack) under `latest` and `v1.0.0`.
 
-## Container image
+## Local Development
 
-[`ghcr.io/aoomee/subtrack`](https://github.com/aoomee/SubTrack/pkgs/container/subtrack) supports `linux/amd64` and `linux/arm64`.
+Requires Node.js 20+:
 
-| Tag | Purpose |
-| --- | --- |
-| `latest` | Latest stable build from the default branch |
-| `main` | Latest build from `main` |
-| `sha-xxxxxxx` | Immutable build for a specific Git commit |
-| `v*` | Build for a Git release tag |
+```bash
+# Terminal 1 — Frontend (http://localhost:5173)
+npm install && npm run dev
 
-## Documentation
+# Terminal 2 — Backend (http://localhost:3001/api)
+cd server && npm install && npm run db:init && npm start
+```
 
-- [Production environment example](.env.production.example)
-- [Deployment guide](docs/DEPLOYMENT.zh-CN.md)
-- [Authentication and security](docs/AUTHENTICATION.md)
-- [Notification system](docs/NOTIFICATION_SYSTEM.md)
-- [API documentation](docs/API_DOCUMENTATION.md)
+Docs: [Production Env](.env.production.example) · [Deployment Guide](docs/DEPLOYMENT.zh-CN.md) · [Authentication](docs/AUTHENTICATION.md) · [Notifications](docs/NOTIFICATION_SYSTEM.md) · [API Reference](docs/API_DOCUMENTATION.md)
 
 ## License
 
-SubTrack continues the MIT-licensed [huhusmang/Subscription-Management](https://github.com/huhusmang/Subscription-Management) project and is released under the [MIT License](LICENSE).
+Built upon the MIT-licensed [huhusmang/Subscription-Management](https://github.com/huhusmang/Subscription-Management) project and released under the [MIT License](LICENSE).

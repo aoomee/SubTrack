@@ -69,8 +69,8 @@ export function ExchangeRateManager() {
               {t('setPreferredCurrency')}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6 flex-1">
-            <div>
+          <CardContent className="flex-1 space-y-6">
+            <div className="space-y-2">
               <Label htmlFor="currency">{t('defaultCurrency')}</Label>
               <Select
                 value={currency}
@@ -91,15 +91,15 @@ export function ExchangeRateManager() {
                   <SelectItem value="HKD">HKD - {t('hongKongDollar')}</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-xs leading-relaxed text-muted-foreground">
                 {t('preferredCurrencyDesc')}
               </p>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-base">{t('showInOriginalCurrency')}</Label>
-                <p className="text-sm text-muted-foreground">
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0 space-y-1">
+                <Label htmlFor="show-original" className="text-sm font-medium">{t('showInOriginalCurrency')}</Label>
+                <p className="text-xs leading-relaxed text-muted-foreground">
                   {t('showOriginalCurrencyDesc')}
                 </p>
               </div>
@@ -135,13 +135,13 @@ export function ExchangeRateManager() {
                   <dd className="flex items-center gap-1.5 text-sm font-medium">
                     {exchangeRateConfigStatus?.tianApiConfigured ? (
                       <>
-                        <CheckCircle className="h-4 w-4 shrink-0 text-primary" />
-                        <span className="text-primary">{t('configured')}</span>
+                        <CheckCircle className="h-4 w-4 shrink-0 text-success" />
+                        <span className="text-success">{t('configured')}</span>
                       </>
                     ) : (
                       <>
-                        <AlertCircle className="h-4 w-4 text-red-500" />
-                        <span className="text-sm text-red-600">{t('notConfigured')}</span>
+                        <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
+                        <span className="text-sm text-destructive">{t('notConfigured')}</span>
                       </>
                     )}
                   </dd>
@@ -163,9 +163,9 @@ export function ExchangeRateManager() {
 
 
               {!exchangeRateConfigStatus?.tianApiConfigured && (
-                <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                  <AlertCircle className="h-4 w-4 text-yellow-600" />
-                  <p className="text-sm text-yellow-800">
+                <div className="flex items-center gap-2 rounded-2xl border border-warning/25 bg-warning/10 p-3 text-warning">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <p className="text-xs leading-relaxed">
                     {t('notConfigured')}
                   </p>
                 </div>

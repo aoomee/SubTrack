@@ -18,7 +18,12 @@ const languages = [
   { code: 'zh-CN', name: '简体中文' },
 ];
 
-export function LanguageSwitcher() {
+interface LanguageSwitcherProps {
+  variant?: 'ghost' | 'secondary'
+  className?: string
+}
+
+export function LanguageSwitcher({ variant = 'ghost', className }: LanguageSwitcherProps = {}) {
   const { i18n } = useTranslation();
   const user = useAuthStore(state => state.user);
 
@@ -58,7 +63,7 @@ export function LanguageSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Switch language">
+        <Button variant={variant} size="icon" className={className} aria-label="Switch language">
           <Globe className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>

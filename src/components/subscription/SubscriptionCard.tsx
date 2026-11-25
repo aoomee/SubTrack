@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { MoreHorizontal, Pencil, Trash2, Ban, RotateCcw } from 'lucide-react'
 import { Subscription, useSubscriptionStore } from '@/store/subscriptionStore'
 import { useSettingsStore } from '@/store/settingsStore'
-import { formatDate, daysUntil, getCategoryLabel, getPaymentMethodLabel } from '@/lib/subscription-utils'
+import { formatDate, signedDaysUntil, getCategoryLabel, getPaymentMethodLabel } from '@/lib/subscription-utils'
 import { convertCurrency, formatCurrencyAmount, formatWithUserCurrency } from '@/utils/currency'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -24,7 +24,7 @@ export function SubscriptionCard({ subscription, onEdit, onDelete, onStatusChang
   const { t } = useTranslation(['common', 'subscription', 'dashboard'])
   const months = { monthly: 1, quarterly: 3, semiannual: 6, yearly: 12 }[billingCycle]
   const monthlyAmount = convertCurrency(amount / months, currency, displayCurrency)
-  const overdue = daysUntil(nextBillingDate) < 0 && status === 'active'
+  const overdue = signedDaysUntil(nextBillingDate) < 0 && status === 'active'
   return (
     <Card className="group cursor-pointer rounded-[24px] transition-colors hover:bg-accent/40"
       role="button" tabIndex={0} aria-label={name}

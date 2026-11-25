@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ChevronDown } from 'lucide-react'
 import { useSubscriptionStore } from "@/store/subscriptionStore"
 import { useSettingsStore } from "@/store/settingsStore"
 import {
@@ -48,6 +49,8 @@ export function ExpenseReportsPage() {
     const currentYear = new Date().getFullYear()
     return `${currentYear - 2} - ${currentYear}`
   })
+
+  const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(false)
 
   // Fetch data when component mounts
   const initializeData = useCallback(async () => {
@@ -173,33 +176,36 @@ export function ExpenseReportsPage() {
           const quarterlyInfo = calculateQuarterlyExpenses(recentQuarterly, userCurrency)
           const yearlyInfo = calculateYearlyExpenses(recentYearly, userCurrency)
 
-          // Ensure paymentCount matches real payment-history records
-          const fillAccurateCounts = async (list: ExpenseInfoData[]): Promise<ExpenseInfoData[]> => {
-            const updated = await Promise.all(
-              list.map(async (item) => {
-                try {
-                  const records = await apiClient.get<PaymentRecordApi[]>(
-                    `/payment-history?start_date=${item.startDate}&end_date=${item.endDate}&status=succeeded`
-                  )
-                  return { ...item, paymentCount: records.length }
-                } catch {
-                  return item
-                }
-              })
-            )
-            return updated
+          // Count real payment-history records with a single batched request instead of N+1 requests
+          const allItems = [...monthlyInfo, ...quarterlyInfo, ...yearlyInfo]
+          let allRecords: PaymentRecordApi[] = []
+          if (allItems.length > 0) {
+            const minStart = allItems.reduce((min, item) => (item.startDate < min ? item.startDate : min), allItems[0].startDate)
+            const maxEnd = allItems.reduce((max, item) => (item.endDate > max ? item.endDate : max), allItems[0].endDate)
+            try {
+              allRecords = await apiClient.get<PaymentRecordApi[]>(
+                `/payment-history?start_date=${minStart}&end_date=${maxEnd}&status=succeeded`
+              )
+            } catch {
+              allRecords = []
+            }
           }
 
-          const [monthlyFixed, quarterlyFixed, yearlyFixed] = await Promise.all([
-            fillAccurateCounts(monthlyInfo),
-            fillAccurateCounts(quarterlyInfo),
-            fillAccurateCounts(yearlyInfo)
-          ])
+          const fillAccurateCounts = (list: ExpenseInfoData[]): ExpenseInfoData[] => {
+            if (!allRecords.length) return list
+            return list.map((item) => {
+              const count = allRecords.filter((rec) => {
+                const dateStr = (rec.payment_date || '').slice(0, 10)
+                return dateStr >= item.startDate && dateStr <= item.endDate
+              }).length
+              return { ...item, paymentCount: count }
+            })
+          }
 
           setExpenseInfoData({
-            monthly: monthlyFixed,
-            quarterly: quarterlyFixed,
-            yearly: yearlyFixed
+            monthly: fillAccurateCounts(monthlyInfo),
+            quarterly: fillAccurateCounts(quarterlyInfo),
+            yearly: fillAccurateCounts(yearlyInfo)
           })
         } else {
           // No data available, set empty state
@@ -385,15 +391,15 @@ export function ExpenseReportsPage() {
         </div>
       </div>
 
-      <Card className="grid grid-cols-2 divide-x md:grid-cols-4">
+      <Card className="grid grid-cols-2 overflow-hidden md:grid-cols-4 [&>*:nth-child(odd)]:border-r [&>*:nth-child(-n+2)]:border-b md:[&>*]:border-b-0 md:[&>*:not(:last-child)]:border-r">
         {[
           [t('ledger.monthlyAverage'), isLoadingExpenses || expenseError ? '—' : formatCurrencyAmount(monthlyExpenses.reduce((sum, item) => sum + item.amount, 0) / (monthlyExpenses.length || 1), userCurrency)],
           [t('ledger.yearAllocated'), isLoadingYearlyExpenses || yearlyExpenseError ? '—' : formatCurrencyAmount(yearlyExpenses.find(item => item.year === new Date().getFullYear())?.amount || 0, userCurrency)],
           [t('ledger.topCategory'), isLoadingCategoryExpenses || categoryExpenseError ? '—' : categoryExpenses[0]?.category || '—'],
           [t('ledger.yearPaid'), isLoadingExpenseInfo || expenseInfoError ? '—' : formatCurrencyAmount(expenseInfoData.yearly.find(item => item.startDate.startsWith(String(new Date().getFullYear())))?.totalSpent || 0, userCurrency)],
-        ].map(([label, value]) => <div key={label} className="min-w-0 p-5 sm:p-6">
+        ].map(([label, value]) => <div key={label} className="min-w-0 border-border p-5 sm:p-6">
           <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="mt-2 break-words text-xl font-semibold tracking-tight">{value}</p>
+          <p className="mt-2 break-words text-xl font-semibold tracking-tight tabular-nums">{value}</p>
         </div>)}
       </Card>
 
@@ -414,7 +420,7 @@ export function ExpenseReportsPage() {
       {!expenseError && (
         <div className="space-y-4">
           <Tabs keepMounted defaultValue="monthly">
-            <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsList className="grid w-fit min-w-[200px] grid-cols-2">
               <TabsTrigger value="monthly">{t('monthly')}</TabsTrigger>
               <TabsTrigger value="yearly">{t('yearly')}</TabsTrigger>
             </TabsList>
@@ -499,49 +505,50 @@ export function ExpenseReportsPage() {
           </Tabs>
         </div>
       )}
-      <details className="rounded-[26px] border bg-card p-5 sm:p-6">
-        <summary className="cursor-pointer text-sm font-semibold">{t('ledger.paymentHistory')}</summary>
-        <div className="mt-5">
-      {/* Expense Info Cards */}
-      <div className="space-y-6">
-        <div>
-          {isLoadingExpenseInfo ? (
-            <div>
-              <ExpenseInfoCards
-                monthlyData={[]}
-                quarterlyData={[]}
-                yearlyData={[]}
-                currency={userCurrency}
-                isLoading={true}
-              />
-            </div>
-          ) : expenseInfoError ? (
-            <Card>
-              <CardContent className="flex items-center justify-center h-32">
-                <div className="text-center">
-                  <p className="text-sm text-destructive mb-2">{t('failedToLoadExpenseOverview')}</p>
-                  <p className="text-xs text-muted-foreground">{expenseInfoError}</p>
+      <Card className="overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setIsPaymentHistoryOpen((prev) => !prev)}
+          aria-expanded={isPaymentHistoryOpen}
+          className="flex w-full items-center justify-between gap-3 p-5 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:p-6"
+        >
+          <span className="text-sm font-semibold">{t('ledger.paymentHistory')}</span>
+          <ChevronDown
+            className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${
+              isPaymentHistoryOpen ? 'rotate-180' : ''
+            }`}
+          />
+        </button>
+        <div className="collapsible-grid" data-open={isPaymentHistoryOpen}>
+          <div>
+            <div className="border-t px-5 pb-6 pt-5 sm:px-6">
+              {isLoadingExpenseInfo ? (
+                <ExpenseInfoCards
+                  monthlyData={[]}
+                  quarterlyData={[]}
+                  yearlyData={[]}
+                  currency={userCurrency}
+                  isLoading={true}
+                />
+              ) : expenseInfoError ? (
+                <div className="flex h-32 items-center justify-center">
+                  <div className="text-center">
+                    <p className="mb-2 text-sm text-destructive">{t('failedToLoadExpenseOverview')}</p>
+                    <p className="text-xs text-muted-foreground">{expenseInfoError}</p>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div>
-              <ExpenseInfoCards
-                monthlyData={expenseInfoData.monthly}
-                quarterlyData={expenseInfoData.quarterly}
-                yearlyData={expenseInfoData.yearly}
-                currency={userCurrency}
-              />
+              ) : (
+                <ExpenseInfoCards
+                  monthlyData={expenseInfoData.monthly}
+                  quarterlyData={expenseInfoData.quarterly}
+                  yearlyData={expenseInfoData.yearly}
+                  currency={userCurrency}
+                />
+              )}
             </div>
-          )}
+          </div>
         </div>
-      </div>
-
-
-
-
-        </div>
-      </details>
+      </Card>
     </div>
   )
 }

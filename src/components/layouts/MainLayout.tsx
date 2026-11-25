@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { LogOut, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -9,6 +9,14 @@ import { useSettingsStore } from '@/store/settingsStore'
 import { Button } from '@/components/ui/button'
 import { SubTrackBrand } from '@/components/brand/SubTrackBrand'
 import { CURRENCY_SYMBOLS } from '@/config/constants'
+
+const NAV_LINKS = [
+  ['/', 'dashboard'],
+  ['/subscriptions', 'subscriptions'],
+  ['/expense-reports', 'reports'],
+  ['/notifications', 'notifications'],
+  ['/settings', 'settings'],
+] as const
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation()
@@ -25,7 +33,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     if (!content || isLogin) return
     let lastContentHeight = content.getBoundingClientRect().height
     const retainLoadingHeight = () => {
-      const loading = Array.from(content.children).some(child => child.classList.contains('page-loading'))
+      const loading = Boolean(
+        content.querySelector(':scope > .page-loading, :scope > .ledger-page-enter > .page-loading')
+      )
       if (loading) {
         content.style.minHeight = `${lastContentHeight}px`
       } else {
@@ -36,7 +46,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     const resize = new ResizeObserver(retainLoadingHeight)
     const mutations = new MutationObserver(retainLoadingHeight)
     resize.observe(content)
-    mutations.observe(content, { childList: true })
+    mutations.observe(content, { childList: true, subtree: true })
     retainLoadingHeight()
     return () => {
       resize.disconnect()
@@ -44,14 +54,16 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       content.style.removeProperty('min-height')
     }
   }, [isLogin])
-  const links = [
-    ['/', 'dashboard'], ['/subscriptions', 'subscriptions'],
-    ['/expense-reports', 'reports'], ['/notifications', 'notifications'], ['/settings', 'settings'],
-  ]
-  const currencyName = new Intl.DisplayNames([i18n.resolvedLanguage || 'en'], { type: 'currency' }).of(currency)
+
+  const language = i18n.resolvedLanguage || 'en'
+  const currencyName = useMemo(
+    () => new Intl.DisplayNames([language], { type: 'currency' }).of(currency),
+    [language, currency]
+  )
+
   const navigation = (mobile = false) => (
     <nav aria-label={t(mobile ? 'mobileNavigation' : 'mainNavigation')} className={mobile ? 'ledger-mobile-nav' : 'ledger-nav'}>
-      {links.map(([path, label]) => (
+      {NAV_LINKS.map(([path, label]) => (
         <Link key={path} to={path} className="ledger-nav-link" aria-current={location.pathname === path ? 'page' : undefined}>
           {t(label)}
         </Link>
@@ -64,7 +76,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       <header className="ledger-header">
         <Link to="/" className="brand-link" aria-label={t('brandName')}><SubTrackBrand /></Link>
         {!isLogin && user && navigation()}
-        <div className="ml-auto flex items-center gap-2 lg:ml-0">
+        <div className="ml-auto flex items-center gap-2 md:ml-0">
           {!isLogin && user && (
             <Link to="/settings?tab=currency" className="currency-shortcut" title={t('currencyShortcut')}>
               <span>{CURRENCY_SYMBOLS[currency] || currency}</span>
@@ -78,11 +90,13 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               <Link to="/subscriptions?add=1"><Plus className="h-3.5 w-3.5" />{t('add')}</Link>
             </Button>
           )}
-          {isLogin && <LanguageSwitcher />}
+          {isLogin && <LanguageSwitcher variant="secondary" className="h-8 w-8" />}
         </div>
       </header>
       <main ref={contentRef} id="main-content" tabIndex={-1} className={isLogin ? 'flex min-h-[65vh] items-center justify-center' : 'ledger-content'}>
-        {children}
+        <div key={location.pathname} className={isLogin ? 'ledger-page-enter flex w-full justify-center' : 'ledger-page-enter min-h-[inherit]'}>
+          {children}
+        </div>
       </main>
       {!isLogin && user && (
         <>

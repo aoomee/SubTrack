@@ -94,11 +94,12 @@ export const TelegramConfig: React.FC<TelegramConfigProps> = ({ userId, onConfig
         setTelegramConfig({ chat_id: chatId });
       }
     } catch (error) {
-      console.error('Failed to load Telegram config:', error);
-      // 如果配置不存在（404错误），使用本地存储的数据或重置为空配置
+      // 404 is expected when Telegram channel has not been configured yet
       if (((error as ApiResponse).status ?? (error as ApiResponse).response?.status) === 404) {
         const localChatId = useNotificationStore.getState().channelConfigs.telegram?.chat_id || '';
         setConfig({ chat_id: localChatId });
+      } else {
+        console.error('Failed to load Telegram config:', error);
       }
     } finally {
       setLoading(false);
@@ -107,13 +108,16 @@ export const TelegramConfig: React.FC<TelegramConfigProps> = ({ userId, onConfig
 
   const loadBotInfo = useCallback(async () => {
     try {
-      const [configStatus, botInfoResponse] = await Promise.all([
-        notificationApi.getTelegramConfigStatus(),
-        notificationApi.getBotInfo()
-      ]);
+      const configStatus = await notificationApi.getTelegramConfigStatus();
+      const normalizedStatus = configStatus || { configured: false, hasToken: false, isPlaceholder: true };
+      setBotConfig(normalizedStatus);
 
-      // The API client already extracts the data field, so configStatus and botInfoResponse are the data directly
-      setBotConfig(configStatus || { configured: false, hasToken: false, isPlaceholder: true });
+      if (!normalizedStatus.configured) {
+        setBotInfo(null);
+        return;
+      }
+
+      const botInfoResponse = await notificationApi.getBotInfo();
       setBotInfo((botInfoResponse as BotInfoResponse)?.success ? (botInfoResponse as BotInfoResponse).botInfo || null : null);
     } catch (error) {
       console.error('Failed to load bot info:', error);
@@ -259,7 +263,7 @@ export const TelegramConfig: React.FC<TelegramConfigProps> = ({ userId, onConfig
     }
     
     if (botConfig.configured) {
-      return <Badge variant="default" className="bg-green-500">{t('configured')}</Badge>;
+      return <Badge variant="success">{t('configured')}</Badge>;
     } else {
       return <Badge variant="destructive">{t('notConfigured')}</Badge>;
     }
@@ -330,13 +334,13 @@ export const TelegramConfig: React.FC<TelegramConfigProps> = ({ userId, onConfig
             <div className="flex items-center gap-2 text-sm">
               {chatIdValid ? (
                 <>
-                  <Check className="h-4 w-4 text-green-500" />
-                  <span className="text-green-600">{t('chatIdValid')}</span>
+                  <Check className="h-4 w-4 text-success" />
+                  <span className="text-success">{t('chatIdValid')}</span>
                 </>
               ) : (
                 <>
-                  <X className="h-4 w-4 text-red-500" />
-                  <span className="text-red-600">{t('chatIdInvalid')}</span>
+                  <X className="h-4 w-4 text-destructive" />
+                  <span className="text-destructive">{t('chatIdInvalid')}</span>
                 </>
               )}
             </div>

@@ -54,31 +54,12 @@ export function ExpenseDetailDialog({ isOpen, onClose, periodData }: ExpenseDeta
     setError(null)
 
     try {
-      let allPaymentDetails: PaymentRecord[] = []
-
-      if (periodData.periodType === 'monthly') {
-        // 月度数据：直接从 payment-history API 获取数据
-        const startDate = new Date(periodData.startDate)
-        const endDate = new Date(periodData.endDate)
-
-        const startDateStr = startDate.toISOString().split('T')[0]
-        const endDateStr = endDate.toISOString().split('T')[0]
-
-        const rawData = await apiClient.get<PaymentHistoryApiResponse>(`/payment-history?start_date=${startDateStr}&end_date=${endDateStr}&status=succeeded`)
-        allPaymentDetails = transformPaymentsFromApi(rawData)
-      } else {
-        // 季度或年度数据：直接从 payment-history API 获取整个时间范围的数据
-        const startDate = new Date(periodData.startDate)
-        const endDate = new Date(periodData.endDate)
-
-        const startDateStr = startDate.toISOString().split('T')[0]
-        const endDateStr = endDate.toISOString().split('T')[0]
-
-        const rawData = await apiClient.get<PaymentHistoryApiResponse>(`/payment-history?start_date=${startDateStr}&end_date=${endDateStr}&status=succeeded`)
-        allPaymentDetails = transformPaymentsFromApi(rawData)
-      }
-
-      setPayments(allPaymentDetails)
+      const startDateStr = new Date(periodData.startDate).toISOString().split('T')[0]
+      const endDateStr = new Date(periodData.endDate).toISOString().split('T')[0]
+      const rawData = await apiClient.get<PaymentHistoryApiResponse>(
+        `/payment-history?start_date=${startDateStr}&end_date=${endDateStr}&status=succeeded`
+      )
+      setPayments(transformPaymentsFromApi(rawData))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load payment data')
     } finally {
@@ -113,19 +94,19 @@ export function ExpenseDetailDialog({ isOpen, onClose, periodData }: ExpenseDeta
   const filteredTotalPages = Math.ceil(filteredPayments.length / pageSize)
 
 
-  const getStatusColor = (status: string | null | undefined) => {
+  const getStatusVariant = (status: string | null | undefined): 'success' | 'destructive' | 'warning' | 'secondary' => {
     switch (status) {
       case 'succeeded':
-        return 'bg-green-100 text-green-800'
+        return 'success'
       case 'failed':
-        return 'bg-red-100 text-red-800'
+        return 'destructive'
       case 'refunded':
-        return 'bg-yellow-100 text-yellow-800'
+        return 'warning'
       case 'unknown':
       case null:
       case undefined:
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'secondary'
     }
   }
 
@@ -250,7 +231,7 @@ export function ExpenseDetailDialog({ isOpen, onClose, periodData }: ExpenseDeta
 
                       <div className="col-start-2 row-start-1 flex min-w-[84px] flex-col items-end justify-center sm:col-start-3 sm:self-center">
                         <p className="whitespace-nowrap text-[15px] font-semibold leading-5 tabular-nums">{formatCurrencyAmount(payment.amountPaid, payment.currency)}</p>
-                        <Badge className={`mt-1 h-5 rounded-md px-2 text-[11px] font-medium ${getStatusColor(payment.status || 'unknown')}`}>
+                        <Badge variant={getStatusVariant(payment.status)} className="mt-1 h-5 rounded-full px-2 text-[11px] font-medium">
                           {t(`common:${payment.status || 'unknown'}`, { defaultValue: payment.status || t('reports:chart.unknown') })}
                         </Badge>
                       </div>

@@ -106,17 +106,35 @@ export function getTimeUntilNextBilling(nextBillingDate: string): string {
 }
 
 /**
- * Calculate days until a given date
+ * Parse YYYY-MM-DD in local time to avoid UTC midnight day-shift issues.
  */
-export function daysUntil(dateString: string): number {
+function parseLocalDate(dateString: string): Date {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString.trim())
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+  }
+  const parsed = new Date(dateString)
+  parsed.setHours(0, 0, 0, 0)
+  return parsed
+}
+
+/**
+ * Calculate signed days until a given date (negative when overdue).
+ */
+export function signedDaysUntil(dateString: string): number {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  
-  const targetDate = new Date(dateString)
-  targetDate.setHours(0, 0, 0, 0)
-  
+
+  const targetDate = parseLocalDate(dateString)
   const timeDiff = targetDate.getTime() - today.getTime()
-  return Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)))
+  return Math.round(timeDiff / (1000 * 3600 * 24))
+}
+
+/**
+ * Calculate days until a given date (clamped to >= 0 for countdown labels).
+ */
+export function daysUntil(dateString: string): number {
+  return Math.max(0, signedDaysUntil(dateString))
 }
 
 /**

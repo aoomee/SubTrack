@@ -25,7 +25,7 @@ function RequireAuth({ children }: { children: JSX.Element }) {
 }
 
 function App() {
-  const fetchMe = useAuthStore().fetchMe
+  const fetchMe = useAuthStore((state) => state.fetchMe)
   useEffect(() => { fetchMe() }, [fetchMe])
 
   return (
@@ -39,6 +39,7 @@ function App() {
             <Route path="/expense-reports" element={<RequireAuth><ExpenseReportsPage /></RequireAuth>} />
             <Route path="/notifications" element={<RequireAuth><NotificationHistoryPage /></RequireAuth>} />
             <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
       </MainLayout>

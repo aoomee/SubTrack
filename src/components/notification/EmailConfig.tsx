@@ -145,7 +145,7 @@ export const EmailConfig: React.FC<EmailConfigProps> = ({ onConfigChange }) => {
     }
 
     if (isEmailValid) {
-      return <Badge variant="default" className="bg-green-500">{t('configured')}</Badge>;
+      return <Badge variant="success">{t('configured')}</Badge>;
     }
 
     return <Badge variant="destructive">{t('errors.invalidEmail')}</Badge>;
@@ -209,7 +209,7 @@ export const EmailConfig: React.FC<EmailConfigProps> = ({ onConfigChange }) => {
         </div>
 
         {isEmailValid && (
-          <div className="flex items-center gap-2 text-sm text-green-600">
+          <div className="flex items-center gap-2 text-sm text-success">
             <Check className="h-4 w-4" />
             <span>{t('emailConfig.valid')}</span>
           </div>

@@ -25,18 +25,25 @@ export default defineConfig(() => {
       // Ensure proper chunking for production
       rollupOptions: {
         output: {
-          manualChunks: {
-            // Vendor libraries
-            'vendor-react': ['react', 'react-dom'],
-            'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select', '@radix-ui/react-tabs'],
-            'vendor-charts': ['recharts'],
-            'vendor-utils': ['zustand', 'date-fns', 'lucide-react'],
-            // App chunks
-            'charts': [
-              './src/components/charts/CategoryPieChart.tsx',
-              './src/components/charts/ExpenseTrendChart.tsx',
-              './src/components/charts/YearlyTrendChart.tsx'
-            ]
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('recharts') || id.includes('d3-')) {
+                return 'vendor-charts'
+              }
+              if (id.includes('@radix-ui/')) {
+                return 'vendor-ui'
+              }
+              if (id.includes('zustand') || id.includes('date-fns') || id.includes('lucide-react')) {
+                return 'vendor-utils'
+              }
+            }
+            if (
+              id.includes('/src/components/charts/CategoryPieChart.tsx') ||
+              id.includes('/src/components/charts/ExpenseTrendChart.tsx') ||
+              id.includes('/src/components/charts/YearlyTrendChart.tsx')
+            ) {
+              return 'charts'
+            }
           },
         },
       },

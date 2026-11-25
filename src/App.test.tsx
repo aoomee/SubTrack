@@ -10,7 +10,10 @@ const { mockUseAuthStore, mockFetchMe } = vi.hoisted(() => ({
 }))
 
 vi.mock('@/store/authStore', () => ({
-  useAuthStore: () => mockUseAuthStore(),
+  useAuthStore: (selector?: (state: unknown) => unknown) => {
+    const state = mockUseAuthStore()
+    return selector ? selector(state) : state
+  },
 }))
 
 vi.mock('./components/ThemeProvider', () => ({
@@ -115,5 +118,17 @@ describe('application routing', () => {
     expect(screen.getByRole('textbox')).toHaveValue('Music')
     view.rerender(<MemoryRouter initialEntries={['/subscriptions']}><App /></MemoryRouter>)
     expect(screen.getByRole('textbox')).toHaveValue('Music')
+  })
+
+  test('redirects unknown routes to home for authenticated users', async () => {
+    mockUseAuthStore.mockReturnValue({
+      user: { username: 'admin', role: 'admin' },
+      initialized: true,
+      fetchMe: mockFetchMe,
+    })
+
+    renderRoute('/non-existent-route')
+
+    expect(await screen.findByText('Home page')).toBeInTheDocument()
   })
 })

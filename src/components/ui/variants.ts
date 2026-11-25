@@ -13,7 +13,7 @@ export const badgeVariants = cva(
           "border-transparent bg-destructive/10 text-destructive hover:bg-destructive/15",
         outline: "text-foreground",
         warning:
-          "border-transparent bg-warning/12 text-warning hover:bg-warning/18",
+          "border-transparent bg-warning/15 text-warning hover:bg-warning/20",
         success:
           "border-transparent bg-success/10 text-success hover:bg-success/15",
         info:
@@ -32,7 +32,7 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-sm hover:bg-primary/92",
+          "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90",
         destructive:
           "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
         outline:
@@ -47,28 +47,6 @@ export const buttonVariants = cva(
         sm: "h-9 rounded-full px-3.5 text-xs",
         lg: "h-11 rounded-full px-6",
         icon: "h-10 w-10",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  }
-)
-
-export const toggleVariants = cva(
-  "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-muted hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground",
-  {
-    variants: {
-      variant: {
-        default: "bg-transparent",
-        outline:
-          "border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground",
-      },
-      size: {
-        default: "h-9 px-3",
-        sm: "h-8 px-2",
-        lg: "h-10 px-3",
       },
     },
     defaultVariants: {

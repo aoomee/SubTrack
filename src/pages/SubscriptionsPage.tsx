@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from "react-i18next"
 import { 
@@ -11,7 +11,8 @@ import {
   Upload,
   Calendar as CalendarIcon,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  X
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -50,7 +51,7 @@ import {
 } from "@/store/subscriptionStore"
 import { optimisticUpdateSubscription, useOptimisticSubscriptions } from "@/store/optimisticStore"
 import { useSettingsStore } from "@/store/settingsStore"
-import { exportSubscriptionsToJSON } from "@/lib/subscription-utils"
+import { exportSubscriptionsToJSON, downloadFile } from "@/lib/subscription-utils"
 
 import { SubscriptionCard } from "@/components/subscription/SubscriptionCard"
 import { PageLoading } from "@/components/ui/page-loading"
@@ -88,7 +89,6 @@ export function SubscriptionsPage() {
     updateSubscription,
     deleteSubscription,
     fetchSubscriptions,
-    getUniqueCategories,
     initializeData,
 
     manualRenewSubscription,
@@ -113,57 +113,62 @@ export function SubscriptionsPage() {
   }, [searchParams])
   
   // Get categories actually in use
-  const usedCategories = getUniqueCategories()
-  
-  // Get unique billing cycles in use
-  const getUniqueBillingCycles = () => {
+  const usedCategories = useMemo(() => {
+    const usedIds = Array.from(
+      new Set(subscriptions.map(sub => sub.categoryId).filter(id => id != null))
+    )
+    return usedIds.map(categoryId =>
+      categories.find(cat => cat.id === categoryId) || { id: categoryId, value: 'other', label: 'Other' }
+    )
+  }, [subscriptions, categories])
+
+  // Get unique billing cycles in use (localized)
+  const usedBillingCycles = useMemo(() => {
     const billingCycles = subscriptions.map(sub => sub.billingCycle)
     return Array.from(new Set(billingCycles)).map(cycle => ({
       value: cycle,
-      label: cycle.charAt(0).toUpperCase() + cycle.slice(1)
+      label: t(`common:${cycle}`, { defaultValue: cycle.charAt(0).toUpperCase() + cycle.slice(1) })
     }))
-  }
-  
-  const usedBillingCycles = getUniqueBillingCycles()
+  }, [subscriptions, t])
 
   // Filter subscriptions based on search term, current view, selected categories and billing cycles
-  const filteredSubscriptions = subscriptions.filter(sub => {
-    const matchesSearch = sub.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        sub.plan.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesStatus = 
-      currentView === "all" || 
-      (currentView === "active" && sub.status === "active") ||
-      (currentView === "trial" && sub.status === "trial") ||
-      (currentView === "cancelled" && sub.status === "cancelled")
-    
-    const matchesCategory =
-      selectedCategories.length === 0 ||
-      selectedCategories.some(categoryValue => {
-        const category = categories.find(cat => cat.value === categoryValue)
-        return category && sub.categoryId === category.id
-      })
-      
-    const matchesBillingCycle =
-      selectedBillingCycles.length === 0 ||
-      selectedBillingCycles.includes(sub.billingCycle)
-    
-    return matchesSearch && matchesStatus && matchesCategory && matchesBillingCycle
-  })
+  const filteredSubscriptions = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase()
+    return subscriptions.filter(sub => {
+      const matchesSearch =
+        !query ||
+        sub.name.toLowerCase().includes(query) ||
+        sub.plan.toLowerCase().includes(query)
+
+      const matchesStatus =
+        currentView === "all" ||
+        sub.status === currentView
+
+      const matchesCategory =
+        selectedCategories.length === 0 ||
+        selectedCategories.some(categoryValue => {
+          const category = categories.find(cat => cat.value === categoryValue)
+          return category && sub.categoryId === category.id
+        })
+
+      const matchesBillingCycle =
+        selectedBillingCycles.length === 0 ||
+        selectedBillingCycles.includes(sub.billingCycle)
+
+      return matchesSearch && matchesStatus && matchesCategory && matchesBillingCycle
+    })
+  }, [subscriptions, searchTerm, currentView, selectedCategories, selectedBillingCycles, categories])
 
   // 将乐观更新应用到筛选后的订阅列表
   const optimisticFiltered = useOptimisticSubscriptions(filteredSubscriptions)
 
-  const sortedSubscriptions = [...optimisticFiltered].sort((a, b) => {
-    const dateA = new Date(a.nextBillingDate).getTime()
-    const dateB = new Date(b.nextBillingDate).getTime()
-
-    if (sortOrder === "asc") {
-      return dateA - dateB
-    } else {
-      return dateB - dateA
-    }
-  })
+  const sortedSubscriptions = useMemo(() => {
+    return [...optimisticFiltered].sort((a, b) => {
+      const dateA = new Date(a.nextBillingDate).getTime()
+      const dateB = new Date(b.nextBillingDate).getTime()
+      return sortOrder === "asc" ? dateA - dateB : dateB - dateA
+    })
+  }, [optimisticFiltered, sortOrder])
 
   // Handler for adding new subscription
   const handleAddSubscription = async (subscription: Omit<Subscription, "id" | "lastBillingDate">) => {
@@ -298,8 +303,10 @@ export function SubscriptionsPage() {
 
     toast({
       title: t('subscription:renewed'),
-      description: t(`${subscription.name} has been renewed. 
-        Next billing date: ${newBillingDate}`)
+      description: t('subscription:renewedSuccessfully', {
+        name: subscription.name,
+        date: newBillingDate,
+      })
     })
   }
 
@@ -351,20 +358,13 @@ export function SubscriptionsPage() {
 
   // Handler for exporting subscriptions
   const handleExportSubscriptions = () => {
-    // Generate JSON data
     const jsonData = exportSubscriptionsToJSON(subscriptions)
-    
-    // Create a blob and download link
-    const blob = new Blob([jsonData], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `subscriptions-${new Date().toISOString().split('T')[0]}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-    
+    downloadFile(
+      jsonData,
+      `subscriptions-${new Date().toISOString().split('T')[0]}.json`,
+      'application/json'
+    )
+
     toast({
       title: t('subscription:exportSuccess'),
       description: t('subscription:exportToJson')
@@ -394,6 +394,7 @@ export function SubscriptionsPage() {
   return (
     <>
       {/* Header */}
+      <TooltipProvider delayDuration={200}>
       <div className="ledger-page-heading">
         <div>
           <h1>{t('subscription:title')}</h1>
@@ -402,44 +403,29 @@ export function SubscriptionsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button onClick={() => setShowAddForm(true)} size="icon" aria-label={t('subscription:add')}>
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{t('subscription:add')}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" onClick={() => setShowImportModal(true)} size="sm" className="h-9 gap-1.5 px-3.5" aria-label={t('common:import')}>
+                <Upload className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{t('common:import')}</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{t('common:import')}</p>
+            </TooltipContent>
+          </Tooltip>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" onClick={() => setShowImportModal(true)} size="icon" aria-label={t('common:import')}>
-                  <Upload className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{t('common:import')}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" onClick={handleExportSubscriptions} size="icon" aria-label={t('common:export')}>
-                  <Download className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{t('common:export')}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" onClick={handleExportSubscriptions} size="sm" className="h-9 gap-1.5 px-3.5" aria-label={t('common:export')}>
+                <Download className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{t('common:export')}</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{t('common:export')}</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
@@ -459,26 +445,26 @@ export function SubscriptionsPage() {
               <Button
                 variant="outline"
                 size="icon"
-                className="relative"
+                className={cn("relative shrink-0", selectedCategories.length > 0 && "border-primary/40")}
                 aria-label={t('subscription:filterByCategory')}
               >
                 <Tags className="h-4 w-4" />
                 {selectedCategories.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full w-4 h-4 text-[10px] flex items-center justify-center">
+                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
                     {selectedCategories.length}
                   </span>
                 )}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-56 p-0" align="end">
-              <div className="p-2">
-                <div className="font-medium text-sm flex items-center justify-between">
+              <div className="p-2.5">
+                <div className="flex items-center justify-between text-sm font-medium">
                   <span>{t('subscription:filterByCategory')}</span>
                   {selectedCategories.length > 0 && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-6 text-xs"
+                      className="h-6 px-2 text-xs"
                       onClick={() => setSelectedCategories([])}
                     >
                       {t('common:reset')}
@@ -487,12 +473,13 @@ export function SubscriptionsPage() {
                 </div>
               </div>
               <Separator />
-              <div className="max-h-72 overflow-y-auto">
+              <div className="max-h-72 overflow-y-auto p-1">
                 {usedCategories.map((category) => (
-                  <div
+                  <button
+                    type="button"
                     key={category.value}
                     className={cn(
-                      "flex items-center px-2 py-1.5 transition-colors hover:bg-muted cursor-pointer",
+                      "flex w-full items-center rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-muted",
                       selectedCategories.includes(category.value) && "bg-muted"
                     )}
                     onClick={() => toggleCategoryFilter(category.value)}
@@ -501,17 +488,17 @@ export function SubscriptionsPage() {
                       "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border",
                       selectedCategories.includes(category.value)
                         ? "border-primary bg-primary text-primary-foreground"
-                        : "opacity-50 border-primary"
+                        : "border-primary opacity-50"
                     )}>
                       {selectedCategories.includes(category.value) && (
                         <Check className="h-3 w-3" />
                       )}
                     </div>
                     <div className="text-sm">{category.label}</div>
-                    <Badge variant="outline" className="ml-auto text-xs">
-                      {subscriptions.filter(s => s.category?.value === category.value).length}
+                    <Badge variant="outline" className="ml-auto text-xs tabular-nums">
+                      {subscriptions.filter(s => s.categoryId === category.id || s.category?.value === category.value).length}
                     </Badge>
-                  </div>
+                  </button>
                 ))}
               </div>
             </PopoverContent>
@@ -523,26 +510,26 @@ export function SubscriptionsPage() {
               <Button
                 variant="outline"
                 size="icon"
-                className="relative"
+                className={cn("relative shrink-0", selectedBillingCycles.length > 0 && "border-primary/40")}
                 aria-label={t('subscription:filterByBillingCycle')}
               >
                 <CalendarIcon className="h-4 w-4" />
                 {selectedBillingCycles.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full w-4 h-4 text-[10px] flex items-center justify-center">
+                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
                     {selectedBillingCycles.length}
                   </span>
                 )}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-56 p-0" align="end">
-              <div className="p-2">
-                <div className="font-medium text-sm flex items-center justify-between">
+              <div className="p-2.5">
+                <div className="flex items-center justify-between text-sm font-medium">
                   <span>{t('subscription:filterByBillingCycle')}</span>
                   {selectedBillingCycles.length > 0 && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-6 text-xs"
+                      className="h-6 px-2 text-xs"
                       onClick={() => setSelectedBillingCycles([])}
                     >
                       {t('common:reset')}
@@ -551,12 +538,13 @@ export function SubscriptionsPage() {
                 </div>
               </div>
               <Separator />
-              <div className="max-h-72 overflow-y-auto">
+              <div className="max-h-72 overflow-y-auto p-1">
                 {usedBillingCycles.map((cycle) => (
-                  <div
+                  <button
+                    type="button"
                     key={cycle.value}
                     className={cn(
-                      "flex items-center px-2 py-1.5 transition-colors hover:bg-muted cursor-pointer",
+                      "flex w-full items-center rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-muted",
                       selectedBillingCycles.includes(cycle.value as BillingCycle) && "bg-muted"
                     )}
                     onClick={() => toggleBillingCycleFilter(cycle.value as BillingCycle)}
@@ -565,7 +553,7 @@ export function SubscriptionsPage() {
                       "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border",
                       selectedBillingCycles.includes(cycle.value as BillingCycle)
                         ? "border-primary bg-primary text-primary-foreground"
-                        : "opacity-50 border-primary"
+                        : "border-primary opacity-50"
                     )}>
                       {selectedBillingCycles.includes(cycle.value as BillingCycle) && (
                         <Check className="h-3 w-3" />
@@ -574,102 +562,75 @@ export function SubscriptionsPage() {
                     <div className="text-sm">{cycle.label}</div>
                     <Badge
                       variant={getBillingCycleBadgeVariant(cycle.value as BillingCycle)}
-                      className="ml-auto text-xs"
+                      className="ml-auto text-xs tabular-nums"
                     >
                       {subscriptions.filter(s => s.billingCycle === cycle.value).length}
                     </Badge>
-                  </div>
+                  </button>
                 ))}
               </div>
             </PopoverContent>
           </Popover>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-                  aria-label={`${t('subscription:sortByNextBilling')} (${sortOrder === 'asc' ? t('common:ascending') : t('common:descending')})`}
-                >
-                  {sortOrder === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{t('subscription:sortByNextBilling')} ({sortOrder === 'asc' ? t('common:ascending') : t('common:descending')})</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0"
+                onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                aria-label={`${t('subscription:sortByNextBilling')} (${sortOrder === 'asc' ? t('common:ascending') : t('common:descending')})`}
+              >
+                {sortOrder === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{t('subscription:sortByNextBilling')} ({sortOrder === 'asc' ? t('common:ascending') : t('common:descending')})</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
 
-        <div className="flex max-w-full items-center gap-1 overflow-x-auto rounded-full bg-secondary p-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className={currentView === 'all' ? 'bg-card shadow-sm' : 'text-muted-foreground'}
-            onClick={() => setCurrentView("all")}
-          >
-            {t('subscription:all')}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={currentView === 'active' ? 'bg-card shadow-sm' : 'text-muted-foreground'}
-            onClick={() => setCurrentView("active")}
-          >
-            {t('subscription:active')}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={currentView === 'trial' ? 'bg-card shadow-sm' : 'text-muted-foreground'}
-            onClick={() => setCurrentView("trial")}
-          >
-            {t('subscription:trial')}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={currentView === 'cancelled' ? 'bg-card shadow-sm' : 'text-muted-foreground'}
-            onClick={() => setCurrentView("cancelled")}
-          >
-            {t('subscription:cancelled')}
-          </Button>
+        <div
+          role="tablist"
+          aria-label={t('subscription:status')}
+          className="glass-tabs-list inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-full p-1 text-muted-foreground"
+        >
+          {(["all", "active", "trial", "cancelled"] as const).map((view) => (
+            <button
+              key={view}
+              type="button"
+              role="tab"
+              aria-selected={currentView === view}
+              data-state={currentView === view ? "active" : "inactive"}
+              className="glass-tabs-trigger inline-flex h-8 items-center justify-center whitespace-nowrap rounded-full px-3.5 text-xs font-medium transition-[background-color,color,box-shadow] duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={() => setCurrentView(view)}
+            >
+              {t(`subscription:${view}`)}
+            </button>
+          ))}
         </div>
       </div>
+      </TooltipProvider>
 
       {/* Display selected category filters */}
       {(selectedCategories.length > 0 || selectedBillingCycles.length > 0) && (
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="mb-4 flex flex-wrap gap-2">
           {selectedCategories.map(categoryValue => {
             const category = categories.find(c => c.value === categoryValue)
             return (
               <Badge
                 key={categoryValue}
                 variant="secondary"
-                className="flex items-center gap-1 px-2 py-1"
+                className="flex items-center gap-1 px-2.5 py-1"
               >
                 {category?.label || categoryValue}
                 <button
+                  type="button"
                   onClick={() => toggleCategoryFilter(categoryValue)}
-                  className="ml-1 rounded-full hover:bg-muted-foreground/20 p-0.5"
+                  className="ml-0.5 rounded-full p-0.5 transition-colors hover:bg-muted-foreground/20"
+                  aria-label={`${t('common:remove')} ${category?.label || categoryValue}`}
                 >
-                  <span className="sr-only">Remove</span>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-3 w-3"
-                  >
-                    <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-                  </svg>
+                  <X className="h-3 w-3" />
                 </button>
               </Badge>
             )
@@ -682,28 +643,16 @@ export function SubscriptionsPage() {
               <Badge
                 key={cycleValue}
                 variant={getBillingCycleBadgeVariant(cycleValue)}
-                className="flex items-center gap-1 px-2 py-1"
+                className="flex items-center gap-1 px-2.5 py-1"
               >
                 {cycle?.label || cycleValue}
                 <button
+                  type="button"
                   onClick={() => toggleBillingCycleFilter(cycleValue)}
-                  className="ml-1 rounded-full hover:bg-muted-foreground/20 p-0.5"
+                  className="ml-0.5 rounded-full p-0.5 transition-colors hover:bg-current/15"
+                  aria-label={`${t('common:remove')} ${cycle?.label || cycleValue}`}
                 >
-                  <span className="sr-only">Remove</span>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-3 w-3 text-white"
-                  >
-                    <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-                  </svg>
+                  <X className="h-3 w-3" />
                 </button>
               </Badge>
             )

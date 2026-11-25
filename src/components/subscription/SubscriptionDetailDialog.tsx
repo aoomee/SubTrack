@@ -15,7 +15,7 @@ import { useTranslation } from "react-i18next"
 import { Subscription, useSubscriptionStore } from "@/store/subscriptionStore"
 import {
   formatDate,
-  daysUntil,
+  signedDaysUntil,
   getCategoryLabel,
   getPaymentMethodLabel
 } from "@/lib/subscription-utils"
@@ -98,7 +98,8 @@ const ContentComponent = ({
 
   const categoryLabel = getCategoryLabel(subscription, categories)
   const paymentMethodLabel = getPaymentMethodLabel(subscription, paymentMethods)
-  const daysLeft = daysUntil(nextBillingDate)
+  const daysLeft = signedDaysUntil(nextBillingDate)
+  const isOverdue = daysLeft < 0
   const isExpiringSoon = daysLeft <= 7
 
   const getBadgeVariant = () => {
@@ -127,24 +128,27 @@ const ContentComponent = ({
 
   return (
     <div className="w-full">
-      <div className="grid w-full grid-cols-2 mb-4 h-10 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
+      <div
+        role="tablist"
+        className="glass-tabs-list mb-5 grid h-10 w-full grid-cols-2 items-center justify-center rounded-full p-1 text-muted-foreground"
+      >
         <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "details"}
+          data-state={activeTab === "details" ? "active" : "inactive"}
           onClick={() => setActiveTab("details")}
-          className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-2 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${
-            activeTab === "details"
-              ? "bg-background text-foreground shadow"
-              : ""
-          }`}
+          className="glass-tabs-trigger inline-flex h-8 items-center justify-center whitespace-nowrap rounded-full px-3 text-xs font-medium ring-offset-background transition-[background-color,color,box-shadow] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           {t('common:details')}
         </button>
         <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "payments"}
+          data-state={activeTab === "payments" ? "active" : "inactive"}
           onClick={() => setActiveTab("payments")}
-          className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-2 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${
-            activeTab === "payments"
-              ? "bg-background text-foreground shadow"
-              : ""
-          }`}
+          className="glass-tabs-trigger inline-flex h-8 items-center justify-center whitespace-nowrap rounded-full px-3 text-xs font-medium ring-offset-background transition-[background-color,color,box-shadow] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           {t('subscription:paymentHistory')}
         </button>
@@ -237,8 +241,8 @@ const ContentComponent = ({
             <span className="text-sm">{t('subscription:details.nextPayment')}</span>
             <div className="flex shrink-0 items-center justify-end gap-2">
               {isExpiringSoon && status === 'active' && (
-                <Badge variant={getBadgeVariant()} className="h-5 shrink-0 whitespace-nowrap rounded-md px-2 text-xs">
-                  {daysLeft === 0 ? t('common:today') : `${daysLeft} ${t('common:days')}`}
+                <Badge variant={getBadgeVariant()} className="h-5 shrink-0 whitespace-nowrap rounded-full px-2 text-xs">
+                  {isOverdue ? t('subscription:expired') : daysLeft === 0 ? t('common:today') : `${daysLeft} ${t('common:days')}`}
                 </Badge>
               )}
               <span className={`text-right text-sm tabular-nums ${isExpiringSoon ? "text-destructive font-medium" : ""}`}>
@@ -293,7 +297,7 @@ const ContentComponent = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => window.open(website, '_blank')}
+                onClick={() => window.open(website, '_blank', 'noopener,noreferrer')}
                 className="gap-2 text-sm h-9 w-full sm:w-auto"
               >
                 <ExternalLink className="h-4 w-4" />

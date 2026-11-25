@@ -62,7 +62,7 @@ export function ExpenseInfoCards({
         <CardContent className="p-5 sm:p-5">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <Calendar className="h-4 w-4" strokeWidth={1.8} />
               </span>
               <p className="truncate text-sm font-semibold">

@@ -16,23 +16,23 @@ interface CategoryPieChartProps {
 export function CategoryPieChart({ data, currency, className, descriptionKey }: CategoryPieChartProps) {
   const { t } = useTranslation('reports')
   const categories = useSubscriptionStore(state => state.categories)
-  return <Card className={className}>
+  return <Card className={`flex min-h-[340px] flex-col ${className || ''}`}>
     <CardHeader>
-      <CardTitle>{t('chart.spendingByCategory')}</CardTitle>
+      <CardTitle className="text-base">{t('chart.spendingByCategory')}</CardTitle>
       <CardDescription>{t(descriptionKey)}</CardDescription>
     </CardHeader>
-    <CardContent>
+    <CardContent className="flex flex-1 flex-col">
       {data.length ? <div className="space-y-5">
         {data.map((item, index) => <div key={item.category} className="space-y-2">
           <div className="flex items-center justify-between gap-3 text-xs">
             <span className="min-w-0 truncate font-medium">{categories.find(category => category.value === item.category)?.label || item.category}</span>
             <span className="shrink-0 font-semibold tabular-nums">{formatCurrencyAmount(item.amount, currency)}</span>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-secondary" aria-hidden="true"><div className="h-full rounded-full" style={{ width: `${Math.max(0, Math.min(100, item.percentage))}%`, background: `hsl(var(--chart-${index % 5 + 1}))` }} /></div>
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground"><span>{t('chart.subscriptions')}: {item.subscriptionCount}</span><span>{item.percentage.toFixed(1)}%</span></div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-secondary" aria-hidden="true"><div className="h-full rounded-full transition-[width] duration-500 ease-out" style={{ width: `${Math.max(0, Math.min(100, item.percentage))}%`, background: `hsl(var(--chart-${index % 5 + 1}))` }} /></div>
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground"><span>{t('chart.subscriptions')}: {item.subscriptionCount}</span><span className="tabular-nums">{item.percentage.toFixed(1)}%</span></div>
         </div>)}
-        <div className="flex justify-between border-t pt-4 text-xs"><span className="text-muted-foreground">{t('chart.total')}</span><span className="font-semibold">{formatCurrencyAmount(data.reduce((sum, item) => sum + item.amount, 0), currency)}</span></div>
-      </div> : <p className="flex min-h-48 items-center justify-center text-xs text-muted-foreground">{t('chart.noCategoryDataAvailable')}</p>}
+        <div className="flex justify-between border-t pt-4 text-xs"><span className="text-muted-foreground">{t('chart.total')}</span><span className="font-semibold tabular-nums">{formatCurrencyAmount(data.reduce((sum, item) => sum + item.amount, 0), currency)}</span></div>
+      </div> : <p className="flex min-h-[240px] flex-1 items-center justify-center text-xs text-muted-foreground">{t('chart.noCategoryDataAvailable')}</p>}
     </CardContent>
   </Card>
 }

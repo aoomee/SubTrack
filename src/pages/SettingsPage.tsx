@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { useSearchParams } from "react-router-dom"
-import { Download, Upload } from "lucide-react"
+import { Download, Loader2, Upload } from "lucide-react"
 
 import { Subscription } from "@/store/subscriptionStore"
 
@@ -48,7 +48,7 @@ import { useTheme } from "next-themes"
 import { useAuthStore } from "@/store/authStore"
 
 export function SettingsPage() {
-  const { t } = useTranslation(['settings', 'common'])
+  const { t } = useTranslation(['settings', 'common', 'subscription'])
   const [searchParams] = useSearchParams()
 
   const { toast } = useToast()
@@ -77,7 +77,7 @@ export function SettingsPage() {
     fetchSettings,
   } = useSettingsStore()
 
-  const { subscriptions, resetSubscriptions, addSubscription } = useSubscriptionStore()
+  const { subscriptions, resetSubscriptions, bulkAddSubscriptions, fetchSubscriptions } = useSubscriptionStore()
 
   const initializeSettings = useCallback(async () => {
     try {
@@ -170,13 +170,28 @@ export function SettingsPage() {
   }
 
   // Handle imports
-  const handleImportData = (subscriptionData: unknown[]) => {
-    subscriptionData.forEach((sub) => {
-      // Type guard to ensure sub has the required properties
-      if (sub && typeof sub === 'object' && 'name' in sub) {
-        addSubscription(sub as Omit<Subscription, "id" | "lastBillingDate">)
-      }
-    })
+  const handleImportData = async (subscriptionData: Omit<Subscription, "id">[]) => {
+    const validSubs = subscriptionData.filter(
+      (sub) => sub && typeof sub === 'object' && 'name' in sub
+    )
+    if (validSubs.length === 0) return
+
+    const { error } = await bulkAddSubscriptions(validSubs)
+    if (error) {
+      toast({
+        title: t('subscription:importFailed'),
+        description: error instanceof Error ? error.message : t('subscription:failedImport'),
+        variant: 'destructive',
+      })
+    } else {
+      toast({
+        title: t('subscription:importSuccess'),
+        description: t('subscription:subscriptionsImported', { count: validSubs.length }),
+      })
+      setIsImportModalOpen(false)
+    }
+
+    await fetchSubscriptions()
   }
 
   // Handle data reset with confirmation
@@ -268,7 +283,7 @@ export function SettingsPage() {
               <CardDescription>{t('changePasswordDesc')}</CardDescription>
             </CardHeader>
             <form onSubmit={handleChangePassword}>
-              <CardContent className="space-y-4">
+              <CardContent className="max-w-md space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="current-password">{t('currentPassword')}</Label>
                   <Input
@@ -309,18 +324,16 @@ export function SettingsPage() {
                   </p>
                 )}
                 {passwordSuccess && !passwordError && (
-                  <p className="text-sm text-emerald-600" role="status">
+                  <p className="text-sm text-success" role="status">
                     {passwordSuccess}
                   </p>
                 )}
               </CardContent>
-              <CardFooter className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <CardFooter>
                 <Button type="submit" disabled={isSubmittingPassword || isAuthLoading}>
-                  {isSubmittingPassword || isAuthLoading ? t('signingIn', { ns: 'auth' }) : t('changePassword')}
+                  {(isSubmittingPassword || isAuthLoading) && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {t('changePassword')}
                 </Button>
-                <p className="text-xs text-muted-foreground">
-                  {t('passwordRules')}
-                </p>
               </CardFooter>
             </form>
           </Card>

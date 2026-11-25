@@ -13,3 +13,12 @@ createRoot(document.getElementById('root')!).render(
     </BrowserRouter>
   </StrictMode>,
 )
+
+// Dismiss preloader smoothly on the next frame once React has mounted
+requestAnimationFrame(() => {
+  const preloader = document.getElementById('app-preloader')
+  if (preloader && !preloader.classList.contains('is-hiding')) {
+    preloader.classList.add('is-hiding')
+    window.setTimeout(() => preloader.remove(), 200)
+  }
+})

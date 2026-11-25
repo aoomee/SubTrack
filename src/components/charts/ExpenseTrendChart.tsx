@@ -225,7 +225,7 @@ export function ExpenseTrendChart({ data, categoryData, currency, className }: E
   }
   
   return (
-    <Card className={`min-h-[340px] ${className || ''}`}>
+    <Card className={`flex min-h-[340px] flex-col ${className || ''}`}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div>
           <CardTitle className="text-base">{t('chart.expenseTrends')}</CardTitle>
@@ -239,16 +239,16 @@ export function ExpenseTrendChart({ data, categoryData, currency, className }: E
         {categoryData && categoryData.length > 0 && (
         <div className="flex items-center gap-3">
           {/* 图表类型切换按钮 */}
-          <div className="flex items-center rounded-lg border bg-background p-0.5">
+          <div className="glass-tabs-list flex items-center rounded-full p-0.5">
             <Button
               variant={chartType === 'line' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setChartType('line')}
               aria-label="Line chart"
               aria-pressed={chartType === 'line'}
-              className="h-7 rounded-md px-2.5"
+              className="h-7 rounded-full px-2.5"
             >
-              <LineChartIcon className="h-3 w-3" />
+              <LineChartIcon className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant={chartType === 'groupedBar' ? 'default' : 'ghost'}
@@ -256,17 +256,17 @@ export function ExpenseTrendChart({ data, categoryData, currency, className }: E
               onClick={() => setChartType('groupedBar')}
               aria-label="Category bar chart"
               aria-pressed={chartType === 'groupedBar'}
-              className="h-7 rounded-md px-2.5"
+              className="h-7 rounded-full px-2.5"
             >
-              <BarChart3 className="h-3 w-3" />
+              <BarChart3 className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
         )}
       </CardHeader>
-      <CardContent className="px-2 sm:px-6">
+      <CardContent className="flex flex-1 flex-col px-2 sm:px-6">
         {(chartType === 'line' ? data.length === 0 : !categoryData || categoryData.length === 0) ? (
-          <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+          <div className="flex min-h-[240px] flex-1 items-center justify-center text-xs text-muted-foreground">
             {chartType === 'line' 
               ? t('chart.noExpenseDataAvailable')
               : t('chart.noCategoryDataAvailable')

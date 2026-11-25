@@ -40,7 +40,14 @@ function EditDialog({ open, onOpenChange, title, currentLabel, onSave }: EditDia
   const { t } = useTranslation(['common', 'settings'])
   const [name, setName] = useState(currentLabel)
 
-  const handleSave = () => {
+  useEffect(() => {
+    if (open) {
+      setName(currentLabel)
+    }
+  }, [open, currentLabel])
+
+  const handleSave = (event: React.FormEvent) => {
+    event.preventDefault()
     if (name.trim()) {
       onSave(name.trim())
       onOpenChange(false)
@@ -50,31 +57,32 @@ function EditDialog({ open, onOpenChange, title, currentLabel, onSave }: EditDia
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('settings:editOptionTitle', { type: title })}</DialogTitle>
-          <DialogDescription>
-            {t('settings:editOptionDesc', { type: title.toLowerCase() })}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div>
+        <form onSubmit={handleSave} className="space-y-4">
+          <DialogHeader>
+            <DialogTitle>{t('settings:editOptionTitle', { type: title })}</DialogTitle>
+            <DialogDescription>
+              {t('settings:editOptionDesc', { type: title.toLowerCase() })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
             <Label htmlFor="name">{t('common:name')}</Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t('settings:enterNamePlaceholder', { type: title.toLowerCase() })}
+              autoFocus
             />
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {t('common:cancel')}
-          </Button>
-          <Button onClick={handleSave} disabled={!name.trim()}>
-            {t('common:save')} {t('common:update')}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              {t('common:cancel')}
+            </Button>
+            <Button type="submit" disabled={!name.trim()}>
+              {t('common:save')}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )
@@ -91,7 +99,14 @@ function AddDialog({ open, onOpenChange, title, onAdd }: AddDialogProps) {
   const { t } = useTranslation(['common', 'settings'])
   const [name, setName] = useState('')
 
-  const handleAdd = () => {
+  useEffect(() => {
+    if (!open) {
+      setName('')
+    }
+  }, [open])
+
+  const handleAdd = (event: React.FormEvent) => {
+    event.preventDefault()
     if (name.trim()) {
       onAdd(name.trim())
       setName('')
@@ -102,31 +117,32 @@ function AddDialog({ open, onOpenChange, title, onAdd }: AddDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('settings:addOptionTitle', { type: title })}</DialogTitle>
-          <DialogDescription>
-            {t('settings:addOptionDesc', { type: title.toLowerCase() })}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div>
+        <form onSubmit={handleAdd} className="space-y-4">
+          <DialogHeader>
+            <DialogTitle>{t('settings:addOptionTitle', { type: title })}</DialogTitle>
+            <DialogDescription>
+              {t('settings:addOptionDesc', { type: title.toLowerCase() })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
             <Label htmlFor="new-name">{t('common:name')}</Label>
             <Input
               id="new-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t('settings:enterNamePlaceholder', { type: title.toLowerCase() })}
+              autoFocus
             />
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {t('common:cancel')}
-          </Button>
-          <Button onClick={handleAdd} disabled={!name.trim()}>
-            {t('settings:addOption', { type: title })}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              {t('common:cancel')}
+            </Button>
+            <Button type="submit" disabled={!name.trim()}>
+              {t('settings:addOption', { type: title })}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )
@@ -142,32 +158,32 @@ interface OptionItemProps {
 
 function OptionItem({ value, label, onEdit, onDelete, canDelete = true }: OptionItemProps) {
   return (
-    <div className="group relative p-3 border rounded-lg hover:shadow-md transition-all duration-200">
-      <div className="space-y-1">
-        <p className="font-medium">{label}</p>
-        <p className="text-xs text-muted-foreground">
+    <div className="group relative rounded-2xl border bg-card p-3.5 transition-[border-color,background-color] duration-200 hover:border-foreground/20 hover:bg-accent/35">
+      <div className="space-y-1 pr-12">
+        <p className="truncate text-sm font-medium">{label}</p>
+        <p className="truncate text-xs text-muted-foreground">
           {value}
         </p>
       </div>
-      <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute right-2 top-2.5 flex items-center gap-0.5 opacity-100 transition-opacity duration-150 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={onEdit}
-          className="h-6 w-6 p-0"
+          className="h-7 w-7"
           aria-label={`Edit ${label}`}
         >
-          <Edit className="h-3 w-3" />
+          <Edit className="h-3.5 w-3.5" />
         </Button>
         {canDelete && (
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={onDelete}
-            className="h-6 w-6 p-0"
+            className="h-7 w-7 text-muted-foreground hover:text-destructive"
             aria-label={`Delete ${label}`}
           >
-            <Trash2 className="h-3 w-3" />
+            <Trash2 className="h-3.5 w-3.5" />
           </Button>
         )}
       </div>
@@ -333,7 +349,7 @@ export function OptionsManager() {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="categories" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="w-fit">
           <TabsTrigger value="categories">{t('settings:categories')}</TabsTrigger>
           <TabsTrigger value="payment-methods">{t('settings:paymentMethods')}</TabsTrigger>
         </TabsList>

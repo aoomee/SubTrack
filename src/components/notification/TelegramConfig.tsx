@@ -291,7 +291,6 @@ export const TelegramConfig: React.FC<TelegramConfigProps> = ({ userId, onConfig
           {/* Natural height and symmetric padding keep the original three rows balanced. */}
           <Alert
             data-bot-summary
-            className="[&>svg+div]:translate-y-0"
             variant={botConfig && !botConfig.configured ? 'destructive' : 'default'}
           >
             <Settings className="h-4 w-4" />

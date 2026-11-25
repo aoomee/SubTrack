@@ -57,12 +57,12 @@ export function SubscriptionCard({ subscription, onEdit, onDelete, onStatusChang
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" onClick={event => event.stopPropagation()}>
-                <DropdownMenuItem onSelect={() => onEdit(id)}><Pencil className="mr-2 h-4 w-4" />{t('common:edit')}</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => onEdit(id)}><Pencil className="h-4 w-4" />{t('common:edit')}</DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => onStatusChange(id, status === 'active' ? 'cancelled' : 'active')}>
-                  {status === 'active' ? <Ban className="mr-2 h-4 w-4" /> : <RotateCcw className="mr-2 h-4 w-4" />}
+                  {status === 'active' ? <Ban className="h-4 w-4" /> : <RotateCcw className="h-4 w-4" />}
                   {t(`subscription:${status === 'active' ? 'cancelled' : 'active'}`)}
                 </DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => onDelete(id)}><Trash2 className="mr-2 h-4 w-4" />{t('common:delete')}</DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => onDelete(id)}><Trash2 className="h-4 w-4" />{t('common:delete')}</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

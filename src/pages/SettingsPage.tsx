@@ -349,11 +349,11 @@ export function SettingsPage() {
             </CardHeader>
             <CardContent className="flex flex-wrap gap-3">
               <Button variant="outline" onClick={handleExportData}>
-                <Download className="mr-2 h-4 w-4" />
+                <Download className="h-4 w-4" />
                 {t('exportData')}
               </Button>
               <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
-                <Upload className="mr-2 h-4 w-4" />
+                <Upload className="h-4 w-4" />
                 {t('importData')}
               </Button>
             </CardContent>

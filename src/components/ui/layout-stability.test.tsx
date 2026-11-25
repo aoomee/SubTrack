@@ -1,5 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
+import { AlertCircle } from 'lucide-react'
 import { afterEach, describe, expect, it } from 'vitest'
+import { Alert, AlertDescription, AlertTitle } from './alert'
 import { PageLoading } from './page-loading'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './dropdown-menu'
@@ -53,5 +55,22 @@ describe('UI layout stability and centering', () => {
 
     expect(screen.getByRole('menuitem', { name: 'Option A' })).toBeInTheDocument()
     expect(document.body).not.toHaveAttribute('data-scroll-locked')
+  })
+
+  it('aligns Alert icons with text in CSS grid without negative translate offsets', () => {
+    render(
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Notice</AlertTitle>
+        <AlertDescription>No records yet</AlertDescription>
+      </Alert>
+    )
+
+    const alert = screen.getByRole('alert')
+    expect(alert.className).toContain('grid')
+    expect(alert.className).not.toContain('translate-y-[-3px]')
+    expect(alert.className).not.toContain('[&>svg]:absolute')
+    expect(screen.getByText('Notice').className).toContain('leading-5')
+    expect(screen.getByText('No records yet').className).toContain('leading-5')
   })
 })

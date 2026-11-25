@@ -28,7 +28,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
     return (
       <div className="relative w-full">
         {icon && (
-          <div className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2">
+          <div className="pointer-events-none absolute left-3.5 top-1/2 flex -translate-y-1/2 items-center justify-center">
             {icon}
           </div>
         )}

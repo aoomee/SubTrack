@@ -365,7 +365,7 @@ export function OptionsManager() {
                   </CardDescription>
                 </div>
                 <Button onClick={() => handleAdd('category')}>
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4" />
                   {t('settings:addCategory')}
                 </Button>
               </div>
@@ -397,7 +397,7 @@ export function OptionsManager() {
                   </CardDescription>
                 </div>
                 <Button onClick={() => handleAdd('payment')}>
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4" />
                   {t('settings:addPaymentMethod')}
                 </Button>
               </div>

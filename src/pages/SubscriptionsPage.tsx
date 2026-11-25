@@ -704,11 +704,11 @@ export function SubscriptionsPage() {
           </p>
           <div className="flex gap-2">
             <Button onClick={() => setShowAddForm(true)}>
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4" />
               {t('subscription:add')}
             </Button>
             <Button variant="outline" onClick={() => setShowImportModal(true)}>
-              <Upload className="h-4 w-4 mr-2" />
+              <Upload className="h-4 w-4" />
               {t('subscription:importSubscriptions')}
             </Button>
           </div>

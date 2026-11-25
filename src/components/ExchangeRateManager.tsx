@@ -163,8 +163,8 @@ export function ExchangeRateManager() {
 
 
               {!exchangeRateConfigStatus?.tianApiConfigured && (
-                <div className="flex items-center gap-2 rounded-2xl border border-warning/25 bg-warning/10 p-3 text-warning">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
+                <div className="flex items-start gap-2 rounded-2xl border border-warning/25 bg-warning/10 p-3 text-warning">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                   <p className="text-xs leading-relaxed">
                     {t('notConfigured')}
                   </p>

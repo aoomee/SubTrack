@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { LogOut, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -9,6 +9,7 @@ import { useSettingsStore } from '@/store/settingsStore'
 import { Button } from '@/components/ui/button'
 import { SubTrackBrand } from '@/components/brand/SubTrackBrand'
 import { CURRENCY_SYMBOLS } from '@/config/constants'
+import { prefetchRoute } from '@/routes/prefetch'
 
 const NAV_LINKS = [
   ['/', 'dashboard'],
@@ -23,37 +24,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const { t, i18n } = useTranslation('navigation')
   const { user, logout } = useAuthStore()
   const currency = useSettingsStore(state => state.currency)
-  const contentRef = useRef<HTMLElement>(null)
   const isLogin = location.pathname === '/login'
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
   }, [location.pathname])
-  useLayoutEffect(() => {
-    const content = contentRef.current
-    if (!content || isLogin) return
-    let lastContentHeight = content.getBoundingClientRect().height
-    const retainLoadingHeight = () => {
-      const loading = Boolean(
-        content.querySelector(':scope > .page-loading, :scope > .ledger-page-enter > .page-loading')
-      )
-      if (loading) {
-        content.style.minHeight = `${lastContentHeight}px`
-      } else {
-        content.style.removeProperty('min-height')
-        lastContentHeight = content.getBoundingClientRect().height
-      }
-    }
-    const resize = new ResizeObserver(retainLoadingHeight)
-    const mutations = new MutationObserver(retainLoadingHeight)
-    resize.observe(content)
-    mutations.observe(content, { childList: true, subtree: true })
-    retainLoadingHeight()
-    return () => {
-      resize.disconnect()
-      mutations.disconnect()
-      content.style.removeProperty('min-height')
-    }
-  }, [isLogin])
 
   const language = i18n.resolvedLanguage || 'en'
   const currencyName = useMemo(
@@ -64,7 +38,14 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const navigation = (mobile = false) => (
     <nav aria-label={t(mobile ? 'mobileNavigation' : 'mainNavigation')} className={mobile ? 'ledger-mobile-nav' : 'ledger-nav'}>
       {NAV_LINKS.map(([path, label]) => (
-        <Link key={path} to={path} className="ledger-nav-link" aria-current={location.pathname === path ? 'page' : undefined}>
+        <Link
+          key={path}
+          to={path}
+          className="ledger-nav-link"
+          aria-current={location.pathname === path ? 'page' : undefined}
+          onMouseEnter={() => prefetchRoute(path)}
+          onFocus={() => prefetchRoute(path)}
+        >
           {t(label)}
         </Link>
       ))}
@@ -74,11 +55,11 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     <div className="ledger-shell">
       <a className="skip-link" href="#main-content">{t('skipToContent')}</a>
       <header className="ledger-header">
-        <Link to="/" className="brand-link" aria-label={t('brandName')}><SubTrackBrand /></Link>
+        <Link to="/" className="brand-link" aria-label={t('brandName')} onMouseEnter={() => prefetchRoute('/')}><SubTrackBrand /></Link>
         {!isLogin && user && navigation()}
         <div className="ml-auto flex items-center gap-2 md:ml-0">
           {!isLogin && user && (
-            <Link to="/settings?tab=currency" className="currency-shortcut" title={t('currencyShortcut')}>
+            <Link to="/settings?tab=currency" className="currency-shortcut" title={t('currencyShortcut')} onMouseEnter={() => prefetchRoute('/settings')}>
               <span>{CURRENCY_SYMBOLS[currency] || currency}</span>
               <span className="hidden sm:inline">{currencyName}</span>
               <span className="sm:hidden">{currency}</span>
@@ -87,14 +68,14 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           <ModeToggle />
           {!isLogin && user && (
             <Button asChild size="sm" className="h-8 gap-1.5 px-3.5">
-              <Link to="/subscriptions?add=1"><Plus className="h-3.5 w-3.5" />{t('add')}</Link>
+              <Link to="/subscriptions?add=1" onMouseEnter={() => prefetchRoute('/subscriptions')}><Plus className="h-3.5 w-3.5" />{t('add')}</Link>
             </Button>
           )}
           {isLogin && <LanguageSwitcher variant="secondary" className="h-8 w-8" />}
         </div>
       </header>
-      <main ref={contentRef} id="main-content" tabIndex={-1} className={isLogin ? 'flex min-h-[65vh] items-center justify-center' : 'ledger-content'}>
-        <div key={location.pathname} className={isLogin ? 'ledger-page-enter flex w-full justify-center' : 'ledger-page-enter min-h-[inherit]'}>
+      <main id="main-content" tabIndex={-1} className={isLogin ? 'flex flex-1 min-h-[65vh] items-center justify-center' : 'ledger-content'}>
+        <div key={location.pathname} className={isLogin ? 'ledger-page-enter flex w-full justify-center' : 'ledger-page-enter flex w-full flex-1 flex-col'}>
           {children}
         </div>
       </main>

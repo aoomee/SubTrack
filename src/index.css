@@ -73,6 +73,17 @@
   }
   * { @apply border-border; }
   html { scrollbar-gutter: stable; }
+  /* html already reserves the scrollbar gutter via scrollbar-gutter: stable;
+     prevent Radix/react-remove-scroll from collapsing the scrollbar or injecting
+     a second horizontal offset when opening selects, menus, or dialogs. */
+  html body[data-scroll-locked] {
+    overflow: visible !important;
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+    padding-right: 0 !important;
+    padding-left: 0 !important;
+    --removed-body-scroll-bar-size: 0px !important;
+  }
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter Variable', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
@@ -83,7 +94,7 @@
 }
 
 @layer components {
-  .ledger-shell { @apply mx-auto flex min-h-screen w-full max-w-[960px] flex-col px-4 pt-6 sm:px-6 sm:pt-10; padding-bottom: calc(7rem + env(safe-area-inset-bottom)); }
+  .ledger-shell { @apply mx-auto flex min-h-[100dvh] w-full max-w-[960px] flex-col px-4 pt-6 sm:px-6 sm:pt-10; padding-bottom: calc(7rem + env(safe-area-inset-bottom)); }
   .ledger-header { @apply mb-8 flex flex-wrap items-center justify-between gap-4 md:mb-10; }
   .brand-link { @apply inline-flex shrink-0 items-center text-foreground transition-opacity hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring; }
   .brand-lockup { @apply inline-flex items-center gap-2.5; }
@@ -101,8 +112,8 @@
   .ledger-page-heading h1 { @apply text-lg font-semibold tracking-tight; }
   .ledger-page-heading p { @apply mt-1 text-xs text-muted-foreground; }
   .service-avatar { @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-secondary text-sm font-semibold text-foreground; }
-  .ledger-content { flex: 1; min-width: 0; }
-  .ledger-content > .page-loading { min-height: inherit; }
+  .ledger-content { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+  .ledger-content .page-loading { flex: 1; }
   .dark [data-card] { box-shadow: none; }
 }
 

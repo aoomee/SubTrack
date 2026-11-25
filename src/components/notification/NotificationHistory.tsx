@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { notificationApi, NotificationHistory as NotificationHistoryType, NotificationStats } from '@/services/notificationApi';
+import { useNotificationHistoryStore } from '@/store/notificationHistoryStore';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/utils/date';
 import { LoadingIndicator } from '@/components/ui/loading-indicator';
@@ -115,28 +116,38 @@ const renderDetailIcon = (iconKey: 'date' | 'amount' | 'payment' | 'plan' | 'tip
 export const NotificationHistory: React.FC = () => {
   const { t } = useTranslation('notification');
   const { toast } = useToast();
-  
-  const [history, setHistory] = useState<NotificationHistoryType[]>([]);
-  const [stats, setStats] = useState<NotificationStats | null>(null);
-  const [historyLoading, setHistoryLoading] = useState(true);
-  const [statsLoading, setStatsLoading] = useState(true);
-  const [isInitializing, setIsInitializing] = useState(true);
+  const cachedStore = useNotificationHistoryStore();
+  const hasWarmCache = cachedStore.hasLoaded;
+
+  const [history, setHistory] = useState<NotificationHistoryType[]>(() =>
+    hasWarmCache ? cachedStore.history : []
+  );
+  const [stats, setStats] = useState<NotificationStats | null>(() =>
+    hasWarmCache ? cachedStore.stats : null
+  );
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(() => !hasWarmCache);
   const initialLoadRef = useRef(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [channelFilter, setChannelFilter] = useState<string>('all');
-  const [historyPagination, setHistoryPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    totalPages: 0
-  });
+  const [historyPagination, setHistoryPagination] = useState(() =>
+    hasWarmCache
+      ? cachedStore.pagination
+      : {
+          page: 1,
+          limit: 10,
+          total: 0,
+          totalPages: 0,
+        }
+  );
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
 
-  const loadHistory = useCallback(async (page = 1) => {
+  const loadHistory = useCallback(async (page = 1, silent = false) => {
     try {
-      setHistoryLoading(true);
+      if (!silent) setHistoryLoading(true);
       const params: { page: number; limit: number; status?: string; type?: string } = {
         page,
         limit: historyPagination.limit
@@ -153,13 +164,22 @@ export const NotificationHistory: React.FC = () => {
       // as backend doesn't support these filters yet
       
       const response = await notificationApi.getHistory(params);
-      setHistory(Array.isArray(response.data) ? response.data : []);
-      setHistoryPagination(prev => ({
-        ...prev,
+      const nextHistory = Array.isArray(response.data) ? response.data : [];
+      const nextPagination = {
+        limit: historyPagination.limit,
         page: response.pagination.page,
         total: response.pagination.total,
         totalPages: Math.ceil(response.pagination.total / response.pagination.limit)
-      }));
+      };
+      setHistory(nextHistory);
+      setHistoryPagination(nextPagination);
+
+      if (page === 1 && statusFilter === 'all' && typeFilter === 'all') {
+        useNotificationHistoryStore.getState().setSnapshot({
+          history: nextHistory,
+          pagination: nextPagination,
+        });
+      }
     } catch (error) {
       console.error('Failed to load notification history:', error);
       toast({
@@ -167,29 +187,32 @@ export const NotificationHistory: React.FC = () => {
         description: t('fetchSettingsError'),
         variant: 'destructive'
       });
-      setHistory([]);
+      if (!silent) setHistory([]);
     } finally {
-      setHistoryLoading(false);
+      if (!silent) setHistoryLoading(false);
     }
   }, [historyPagination.limit, statusFilter, typeFilter, t, toast]);
 
-  const loadStats = useCallback(async () => {
+  const loadStats = useCallback(async (silent = false) => {
     try {
-      setStatsLoading(true);
+      if (!silent) setStatsLoading(true);
       const response = await notificationApi.getStats();
       setStats(response);
+      useNotificationHistoryStore.getState().setStats(response);
     } catch (error) {
       console.error('Failed to load notification stats:', error);
-      setStats(null);
+      if (!silent) setStats(null);
     } finally {
-      setStatsLoading(false);
+      if (!silent) setStatsLoading(false);
     }
   }, []);
 
   useEffect(() => {
     if (initialLoadRef.current) {
       initialLoadRef.current = false;
-      Promise.all([loadHistory(1), loadStats()]).finally(() => {
+      const silent = useNotificationHistoryStore.getState().hasLoaded;
+      Promise.all([loadHistory(1, silent), loadStats(silent)]).finally(() => {
+        useNotificationHistoryStore.getState().markLoaded();
         setIsInitializing(false);
       });
       return;
@@ -197,7 +220,7 @@ export const NotificationHistory: React.FC = () => {
 
     // Reload data when status or type filter changes.
     setHistoryPagination(prev => ({ ...prev, page: 1 }));
-    loadHistory(1);
+    loadHistory(1, false);
   }, [statusFilter, typeFilter, loadHistory, loadStats]);
 
   const handlePageChange = (page: number) => {
@@ -379,7 +402,7 @@ export const NotificationHistory: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="relative" aria-busy={historyLoading}>
-          {historyLoading && <div className="absolute inset-0 z-10 flex items-center justify-center rounded-b-2xl bg-card/70">
+          {historyLoading && <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-card/75 backdrop-blur-[1px]">
             <LoadingIndicator size="md" />
           </div>}
           {filteredHistory.length === 0 ? (

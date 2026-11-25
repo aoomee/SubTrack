@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { ChevronDown } from 'lucide-react'
 import { useSubscriptionStore } from "@/store/subscriptionStore"
 import { useSettingsStore } from "@/store/settingsStore"
+import { useExpenseReportsStore } from "@/store/expenseReportsStore"
 import {
   getApiMonthlyExpenses,
   getApiCategoryExpenses,
@@ -28,352 +29,275 @@ import { apiClient } from '@/utils/api-client'
 import { formatCurrencyAmount } from '@/utils/currency'
 import type { PaymentRecordApi } from '@/utils/dataTransform'
 
-
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { LoadingIndicator } from "@/components/ui/loading-indicator"
 import { PageLoading } from "@/components/ui/page-loading"
-
 
 export function ExpenseReportsPage() {
   const { fetchSubscriptions, fetchCategories } = useSubscriptionStore()
   const { t } = useTranslation(['reports', 'common'])
   const { currency: userCurrency, fetchSettings } = useSettingsStore()
-  const [isInitializingData, setIsInitializingData] = useState(() =>
-    !useSettingsStore.getState().hasLoaded || !useSubscriptionStore.getState().hasLoaded
-  )
-  
-  // Filter states
-  const [selectedDateRange] = useState('Last 12 Months')
-  const [selectedYearlyDateRange] = useState(() => {
-    const currentYear = new Date().getFullYear()
-    return `${currentYear - 2} - ${currentYear}`
-  })
 
+  const cachedStore = useExpenseReportsStore()
+  const hasWarmCache = cachedStore.hasLoaded && cachedStore.currency === userCurrency
+
+  const [isInitializingData, setIsInitializingData] = useState(() => !hasWarmCache)
   const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(false)
 
-  // Fetch data when component mounts
-  const initializeData = useCallback(async () => {
-    try {
-      await Promise.all([fetchSubscriptions(), fetchCategories(), fetchSettings()])
-    } finally {
-      setIsInitializingData(false)
-    }
-  }, [fetchSubscriptions, fetchCategories, fetchSettings])
-
-  useEffect(() => {
-    initializeData()
-  }, [initializeData])
-
-  // Get date range presets - create stable date range
+  // Stable date ranges
   const currentDateRange = useMemo(() => {
     const now = new Date()
-    const currentYear = now.getFullYear()
-    const currentMonth = now.getMonth()
-
-    const presets = {
-      'Last 3 Months': {
-        startDate: new Date(currentYear, currentMonth - 2, 1),
-        endDate: now
-      },
-      'Last 6 Months': {
-        startDate: new Date(currentYear, currentMonth - 5, 1),
-        endDate: now
-      },
-      'Last 12 Months': {
-        startDate: new Date(currentYear, currentMonth - 11, 1),
-        endDate: now
-      },
-      'This Year': {
-        startDate: new Date(currentYear, 0, 1),
-        endDate: now
-      },
-      'Last Year': {
-        startDate: new Date(currentYear - 1, 0, 1),
-        endDate: new Date(currentYear - 1, 11, 31)
-      }
+    return {
+      startDate: new Date(now.getFullYear(), now.getMonth() - 11, 1),
+      endDate: now,
     }
-
-    return presets[selectedDateRange as keyof typeof presets] || presets['Last 12 Months']
-  }, [selectedDateRange])
-
-  // Get yearly date range presets (fixed recent 3 years)
-  const yearlyDateRangePresets = useMemo(() => {
-    const now = new Date()
-    const currentYear = now.getFullYear()
-    const currentMonth = now.getMonth() // 0-11
-    return [
-      {
-        label: `${currentYear - 2} - ${currentYear}`,
-        startDate: new Date(currentYear - 2, 0, 1), // January 1st of 3 years ago
-        endDate: new Date(currentYear, currentMonth, new Date(currentYear, currentMonth + 1, 0).getDate()) // Last day of current month
-      }
-    ]
   }, [])
 
   const currentYearlyDateRange = useMemo(() => {
-    return yearlyDateRangePresets.find(preset => preset.label === selectedYearlyDateRange)
-      || yearlyDateRangePresets[0] // Default to Recent 3 Years
-  }, [selectedYearlyDateRange, yearlyDateRangePresets])
-  
-  // State for API data
-  const [monthlyExpenses, setMonthlyExpenses] = useState<MonthlyExpense[]>([])
-  const [yearlyExpenses, setYearlyExpenses] = useState<YearlyExpense[]>([])
-  const [categoryExpenses, setCategoryExpenses] = useState<CategoryExpense[]>([])
-  const [yearlyCategoryExpenses, setYearlyCategoryExpenses] = useState<CategoryExpense[]>([])
-  const [monthlyCategoryExpenses, setMonthlyCategoryExpenses] = useState<{ month: string; monthKey: string; year: number; categories: { [categoryName: string]: number }; total: number }[]>([])
-  const [yearlyGroupedCategoryExpenses, setYearlyGroupedCategoryExpenses] = useState<{ year: number; categories: { [categoryName: string]: number }; total: number }[]>([])
+    const now = new Date()
+    const currentYear = now.getFullYear()
+    const currentMonth = now.getMonth()
+    return {
+      startDate: new Date(currentYear - 2, 0, 1),
+      endDate: new Date(currentYear, currentMonth, new Date(currentYear, currentMonth + 1, 0).getDate()),
+    }
+  }, [])
 
-  // State for expense info data
-  const [expenseInfoData, setExpenseInfoData] = useState<{
-    monthly: ExpenseInfoData[]
-    quarterly: ExpenseInfoData[]
-    yearly: ExpenseInfoData[]
-  }>({
-    monthly: [],
-    quarterly: [],
-    yearly: []
-  })
+  // Local state hydrated immediately from cache when available
+  const [monthlyExpenses, setMonthlyExpenses] = useState<MonthlyExpense[]>(() =>
+    hasWarmCache ? cachedStore.monthlyExpenses : []
+  )
+  const [yearlyExpenses, setYearlyExpenses] = useState<YearlyExpense[]>(() =>
+    hasWarmCache ? cachedStore.yearlyExpenses : []
+  )
+  const [categoryExpenses, setCategoryExpenses] = useState<CategoryExpense[]>(() =>
+    hasWarmCache ? cachedStore.categoryExpenses : []
+  )
+  const [yearlyCategoryExpenses, setYearlyCategoryExpenses] = useState<CategoryExpense[]>(() =>
+    hasWarmCache ? cachedStore.yearlyCategoryExpenses : []
+  )
+  const [monthlyCategoryExpenses, setMonthlyCategoryExpenses] = useState(() =>
+    hasWarmCache ? cachedStore.monthlyCategoryExpenses : []
+  )
+  const [yearlyGroupedCategoryExpenses, setYearlyGroupedCategoryExpenses] = useState(() =>
+    hasWarmCache ? cachedStore.yearlyGroupedCategoryExpenses : []
+  )
+  const [expenseInfoData, setExpenseInfoData] = useState(() =>
+    hasWarmCache
+      ? cachedStore.expenseInfoData
+      : { monthly: [] as ExpenseInfoData[], quarterly: [] as ExpenseInfoData[], yearly: [] as ExpenseInfoData[] }
+  )
 
-  const [isLoadingExpenses, setIsLoadingExpenses] = useState(true)
-  const [isLoadingYearlyExpenses, setIsLoadingYearlyExpenses] = useState(true)
-  const [isLoadingCategoryExpenses, setIsLoadingCategoryExpenses] = useState(true)
-  const [isLoadingYearlyCategoryExpenses, setIsLoadingYearlyCategoryExpenses] = useState(true)
-  const [isLoadingMonthlyCategoryExpenses, setIsLoadingMonthlyCategoryExpenses] = useState(true)
-  const [isLoadingYearlyGroupedCategoryExpenses, setIsLoadingYearlyGroupedCategoryExpenses] = useState(true)
+  const [isLoadingExpenses, setIsLoadingExpenses] = useState(!hasWarmCache)
+  const [isLoadingYearlyExpenses, setIsLoadingYearlyExpenses] = useState(!hasWarmCache)
+  const [isLoadingCategoryExpenses, setIsLoadingCategoryExpenses] = useState(!hasWarmCache)
+  const [isLoadingYearlyCategoryExpenses, setIsLoadingYearlyCategoryExpenses] = useState(!hasWarmCache)
+  const [isLoadingMonthlyCategoryExpenses, setIsLoadingMonthlyCategoryExpenses] = useState(!hasWarmCache)
+  const [isLoadingYearlyGroupedCategoryExpenses, setIsLoadingYearlyGroupedCategoryExpenses] = useState(!hasWarmCache)
+  const [isLoadingExpenseInfo, setIsLoadingExpenseInfo] = useState(!hasWarmCache)
 
-  const [isLoadingExpenseInfo, setIsLoadingExpenseInfo] = useState(true)
   const [expenseError, setExpenseError] = useState<string | null>(null)
   const [yearlyExpenseError, setYearlyExpenseError] = useState<string | null>(null)
   const [categoryExpenseError, setCategoryExpenseError] = useState<string | null>(null)
   const [yearlyCategoryExpenseError, setYearlyCategoryExpenseError] = useState<string | null>(null)
-  const [, setMonthlyCategoryExpenseError] = useState<string | null>(null)
-  const [, setYearlyGroupedCategoryExpenseError] = useState<string | null>(null)
-
   const [expenseInfoError, setExpenseInfoError] = useState<string | null>(null)
 
-  // Load expense info data (recent periods)
-  useEffect(() => {
-    const loadExpenseInfoData = async () => {
+  const loadAllReportData = useCallback(async () => {
+    const store = useExpenseReportsStore.getState()
+    const warm = store.hasLoaded && store.currency === userCurrency
+
+    if (warm) {
+      setMonthlyExpenses(store.monthlyExpenses)
+      setYearlyExpenses(store.yearlyExpenses)
+      setCategoryExpenses(store.categoryExpenses)
+      setYearlyCategoryExpenses(store.yearlyCategoryExpenses)
+      setMonthlyCategoryExpenses(store.monthlyCategoryExpenses)
+      setYearlyGroupedCategoryExpenses(store.yearlyGroupedCategoryExpenses)
+      setExpenseInfoData(store.expenseInfoData)
+      setIsInitializingData(false)
+      setIsLoadingExpenses(false)
+      setIsLoadingYearlyExpenses(false)
+      setIsLoadingCategoryExpenses(false)
+      setIsLoadingYearlyCategoryExpenses(false)
+      setIsLoadingMonthlyCategoryExpenses(false)
+      setIsLoadingYearlyGroupedCategoryExpenses(false)
+      setIsLoadingExpenseInfo(false)
+    } else {
+      setIsInitializingData(true)
+      setIsLoadingExpenses(true)
+      setIsLoadingYearlyExpenses(true)
+      setIsLoadingCategoryExpenses(true)
+      setIsLoadingYearlyCategoryExpenses(true)
+      setIsLoadingMonthlyCategoryExpenses(true)
+      setIsLoadingYearlyGroupedCategoryExpenses(true)
       setIsLoadingExpenseInfo(true)
-      setExpenseInfoError(null)
+    }
 
-      try {
-        // Get recent 12 months of data for expense info
-        const endDate = new Date()
-        const startDate = new Date()
-        startDate.setMonth(startDate.getMonth() - 12)
+    setExpenseError(null)
+    setYearlyExpenseError(null)
+    setCategoryExpenseError(null)
+    setYearlyCategoryExpenseError(null)
+    setExpenseInfoError(null)
 
-        // Payment-detail cards retain cash totals; charts show allocated costs.
-        const allMonthlyData = await getApiMonthlyExpenses(startDate, endDate, userCurrency, 'cash')
+    const cashEnd = new Date()
+    const cashStart = new Date()
+    cashStart.setMonth(cashStart.getMonth() - 12)
 
-        // Process API data
-        if (allMonthlyData && allMonthlyData.length > 0) {
-          const { monthlyExpenses: recentMonthly, quarterlyExpenses: recentQuarterly, yearlyExpenses: recentYearly } = filterRecentExpenses(allMonthlyData)
+    const [
+      ,
+      ,
+      ,
+      monthlyRes,
+      monthlyCatRes,
+      catRes,
+      yearlyMonthlyRes,
+      yearlyCatRes,
+      yearlyGroupedRes,
+      cashMonthlyRes,
+    ] = await Promise.allSettled([
+      fetchSubscriptions(),
+      fetchCategories(),
+      fetchSettings(),
+      getApiMonthlyExpenses(currentDateRange.startDate, currentDateRange.endDate, userCurrency),
+      getApiMonthlyCategoryExpenses(currentDateRange.startDate, currentDateRange.endDate, userCurrency),
+      getApiCategoryExpenses(currentDateRange.startDate, currentDateRange.endDate, userCurrency),
+      getApiMonthlyExpenses(currentYearlyDateRange.startDate, currentYearlyDateRange.endDate, userCurrency),
+      getApiCategoryExpenses(currentYearlyDateRange.startDate, currentYearlyDateRange.endDate, userCurrency),
+      getApiYearlyCategoryExpenses(currentYearlyDateRange.startDate, currentYearlyDateRange.endDate, userCurrency),
+      getApiMonthlyExpenses(cashStart, cashEnd, userCurrency, 'cash'),
+    ])
 
-          // Convert to expense info format
-          const monthlyInfo = convertMonthlyExpensesToInfo(recentMonthly, userCurrency)
-          const quarterlyInfo = calculateQuarterlyExpenses(recentQuarterly, userCurrency)
-          const yearlyInfo = calculateYearlyExpenses(recentYearly, userCurrency)
+    let nextMonthly = store.currency === userCurrency ? store.monthlyExpenses : []
+    if (monthlyRes.status === 'fulfilled') {
+      nextMonthly = monthlyRes.value
+      setMonthlyExpenses(nextMonthly)
+    } else {
+      console.error('Failed to load monthly expense data:', monthlyRes.reason)
+      setExpenseError(monthlyRes.reason instanceof Error ? monthlyRes.reason.message : 'Failed to load monthly expense data')
+    }
 
-          // Count real payment-history records with a single batched request instead of N+1 requests
-          const allItems = [...monthlyInfo, ...quarterlyInfo, ...yearlyInfo]
-          let allRecords: PaymentRecordApi[] = []
-          if (allItems.length > 0) {
-            const minStart = allItems.reduce((min, item) => (item.startDate < min ? item.startDate : min), allItems[0].startDate)
-            const maxEnd = allItems.reduce((max, item) => (item.endDate > max ? item.endDate : max), allItems[0].endDate)
-            try {
-              allRecords = await apiClient.get<PaymentRecordApi[]>(
-                `/payment-history?start_date=${minStart}&end_date=${maxEnd}&status=succeeded`
-              )
-            } catch {
-              allRecords = []
-            }
+    let nextMonthlyCat = store.currency === userCurrency ? store.monthlyCategoryExpenses : []
+    if (monthlyCatRes.status === 'fulfilled') {
+      nextMonthlyCat = monthlyCatRes.value
+      setMonthlyCategoryExpenses(nextMonthlyCat)
+    } else {
+      console.error('Failed to load monthly category expense data:', monthlyCatRes.reason)
+    }
+
+    let nextCat = store.currency === userCurrency ? store.categoryExpenses : []
+    if (catRes.status === 'fulfilled') {
+      nextCat = catRes.value
+      setCategoryExpenses(nextCat)
+    } else {
+      console.error('Failed to load category expense data:', catRes.reason)
+      setCategoryExpenseError(catRes.reason instanceof Error ? catRes.reason.message : 'Failed to load category expense data')
+    }
+
+    let nextYearly = store.currency === userCurrency ? store.yearlyExpenses : []
+    if (yearlyMonthlyRes.status === 'fulfilled') {
+      nextYearly = calculateYearlyExpensesFromMonthly(yearlyMonthlyRes.value)
+      setYearlyExpenses(nextYearly)
+    } else {
+      console.error('Failed to load yearly expense data:', yearlyMonthlyRes.reason)
+      setYearlyExpenseError(yearlyMonthlyRes.reason instanceof Error ? yearlyMonthlyRes.reason.message : 'Failed to load yearly expense data')
+    }
+
+    let nextYearlyCat = store.currency === userCurrency ? store.yearlyCategoryExpenses : []
+    if (yearlyCatRes.status === 'fulfilled') {
+      nextYearlyCat = yearlyCatRes.value
+      setYearlyCategoryExpenses(nextYearlyCat)
+    } else {
+      console.error('Failed to load yearly category expense data:', yearlyCatRes.reason)
+      setYearlyCategoryExpenseError(yearlyCatRes.reason instanceof Error ? yearlyCatRes.reason.message : 'Failed to load yearly category expense data')
+    }
+
+    let nextYearlyGrouped = store.currency === userCurrency ? store.yearlyGroupedCategoryExpenses : []
+    if (yearlyGroupedRes.status === 'fulfilled') {
+      nextYearlyGrouped = yearlyGroupedRes.value
+      setYearlyGroupedCategoryExpenses(nextYearlyGrouped)
+    } else {
+      console.error('Failed to load yearly grouped category expense data:', yearlyGroupedRes.reason)
+    }
+
+    let nextExpenseInfo = store.currency === userCurrency
+      ? store.expenseInfoData
+      : { monthly: [] as ExpenseInfoData[], quarterly: [] as ExpenseInfoData[], yearly: [] as ExpenseInfoData[] }
+
+    if (cashMonthlyRes.status === 'fulfilled') {
+      const allMonthlyData = cashMonthlyRes.value
+      if (allMonthlyData && allMonthlyData.length > 0) {
+        const { monthlyExpenses: recentMonthly, quarterlyExpenses: recentQuarterly, yearlyExpenses: recentYearly } = filterRecentExpenses(allMonthlyData)
+        const monthlyInfo = convertMonthlyExpensesToInfo(recentMonthly, userCurrency)
+        const quarterlyInfo = calculateQuarterlyExpenses(recentQuarterly, userCurrency)
+        const yearlyInfo = calculateYearlyExpenses(recentYearly, userCurrency)
+
+        const allItems = [...monthlyInfo, ...quarterlyInfo, ...yearlyInfo]
+        let allRecords: PaymentRecordApi[] = []
+        if (allItems.length > 0) {
+          const minStart = allItems.reduce((min, item) => (item.startDate < min ? item.startDate : min), allItems[0].startDate)
+          const maxEnd = allItems.reduce((max, item) => (item.endDate > max ? item.endDate : max), allItems[0].endDate)
+          try {
+            allRecords = await apiClient.get<PaymentRecordApi[]>(
+              `/payment-history?start_date=${minStart}&end_date=${maxEnd}&status=succeeded`
+            )
+          } catch {
+            allRecords = []
           }
+        }
 
-          const fillAccurateCounts = (list: ExpenseInfoData[]): ExpenseInfoData[] => {
-            if (!allRecords.length) return list
-            return list.map((item) => {
-              const count = allRecords.filter((rec) => {
-                const dateStr = (rec.payment_date || '').slice(0, 10)
-                return dateStr >= item.startDate && dateStr <= item.endDate
-              }).length
-              return { ...item, paymentCount: count }
-            })
-          }
-
-          setExpenseInfoData({
-            monthly: fillAccurateCounts(monthlyInfo),
-            quarterly: fillAccurateCounts(quarterlyInfo),
-            yearly: fillAccurateCounts(yearlyInfo)
-          })
-        } else {
-          // No data available, set empty state
-          setExpenseInfoData({
-            monthly: [],
-            quarterly: [],
-            yearly: []
+        const fillAccurateCounts = (list: ExpenseInfoData[]): ExpenseInfoData[] => {
+          if (!allRecords.length) return list
+          return list.map((item) => {
+            const count = allRecords.filter((rec) => {
+              const dateStr = (rec.payment_date || '').slice(0, 10)
+              return dateStr >= item.startDate && dateStr <= item.endDate
+            }).length
+            return { ...item, paymentCount: count }
           })
         }
 
-      } catch (error) {
-        console.error('Failed to load expense info data:', error)
-        setExpenseInfoError(error instanceof Error ? error.message : 'Failed to load expense info data')
-
-        // Set empty state on error
-        setExpenseInfoData({
-          monthly: [],
-          quarterly: [],
-          yearly: []
-        })
-      } finally {
-        setIsLoadingExpenseInfo(false)
+        nextExpenseInfo = {
+          monthly: fillAccurateCounts(monthlyInfo),
+          quarterly: fillAccurateCounts(quarterlyInfo),
+          yearly: fillAccurateCounts(yearlyInfo),
+        }
+      } else {
+        nextExpenseInfo = { monthly: [], quarterly: [], yearly: [] }
       }
+      setExpenseInfoData(nextExpenseInfo)
+    } else {
+      console.error('Failed to load expense info data:', cashMonthlyRes.reason)
+      setExpenseInfoError(cashMonthlyRes.reason instanceof Error ? cashMonthlyRes.reason.message : 'Failed to load expense info data')
+      setExpenseInfoData({ monthly: [], quarterly: [], yearly: [] })
     }
 
-    loadExpenseInfoData()
-  }, [userCurrency])
+    if (monthlyRes.status === 'fulfilled') {
+      useExpenseReportsStore.getState().setReportData({
+        currency: userCurrency,
+        monthlyExpenses: nextMonthly,
+        yearlyExpenses: nextYearly,
+        categoryExpenses: nextCat,
+        yearlyCategoryExpenses: nextYearlyCat,
+        monthlyCategoryExpenses: nextMonthlyCat,
+        yearlyGroupedCategoryExpenses: nextYearlyGrouped,
+        expenseInfoData: nextExpenseInfo,
+      })
+    }
 
-  // Load monthly expense data from API
+    setIsLoadingExpenses(false)
+    setIsLoadingYearlyExpenses(false)
+    setIsLoadingCategoryExpenses(false)
+    setIsLoadingYearlyCategoryExpenses(false)
+    setIsLoadingMonthlyCategoryExpenses(false)
+    setIsLoadingYearlyGroupedCategoryExpenses(false)
+    setIsLoadingExpenseInfo(false)
+    setIsInitializingData(false)
+  }, [currentDateRange, currentYearlyDateRange, fetchCategories, fetchSettings, fetchSubscriptions, userCurrency])
+
   useEffect(() => {
-    const loadMonthlyExpenseData = async () => {
-      setIsLoadingExpenses(true)
-      setExpenseError(null)
-
-      try {
-        // Fetch monthly expenses from API
-        const monthlyData = await getApiMonthlyExpenses(currentDateRange.startDate, currentDateRange.endDate, userCurrency);
-        setMonthlyExpenses(monthlyData)
-
-      } catch (error) {
-        console.error('Failed to load monthly expense data:', error)
-        setExpenseError(error instanceof Error ? error.message : 'Failed to load monthly expense data')
-      } finally {
-        setIsLoadingExpenses(false)
-      }
-    }
-
-    const loadMonthlyCategoryExpenseData = async () => {
-      setIsLoadingMonthlyCategoryExpenses(true)
-      setMonthlyCategoryExpenseError(null)
-
-      try {
-        // Fetch monthly category expenses from API
-        const monthlyCategoryData = await getApiMonthlyCategoryExpenses(currentDateRange.startDate, currentDateRange.endDate, userCurrency);
-        setMonthlyCategoryExpenses(monthlyCategoryData)
-
-      } catch (error) {
-        console.error('Failed to load monthly category expense data:', error)
-        setMonthlyCategoryExpenseError(error instanceof Error ? error.message : 'Failed to load monthly category expense data')
-      } finally {
-        setIsLoadingMonthlyCategoryExpenses(false)
-      }
-    }
-
-    loadMonthlyExpenseData()
-    loadMonthlyCategoryExpenseData()
-  }, [currentDateRange, userCurrency])
-
-  // Load category expense data from API
-  useEffect(() => {
-    const loadCategoryExpenseData = async () => {
-      setIsLoadingCategoryExpenses(true)
-      setCategoryExpenseError(null)
-
-      try {
-        // Fetch category expenses from API
-        const categoryData = await getApiCategoryExpenses(currentDateRange.startDate, currentDateRange.endDate, userCurrency);
-        setCategoryExpenses(categoryData)
-
-      } catch (error) {
-        console.error('Failed to load category expense data:', error)
-        setCategoryExpenseError(error instanceof Error ? error.message : 'Failed to load category expense data')
-      } finally {
-        setIsLoadingCategoryExpenses(false)
-      }
-    }
-
-    loadCategoryExpenseData()
-  }, [currentDateRange, userCurrency])
-
-  // Load yearly expense data from API (using separate date range)
-  useEffect(() => {
-    const loadYearlyExpenseData = async () => {
-      setIsLoadingYearlyExpenses(true)
-      setYearlyExpenseError(null)
-
-      try {
-        // Fetch yearly expenses using the 3-year date range
-        const yearlyMonthlyData = await getApiMonthlyExpenses(
-          currentYearlyDateRange.startDate,
-          currentYearlyDateRange.endDate,
-          userCurrency
-        );
-
-        // Calculate yearly expenses from monthly data
-        const yearlyData = calculateYearlyExpensesFromMonthly(yearlyMonthlyData)
-        setYearlyExpenses(yearlyData)
-
-
-
-      } catch (error) {
-        console.error('Failed to load yearly expense data:', error)
-        setYearlyExpenseError(error instanceof Error ? error.message : 'Failed to load yearly expense data')
-      } finally {
-        setIsLoadingYearlyExpenses(false)
-      }
-    }
-
-    loadYearlyExpenseData()
-  }, [currentYearlyDateRange, userCurrency])
-
-  // Load yearly category expense data from API
-  useEffect(() => {
-    const loadYearlyCategoryExpenseData = async () => {
-      setIsLoadingYearlyCategoryExpenses(true)
-      setYearlyCategoryExpenseError(null)
-
-      try {
-        // Fetch yearly category expenses from API using yearly date range
-        const yearlyCategoryData = await getApiCategoryExpenses(
-          currentYearlyDateRange.startDate,
-          currentYearlyDateRange.endDate,
-          userCurrency
-        );
-        setYearlyCategoryExpenses(yearlyCategoryData)
-
-      } catch (error) {
-        console.error('Failed to load yearly category expense data:', error)
-        setYearlyCategoryExpenseError(error instanceof Error ? error.message : 'Failed to load yearly category expense data')
-      } finally {
-        setIsLoadingYearlyCategoryExpenses(false)
-      }
-    }
-
-    const loadYearlyGroupedCategoryExpenseData = async () => {
-      setIsLoadingYearlyGroupedCategoryExpenses(true)
-      setYearlyGroupedCategoryExpenseError(null)
-
-      try {
-        // Fetch yearly grouped category expenses from API
-        const yearlyGroupedCategoryData = await getApiYearlyCategoryExpenses(
-          currentYearlyDateRange.startDate,
-          currentYearlyDateRange.endDate,
-          userCurrency
-        );
-        setYearlyGroupedCategoryExpenses(yearlyGroupedCategoryData)
-
-      } catch (error) {
-        console.error('Failed to load yearly grouped category expense data:', error)
-        setYearlyGroupedCategoryExpenseError(error instanceof Error ? error.message : 'Failed to load yearly grouped category expense data')
-      } finally {
-        setIsLoadingYearlyGroupedCategoryExpenses(false)
-      }
-    }
-
-    loadYearlyCategoryExpenseData()
-    loadYearlyGroupedCategoryExpenseData()
-  }, [currentYearlyDateRange, userCurrency])
+    void loadAllReportData()
+  }, [loadAllReportData])
 
   if (isInitializingData) {
     return <PageLoading />
@@ -385,9 +309,7 @@ export function ExpenseReportsPage() {
       <div className="ledger-page-heading">
         <div>
           <h1>{t('title')}</h1>
-          <p>
-            {t('description')}
-          </p>
+          <p>{t('description')}</p>
         </div>
       </div>
 
@@ -403,16 +325,12 @@ export function ExpenseReportsPage() {
         </div>)}
       </Card>
 
-      {/* Loading and Error States */}
-
       {expenseError && (
-        <Card>
-          <CardContent className="flex items-center justify-center h-32">
-            <div className="text-center">
-              <p className="text-sm text-destructive mb-2">{t('failedToLoadExpenseData')}</p>
-              <p className="text-xs text-muted-foreground">{expenseError}</p>
-            </div>
-          </CardContent>
+        <Card className="flex h-32 items-center justify-center p-6">
+          <div className="text-center">
+            <p className="mb-2 text-sm text-destructive">{t('failedToLoadExpenseData')}</p>
+            <p className="text-xs text-muted-foreground">{expenseError}</p>
+          </div>
         </Card>
       )}
 
@@ -426,26 +344,28 @@ export function ExpenseReportsPage() {
             </TabsList>
 
             <TabsContent value="monthly" className="space-y-4">
-              <div className="grid gap-5 grid-cols-1 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-                {isLoadingExpenses ? <Card><PageLoading className="min-h-[380px]" /></Card> : <ExpenseTrendChart
-                  data={monthlyExpenses}
-                  categoryData={isLoadingMonthlyCategoryExpenses ? undefined : monthlyCategoryExpenses}
-                  currency={userCurrency}
-                />}
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+                {isLoadingExpenses ? (
+                  <Card className="flex min-h-[340px] items-center justify-center" aria-busy="true">
+                    <LoadingIndicator size="md" />
+                  </Card>
+                ) : (
+                  <ExpenseTrendChart
+                    data={monthlyExpenses}
+                    categoryData={isLoadingMonthlyCategoryExpenses ? undefined : monthlyCategoryExpenses}
+                    currency={userCurrency}
+                  />
+                )}
                 {isLoadingCategoryExpenses ? (
-                  <Card>
-                    <CardContent className="flex h-[400px] items-center justify-center" aria-busy="true">
-                      <LoadingIndicator />
-                    </CardContent>
+                  <Card className="flex min-h-[340px] items-center justify-center" aria-busy="true">
+                    <LoadingIndicator size="md" />
                   </Card>
                 ) : categoryExpenseError ? (
-                  <Card>
-                    <CardContent className="flex items-center justify-center h-[400px]">
-                      <div className="text-center text-destructive">
-                        <p className="font-medium">{t('failedToLoadCategoryData')}</p>
-                        <p className="text-sm text-muted-foreground mt-1">{categoryExpenseError}</p>
-                      </div>
-                    </CardContent>
+                  <Card className="flex min-h-[340px] items-center justify-center p-6">
+                    <div className="text-center text-destructive">
+                      <p className="font-medium">{t('failedToLoadCategoryData')}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{categoryExpenseError}</p>
+                    </div>
                   </Card>
                 ) : (
                   <CategoryPieChart
@@ -459,38 +379,38 @@ export function ExpenseReportsPage() {
 
             <TabsContent value="yearly" className="space-y-4">
               {isLoadingYearlyExpenses ? (
-                <div className="grid gap-4 grid-cols-1 xl:grid-cols-2" aria-busy="true">
-                  <Card><PageLoading className="min-h-[380px]" /></Card>
-                  <Card><PageLoading className="min-h-[380px]" /></Card>
+                <div className="grid grid-cols-1 gap-5 xl:grid-cols-2" aria-busy="true">
+                  <Card className="flex min-h-[340px] items-center justify-center">
+                    <LoadingIndicator size="md" />
+                  </Card>
+                  <Card className="flex min-h-[340px] items-center justify-center">
+                    <LoadingIndicator size="md" />
+                  </Card>
                 </div>
               ) : yearlyExpenseError ? (
-                <div className="flex items-center justify-center h-32">
+                <div className="flex h-32 items-center justify-center">
                   <div className="text-center">
-                    <p className="text-sm text-destructive mb-2">{t('failedToLoadYearlyData')}</p>
+                    <p className="mb-2 text-sm text-destructive">{t('failedToLoadYearlyData')}</p>
                     <p className="text-xs text-muted-foreground">{yearlyExpenseError}</p>
                   </div>
                 </div>
               ) : (
-                <div className="grid gap-4 grid-cols-1 xl:grid-cols-2">
+                <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
                   <YearlyTrendChart
                     data={yearlyExpenses}
                     categoryData={isLoadingYearlyGroupedCategoryExpenses ? undefined : yearlyGroupedCategoryExpenses}
                     currency={userCurrency}
                   />
                   {isLoadingYearlyCategoryExpenses ? (
-                    <Card>
-                      <CardContent className="flex h-[400px] items-center justify-center" aria-busy="true">
-                        <LoadingIndicator />
-                      </CardContent>
+                    <Card className="flex min-h-[340px] items-center justify-center" aria-busy="true">
+                      <LoadingIndicator size="md" />
                     </Card>
                   ) : yearlyCategoryExpenseError ? (
-                    <Card>
-                      <CardContent className="flex items-center justify-center h-[400px]">
-                        <div className="text-center text-destructive">
-                          <p className="font-medium">{t('failedToLoadYearlyCategoryData')}</p>
-                          <p className="text-sm text-muted-foreground mt-1">{yearlyCategoryExpenseError}</p>
-                        </div>
-                      </CardContent>
+                    <Card className="flex min-h-[340px] items-center justify-center p-6">
+                      <div className="text-center text-destructive">
+                        <p className="font-medium">{t('failedToLoadYearlyCategoryData')}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">{yearlyCategoryExpenseError}</p>
+                      </div>
                     </Card>
                   ) : (
                     <CategoryPieChart
@@ -505,6 +425,7 @@ export function ExpenseReportsPage() {
           </Tabs>
         </div>
       )}
+
       <Card className="overflow-hidden">
         <button
           type="button"

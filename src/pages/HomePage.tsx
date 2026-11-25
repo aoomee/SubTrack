@@ -11,10 +11,10 @@ import {
 } from "@/store/subscriptionStore"
 import { useSubscriptionStats } from "@/store/subscriptionHooks"
 import { useSettingsStore } from "@/store/settingsStore"
+import { useExpenseReportsStore } from "@/store/expenseReportsStore"
 import { formatCurrencyAmount } from "@/utils/currency"
 import {
   getApiMonthlyExpenses,
-  type MonthlyExpense,
 } from "@/lib/expense-analytics-api"
 
 import { SubscriptionForm } from "@/components/subscription/SubscriptionForm"
@@ -24,6 +24,7 @@ import { ActiveSubscriptionList, BillingCalendar, CategoryStrip } from "@/compon
 import { SubscriptionDetailDialog } from '@/components/subscription/SubscriptionDetailDialog'
 import { ExpenseTrendChart } from "@/components/charts/ExpenseTrendChart"
 import { PageLoading } from "@/components/ui/page-loading"
+import { LoadingIndicator } from "@/components/ui/loading-indicator"
 
 const getErrorMessage = (error: unknown): string => {
   if (error && typeof error === 'object' && 'message' in error) {
@@ -55,8 +56,12 @@ function HomePage() {
   // Projected recurring costs come directly from active subscriptions.
   // Historical trends allocate successful payments over their billing periods.
   const { totalMonthlySpending, totalYearlySpending, activeCount } = useSubscriptionStats()
-  const [monthlyTrend, setMonthlyTrend] = useState<MonthlyExpense[]>([])
-  const [isLoadingSpending, setIsLoadingSpending] = useState(true)
+  const cachedTrend = useExpenseReportsStore(state => state.dashboardMonthlyTrend)
+  const cachedTrendCurrency = useExpenseReportsStore(state => state.dashboardTrendCurrency)
+  const setDashboardTrend = useExpenseReportsStore(state => state.setDashboardTrend)
+  const hasCachedTrend = cachedTrendCurrency === userCurrency && cachedTrend.length > 0
+  const [monthlyTrend, setMonthlyTrend] = useState(() => (hasCachedTrend ? cachedTrend : []))
+  const [isLoadingSpending, setIsLoadingSpending] = useState(() => !hasCachedTrend)
   const [isRefreshing, setIsRefreshing] = useState(false)
 
   // Initialize subscriptions without auto-renewals
@@ -72,16 +77,24 @@ function HomePage() {
     initialize()
   }, [initialize])
 
-  // Load spending data from API
+  // Load spending data from API (stale-while-revalidate when cached for active currency)
   useEffect(() => {
     const loadSpendingData = async () => {
-      setIsLoadingSpending(true)
+      const store = useExpenseReportsStore.getState()
+      const hasWarmCache = store.dashboardTrendCurrency === userCurrency && store.dashboardMonthlyTrend.length > 0
+      if (hasWarmCache) {
+        setMonthlyTrend(store.dashboardMonthlyTrend)
+        setIsLoadingSpending(false)
+      } else {
+        setIsLoadingSpending(true)
+      }
 
       try {
         const endDate = new Date()
         const startDate = new Date(endDate.getFullYear(), endDate.getMonth() - 11, 1)
         const trend = await getApiMonthlyExpenses(startDate, endDate, userCurrency)
         setMonthlyTrend(trend)
+        setDashboardTrend(userCurrency, trend)
       } catch (error) {
         console.error('Failed to load spending data:', error)
       } finally {
@@ -94,7 +107,7 @@ function HomePage() {
     } else {
       setIsLoadingSpending(false)
     }
-  }, [userCurrency])
+  }, [userCurrency, setDashboardTrend])
 
   // Handler for updating subscription
   const handleUpdateSubscription = async (id: number, data: Omit<Subscription, "id" | "lastBillingDate">) => {
@@ -128,6 +141,7 @@ function HomePage() {
         const startDate = new Date(endDate.getFullYear(), endDate.getMonth() - 11, 1)
         const trend = await getApiMonthlyExpenses(startDate, endDate, userCurrency)
         setMonthlyTrend(trend)
+        setDashboardTrend(userCurrency, trend)
       }
 
       toast({
@@ -214,7 +228,13 @@ function HomePage() {
           </section>
 
           <section className="grid grid-cols-1 gap-5 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]" aria-label="Expense trend and scheduled payments">
-            {isLoadingSpending ? <Card><PageLoading className="min-h-[380px]" /></Card> : <ExpenseTrendChart data={monthlyTrend} currency={userCurrency} />}
+            {isLoadingSpending ? (
+              <Card className="flex min-h-[340px] items-center justify-center" aria-busy="true">
+                <LoadingIndicator size="md" />
+              </Card>
+            ) : (
+              <ExpenseTrendChart data={monthlyTrend} currency={userCurrency} />
+            )}
             <BillingCalendar subscriptions={subscriptions} />
           </section>
           <ActiveSubscriptionList subscriptions={subscriptions} onSelect={setDetailSubscription} />

@@ -4,6 +4,8 @@ import { authApi, type AuthUser } from '@/services/authApi'
 import { ApiError } from '@/config/api'
 import { useSettingsStore } from './settingsStore'
 import { useSubscriptionStore } from './subscriptionStore'
+import { useExpenseReportsStore } from './expenseReportsStore'
+import { useNotificationHistoryStore } from './notificationHistoryStore'
 
 interface AuthState {
   user: AuthUser | null
@@ -36,6 +38,8 @@ export const useAuthStore = create<AuthState>()(
         // A new session must load its own data before showing cached pages.
         useSettingsStore.setState({ hasLoaded: false })
         useSubscriptionStore.setState({ hasLoaded: false })
+        useExpenseReportsStore.getState().reset()
+        useNotificationHistoryStore.getState().reset()
         set({ isLoading: true, error: null })
         try {
           await authApi.login(username, password)
@@ -76,6 +80,8 @@ export const useAuthStore = create<AuthState>()(
         } finally {
           useSettingsStore.setState({ hasLoaded: false })
           useSubscriptionStore.setState({ hasLoaded: false })
+          useExpenseReportsStore.getState().reset()
+          useNotificationHistoryStore.getState().reset()
           set({ user: null, initialized: true })
         }
       },

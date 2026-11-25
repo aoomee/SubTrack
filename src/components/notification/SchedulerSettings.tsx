@@ -111,12 +111,8 @@ export function SchedulerSettings() {
 
   if (loading) {
     return (
-      <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-center">
-            <LoadingIndicator size="md" />
-            </div>
-          </CardContent>
+      <Card className="flex min-h-[320px] items-center justify-center p-6" aria-busy="true">
+        <LoadingIndicator size="md" />
       </Card>
     );
   }

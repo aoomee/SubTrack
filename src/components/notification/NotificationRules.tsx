@@ -141,7 +141,7 @@ export const NotificationRules: React.FC<NotificationRulesProps> = ({
   if (loading) {
     return (
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="p-5 sm:p-6">
           <div className="space-y-4">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="animate-pulse">

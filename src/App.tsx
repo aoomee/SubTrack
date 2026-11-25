@@ -7,13 +7,15 @@ import { useAuthStore } from '@/store/authStore'
 import { Navigate } from 'react-router-dom'
 import { PageLoading } from '@/components/ui/page-loading'
 
+import { routeLoaders } from './routes/prefetch'
+
 // Lazy load pages for code splitting
-const HomePage = lazy(() => import("./pages/HomePage"))
-const SubscriptionsPage = lazy(() => import("./pages/SubscriptionsPage").then(module => ({ default: module.SubscriptionsPage })))
-const SettingsPage = lazy(() => import("./pages/SettingsPage").then(module => ({ default: module.SettingsPage })))
-const ExpenseReportsPage = lazy(() => import("./pages/ExpenseReportsPage").then(module => ({ default: module.ExpenseReportsPage })))
-const NotificationHistoryPage = lazy(() => import("./pages/NotificationHistoryPage").then(module => ({ default: module.NotificationHistoryPage })))
-const LoginPage = lazy(() => import("./pages/LoginPage"))
+const HomePage = lazy(routeLoaders['/'])
+const SubscriptionsPage = lazy(() => routeLoaders['/subscriptions']().then(module => ({ default: module.SubscriptionsPage })))
+const SettingsPage = lazy(() => routeLoaders['/settings']().then(module => ({ default: module.SettingsPage })))
+const ExpenseReportsPage = lazy(() => routeLoaders['/expense-reports']().then(module => ({ default: module.ExpenseReportsPage })))
+const NotificationHistoryPage = lazy(() => routeLoaders['/notifications']().then(module => ({ default: module.NotificationHistoryPage })))
+const LoginPage = lazy(routeLoaders['/login'])
 
 function RequireAuth({ children }: { children: JSX.Element }) {
     const { user, initialized } = useAuthStore()
